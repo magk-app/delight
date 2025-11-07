@@ -182,7 +182,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Website**: Coming soon
 - **Discord**: Coming soon
 - **Twitter**: Coming soon
-- **Email**: hello@delightby.magk (coming soon)
+- **Email**: jack@hexahacks.com (coming soon)
 
 ---
 
