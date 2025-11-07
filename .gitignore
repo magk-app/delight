@@ -140,4 +140,5 @@ vite.config.ts.timestamp-*
 
 .claude/
 .cursor/
+.gemini/
 bmad/
