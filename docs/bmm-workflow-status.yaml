@@ -7,7 +7,7 @@ workflow_path: "bmad/bmm/workflows/workflow-status/paths/method-greenfield.yaml"
 
 workflow_status: |
   # Phase 0: Discovery (Optional)
-  brainstorm-project: required
+  brainstorm-project: docs/bmm-brainstorming-session-2025-11-08.md
   product-brief: required
 
   # Phase 1: Planning
