@@ -117,14 +117,14 @@ The MVP commits to a single-player but emotionally aware loop that proves Deligh
 
 ### Feature Priorities & Acceptance Criteria
 
-| Feature | Priority | Acceptance Criteria |
-| --- | --- | --- |
-| Emotionally aware companion | **P0** | ≥90 % of guided sessions open with remembered context (goals, emotional cues) and conversational CSAT averages ≥4/5 in pilot interviews. |
-| Collaborative goal modeling & tracking primitives | **P0** | ≥80 % of new macro goals are decomposed into micro-quests within the first week, each with clear next actions and value tags (growth/health/craft). |
-| Priority triads & adaptive missions | **P0** | ≥70 % of active users maintain 4+ day streaks in their first two weeks and ≥75 % of missions stay within the user’s requested energy/time band. |
-| Momentum storytelling (streaks + highlight reels) | **P1** | Highlight reels auto-generate for ≥60 % of completed quests with positive sentiment scores, and ≥50 % of users watch at least one cinematic recap per week. |
-| Quantitative consistency dashboard (DCI) | **P1** | Daily Consistency Index surfaces week-over-week; ≥65 % of WAUs view the dashboard weekly and ≥50 % sustain DCI ≥0.6. |
-| Compassionate nudges | **P1** | ≥50 % of silent users who receive a gentle SMS/email nudge re-engage within 24 hours, while opt-out rates remain <5 %. |
+| Feature                                           | Priority | Acceptance Criteria                                                                                                                                         |
+| ------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Emotionally aware companion                       | **P0**   | ≥90 % of guided sessions open with remembered context (goals, emotional cues) and conversational CSAT averages ≥4/5 in pilot interviews.                    |
+| Collaborative goal modeling & tracking primitives | **P0**   | ≥80 % of new macro goals are decomposed into micro-quests within the first week, each with clear next actions and value tags (growth/health/craft).         |
+| Priority triads & adaptive missions               | **P0**   | ≥70 % of active users maintain 4+ day streaks in their first two weeks and ≥75 % of missions stay within the user’s requested energy/time band.             |
+| Momentum storytelling (streaks + highlight reels) | **P1**   | Highlight reels auto-generate for ≥60 % of completed quests with positive sentiment scores, and ≥50 % of users watch at least one cinematic recap per week. |
+| Quantitative consistency dashboard (DCI)          | **P1**   | Daily Consistency Index surfaces week-over-week; ≥65 % of WAUs view the dashboard weekly and ≥50 % sustain DCI ≥0.6.                                        |
+| Compassionate nudges                              | **P1**   | ≥50 % of silent users who receive a gentle SMS/email nudge re-engage within 24 hours, while opt-out rates remain <5 %.                                      |
 
 ### Delivery Guardrails
 
@@ -172,13 +172,13 @@ The MVP commits to a single-player but emotionally aware loop that proves Deligh
 - **Planning quality differentiation:** ≥70 % of surveyed users state Delight-generated plans are “more actionable” than their prior system.
 - **Motivation lift:** ≥50 % of users cite a moment when Delight nudged them through a task they would have otherwise abandoned.
 
-### Leading Indicators
+### Leading Indicators\*
 
 - **Organic word-of-mouth:** Unprompted community mentions, social posts, or referrals.
 - **Testimonials referencing emotional relief:** Users sharing that Delight helped them “finally start” or “stay consistent” are early signs we’re solving the right problem.
 - **Community buzz among high-intent groups:** Engagement in ADHD, founder, and student communities shows we resonate with the intended segments.
 
-### Key Performance Indicators
+\*### Key Performance Indicators
 
 - D1/D7/D30 retention segmented by persona and habit category.
 - Average number of collaborative planning sessions per user per week.
