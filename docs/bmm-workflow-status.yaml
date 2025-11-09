@@ -19,7 +19,7 @@ workflow_status: |
   # Phase 2: Solutioning
   create-architecture: docs/architecture.md
   validate-architecture: optional
-  solutioning-gate-check: required
+  solutioning-gate-check: docs/bmm-implementation-readiness-assessment-20251109.md
 
   # Phase 3: Implementation
   sprint-planning: required
