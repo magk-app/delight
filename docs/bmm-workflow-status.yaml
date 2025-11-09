@@ -1,6 +1,7 @@
 generated: "2025-11-08"
 project: "delight"
 project_type: "software"
+project_level: 2
 selected_track: "method"
 field_type: "greenfield"
 workflow_path: "bmad/bmm/workflows/workflow-status/paths/method-greenfield.yaml"
