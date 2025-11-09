@@ -1,23 +1,23 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Delight is a monorepo anchored in `packages/`, with workspaces for `backend` (FastAPI services), `frontend` (Next.js UI), `ai-agent` (LLM orchestration), `game-engine` (XP/quest logic), and `shared` (cross-cutting types). Architecture notes belong in `ARCHITECTURE.md` and `docs/`, while agent prompt assets stay in `bmad/`. Store migrations, fixtures, and storyboards beside the owning feature so reviewers can trace context quickly.
+Delight is a monorepo rooted in `packages/`, with workspace folders for `backend` (FastAPI services), `frontend` (Next.js UI), `ai-agent`, `game-engine`, and `shared` types. Docs, briefs, and workflow outputs live under `docs/`, while BMAD workflow assets reside in `bmad/`. Keep migrations, fixtures, and storyboards beside the feature that owns them so reviewers can trace context, and re-export shared modules through `packages/shared/index.ts` barrels to avoid deep relative paths.
 
 ## Build, Test, and Development Commands
-- `cd packages/backend && poetry install` — resolve Python dependencies.
-- `poetry run uvicorn main:app --reload` — run the FastAPI gateway with auto-reload.
-- `cd packages/frontend && pnpm install` — install the Next.js toolchain (Node 18+, pnpm).
-- `pnpm dev` — serve the web client at `http://localhost:3000`.
-Run backend and frontend in parallel; copy `.env.example` files before starting either service so configuration mismatches surface early.
+- `cd packages/backend && poetry install` — resolve Python deps; follow with `poetry run uvicorn main:app --reload` for the FastAPI gateway.
+- `cd packages/frontend && pnpm install` — install the Next.js toolchain; use `pnpm dev` to run the UI at http://localhost:3000.
+- Backend tests: `cd packages/backend && poetry run pytest`.
+- Frontend unit tests: `cd packages/frontend && pnpm test`; Playwright E2E: `pnpm test:e2e`.
+Copy `.env.example` files before starting services so configuration mismatches surface early.
 
 ## Coding Style & Naming Conventions
-Backend code follows PEP 8, 4-space indentation, snake_case modules (`quest_service.py`), and type-annotated public APIs. Frontend files use ESLint + Prettier defaults, PascalCase components (`ProgressCard.tsx`), camelCase hooks/utilities, and Tailwind classes defined inline. Shared modules should re-export through `index.ts` barrels to discourage deep relative imports. Keep comments purposeful—explain why orchestration decisions exist rather than what the code already states.
+Backend code follows PEP 8 with 4-space indentation, snake_case modules (`quest_service.py`), and type annotations on public APIs. Frontend adopts ESLint + Prettier defaults, PascalCase components (`ProgressCard.tsx`), camelCase hooks/utils, and Tailwind classes inline. Keep comments purposeful—explain why orchestration choices exist instead of restating logic.
 
 ## Testing Guidelines
-Place backend tests in `packages/backend/tests/` and execute with `poetry run pytest` as suites land. Frontend unit tests live in `packages/frontend/__tests__/` (Vitest), and end-to-end specs under `packages/frontend/e2e/` (Playwright) executed via `pnpm test` and `pnpm test:e2e`. Mirror narrative scenarios from `docs/` when writing fixtures so AI and quest mechanics stay verifiable. Every feature should merge with at least a smoke test covering the primary user path.
+Mirror backend tests in `packages/backend/tests/` and frontend unit specs in `packages/frontend/__tests__/`; e2e specs sit in `packages/frontend/e2e/`. Align fixtures with narrative scenarios recorded in `docs/` so AI and quest mechanics remain verifiable. Every feature should land with at least a smoke test covering the primary user path plus the supporting command output in the PR description.
 
 ## Commit & Pull Request Guidelines
-History uses short, imperative commits (`package json setup`, `basic partitioning of docs`), so keep subjects under ~60 characters and scoped to the package touched. Pull requests must ship with a concise summary, linked issue or roadmap item, local test evidence (command + result), and screenshots/GIFs for UI changes. Request review from the owning domain lead before merging to `main`; drafts are encouraged until tests pass.
+Use short, imperative commit subjects under ~60 characters (`package json setup`, `basic partitioning of docs`). Pull requests need a concise summary, linked issue or roadmap reference, and local test evidence (command + result). Include screenshots or GIFs for UI changes and request review from the owning domain lead before merging to `main`; keep drafts open until tests pass.
 
-## Configuration & Security Tips
-Do not commit `.env` files; copy from the provided examples and document new keys in `README.md`. Secrets consumed by agents in `bmad/` belong in your secret manager, not the manifests. Scrub user-identifiable data from logs or demos and store sanitized story content in `docs/stories/`.
+## Security & Configuration Tips
+Never commit `.env` files; copy from the provided examples and document new keys in `README.md`. Secrets for agents in `bmad/` belong in your secret manager, not in manifests. Scrub user-identifiable data from logs or demos, and store sanitized story content under `docs/stories/`.

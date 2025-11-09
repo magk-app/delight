@@ -13,7 +13,7 @@ workflow_status: |
 
   # Phase 1: Planning
   prd: docs/product-brief-Delight-2025-11-09.md
-  validate-prd: optional
+  validate-prd: docs/validation-report-20251109-230948.md
   create-design: docs/ux-design-specification.md
 
   # Phase 2: Solutioning
