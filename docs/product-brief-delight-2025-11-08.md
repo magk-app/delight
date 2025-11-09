@@ -90,26 +90,27 @@ Small teams, accountability circles, and early-stage cohorts who want to anchor 
 
 ---
 
-{{#if success_metrics}}
-
 ## Success Metrics
 
-{{success_metrics}}
-
-{{#if business_objectives}}
+1. **Daily Consistency Index (DCI):** Weighted blend of active streak, daily quest completion, and accountability touchpoints. Target ≥65% of weekly active users sustaining DCI ≥0.6.
+2. **Weekly Quest Completion Rate:** Average % of assigned micro-quests completed within 7 days; target ≥75% for primary personas.
+3. **Goal Decomposition Coverage:** Portion of macro goals that have collaborative micro-step plans and utility-weighted estimates; target ≥80% within first week of goal creation.
+4. **Narrative Momentum Score:** Frequency/quality of highlight reels or story beats acknowledged by the user; target ≥2 meaningful story beats per user per week.
+5. **Companion Engagement Depth:** Median number of purposeful companion exchanges per session (goal modeling, reflection, reprioritization); target ≥4 with satisfaction ≥4/5.
 
 ### Business Objectives
 
-{{business_objectives}}
-{{/if}}
-
-{{#if key_performance_indicators}}
+1. Prove that Delight keeps users more consistent than baseline tools by achieving ≥40% Day-30 retention for target personas.
+2. Demonstrate superior planning quality vs. mainstream apps by showing ≥70% of users rate Delight-generated plans as “more actionable” than their prior system.
+3. Establish a measurable motivation lift: ≥50% of users report that Delight nudged them through a task they would have otherwise abandoned.
 
 ### Key Performance Indicators
 
-{{key_performance_indicators}}
-{{/if}}
-{{/if}}
+- D1/D7/D30 retention, segmented by persona and habit category.
+- Average number of collaborative planning sessions per user per week.
+- % of abstract goals (e.g., relocation, relationships) receiving mixed qualitative + quantitative plans.
+- Highlight reel completion rate and shareability (exports or shares).
+- Net Companion Score (qualitative trust rating in the AI).
 
 ---
 
@@ -117,79 +118,83 @@ Small teams, accountability circles, and early-stage cohorts who want to anchor 
 
 ### Core Features
 
-{{core_features}}
-
-{{#if out_of_scope}}
+1. **Emotionally aware companion:** LangChain-powered agent with Mem0/Qdrant memory tiers, enabling nuanced conversations, context retention, and collaborative planning for abstract goals.
+2. **Collaborative goal modeling:** Co-creative flow where the companion and user break ambitions into micro-quests, utility-weighted milestones, and rolling schedules.
+3. **Priority triads & scheduling:** Daily “choose one of three” commitments, ritualized check-ins, and smart calendar suggestions that maintain momentum without overwhelming users.
+4. **Narrative momentum system:** Arena/Observatory/Commons story beats, highlight reels, and lore snippets that externalize progress and invite sharing.
+5. **Quantitative consistency dashboard:** DCI display, streaks, quest completion visualizations, and “what’s working” analytics derived from the life-plan blueprint.
+6. **Configurable nudges:** In-app, email, and SMS reminders tuned for compassionate accountability (no financial forfeits yet) plus optional opt-in screen-time awareness for later experimentation.
 
 ### Out of Scope for MVP
 
-{{out_of_scope}}
-{{/if}}
-
-{{#if mvp_success_criteria}}
+- Financial forfeits or binding contracts for accountability.
+- Deep screen-time or app-tracking instrumentation (may appear as lightweight beta later).
+- Full multiplayer worlds, guild economies, or coin systems.
+- Automated human introductions/matchmaking; manual experiments only if needed.
+- Voice input, 2D sprite rendering, or advanced gaming UX polish.
 
 ### MVP Success Criteria
 
-{{mvp_success_criteria}}
-{{/if}}
-
-{{#if future_vision_features}}
+1. Companion successfully collaborates on ≥80% of new goals without human ops intervention.
+2. ≥70% of active users maintain a streak of 4+ days within their first two weeks.
+3. Highlight reels auto-generate for ≥60% of completed quests with positive sentiment feedback.
+4. Core personas report ≥4/5 satisfaction with the collaborative planning flow in qualitative interviews.
 
 ### Future Vision
 
-{{future_vision_features}}
-{{/if}}
+1. **Social world-building:** Unlockable zones, co-op missions, and safe introductions orchestrated by the companion.
+2. **Advanced accountability levers:** Optional financial stakes, buddy systems, and AI-mediated feedback loops.
+3. **Emotion-aware sensory inputs:** Screen-time context, voice tone, wearables integration for richer state detection.
+4. **Autonomous agent network:** Delegates research, logistics, and admin work while users stay in flow.
+5. **Lore-rich economies:** Coin systems, 2D sprites, and achievement arcs that tie directly to real work outputs.
 
 ---
 
-{{#if market_analysis}}
-
 ## Market Context
 
-{{market_analysis}}
-{{/if}}
-
-{{#if financial_considerations}}
+- Gamification drives productivity: 90% of employees report higher output when workflows include game mechanics, and engagement lifts ≈60% (per Delight life-plan research). Existing incumbents (Notion, Jira) under-deliver because setup complexity erodes that gain.
+- AI productivity boom is crowded yet shallow: most assistants focus on task execution or summarization, not emotional coaching or abstract goal modeling.
+- Learners and technologists actively seek community-backed accountability but distrust platforms that feel like surveillance; Delight’s lore-first framing offers a differentiated emotional tone.
+- Competitive landscape: Habitica (RPG productivity), Goblin Tools (neurodivergent planning aids), and coach marketplaces. None combine empathetic AI, quantitative rigor, and narrative worlds.
 
 ## Financial Considerations
 
-{{financial_considerations}}
-{{/if}}
-
-{{#if technical_preferences}}
+- Monetization path (post-MVP): subscription with tiered access to advanced rituals, co-op pods, and extra companion personas.
+- Infrastructure costs anchored in Mem0 + Qdrant + Postgres stack; expected <$0.10 per active user per day at MVP scale.
+- SMS/email nudges introduce marginal cost; limit to high-signal events until retention impact is proven.
 
 ## Technical Preferences
 
-{{technical_preferences}}
-{{/if}}
-
-{{#if organizational_context}}
+- **Architecture:** FastAPI backend (packages/backend) orchestrating workflows and memory, Next.js frontend (packages/frontend) delivering immersive UI, shared TypeScript types for consistency.
+- **AI stack:** LangChain/LangGraph orchestration, Mem0 for persistent memory, Qdrant vector store, Redis for task memory, optional Letta/MemGPT upgrade later.
+- **Knowledge graph:** NetworkX prototype scaling to Neo4j, enabling relationship/progress tracking and “introduction readiness” signals.
+- **Data discipline:** All computations logged for replay; quantitative metrics stored in Postgres for analytics and the Consistency Dashboard.
 
 ## Organizational Context
 
-{{organizational_context}}
-{{/if}}
-
-{{#if risks_and_assumptions}}
+- Founder-led initiative with direct line to research backlog (`docs/delight-plan.md`) and brainstorming outcomes.
+- Requires close collaboration between AI/platform engineering (memory + orchestration), product design (narrative UX, storyboards), and growth (accountability rituals, communications).
+- Documentation lives in `docs/` with workflows tracked via BMAD; ensures future contributors can pick up context quickly.
 
 ## Risks and Assumptions
 
-{{risks_and_assumptions}}
-{{/if}}
-
-{{#if timeline_constraints}}
+- **Risk:** AI companion mishandles sensitive goals due to model constraints. *Mitigation:* Guardrail prompts + human-in-the-loop review for edge categories.
+- **Risk:** Quantitative tracking feels punitive. *Mitigation:* Allow users to tune which metrics display and default to positive framing.
+- **Risk:** Narrative system becomes gimmicky without real utility. *Mitigation:* Tie every story beat to verifiable work artifacts (quests, reflections, streaks).
+- **Assumption:** Target personas are willing to enable SMS/email nudges if tone feels human.
+- **Assumption:** Collaborative planning can occur via chat-first interface; no visual builder required initially.
 
 ## Timeline
 
-{{timeline_constraints}}
-{{/if}}
-
-{{#if supporting_materials}}
+- **Weeks 0-2:** Stand up companion + memory stack, ship conversational goal modeling prototype.
+- **Weeks 3-4:** Layer in priority triads, DCI tracking, and highlight reel generation.
+- **Weeks 5-6:** Add configurable nudges (email/SMS), polish narrative zones, conduct retention experiments with pilot cohort.
+- **Weeks 7-8:** Harden analytics, prepare PRD workflow handoff, and evaluate expansion scope (screen-time beta, social pods).
 
 ## Supporting Materials
 
-{{supporting_materials}}
-{{/if}}
+- `docs/bmm-brainstorming-session-2025-11-08.md` — ritual + persona ideation source.
+- `docs/delight-plan.md` — detailed implementation plan, memory architecture, and to-do list.
 
 ---
 
