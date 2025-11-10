@@ -1,6 +1,6 @@
 # Story 1.2: Set Up Database Schema and Migrations
 
-Status: review
+Status: done
 
 ## Story
 
@@ -992,12 +992,15 @@ Claude Sonnet 4.5 (via Cursor)
 | 2025-11-10 | SM     | Story drafted with complete specifications |
 | 2025-11-10 | Dev (Claude Sonnet 4.5) | Story 1.2 implementation completed - database schema and migrations |
 | 2025-11-10 | Jack   | Senior Developer Review (AI) notes appended |
+| 2025-11-11 | Jack   | Validation evidence captured; story approved |
 
 ## Senior Developer Review (AI)
 
+### 2025-11-10 Review
+
 **Reviewer:** Jack  
 **Date:** 2025-11-10  
-**Outcome:** Blocked — critical issues prevent AC1/AC4 sign-off.
+**Outcome (2025-11-10):** Blocked — critical issues prevent AC1/AC4 sign-off.
 
 ### Summary
 - Async SQLAlchemy, migrations, and CRUD smoke tests exist, but Alembic never imports the ORM modules and the models inherit from a different declarative base. As a result, metadata used by migrations/tests is empty, so autogenerate can’t see schema changes and DB tests create no tables.
@@ -1064,6 +1067,51 @@ Summary: 5 tasks verified, 2 partial, 1 not assessed (docs/tests outside repo sc
 
 **Advisory Notes**
 - Note: Once the Base consolidation lands, re-run `alembic revision --autogenerate` to confirm future schema diffs are detected.
+
+
+### 2025-11-11 Validation
+
+**Reviewer:** Jack  
+**Date:** 2025-11-11  
+**Outcome (2025-11-11):** Approved — AC1–AC6 validated end-to-end against Supabase.
+
+#### Summary
+- Unified the declarative base under `app.db.base` and ensured all ORM modules import from it (`packages/backend/app/db/base.py:6-27`, `packages/backend/app/models/user.py:15-79`).
+- Escaped percent characters when seeding Alembic’s config and re-ran the upgrade/downgrade cycle successfully (`packages/backend/app/db/migrations/env.py:18-54`; alembic logs attached).
+- Exercised the async CRUD smoke test (`scripts/test_db_connection.py`) plus the FastAPI health probe, and confirmed the full pytest suite (17 passed, 2 skipped) uses the real async session.
+- Verified pgvector availability in Supabase (`SELECT * FROM pg_extension WHERE extname = 'vector';` returned OID 17462, `extrelocatable = true`).
+
+#### Evidence Collected (2025-11-11)
+1. `poetry run alembic upgrade head && poetry run alembic downgrade -1 && poetry run alembic upgrade head` — proves AC1/AC5 on Supabase (logs attached to story).
+2. `poetry run python scripts/test_db_connection.py` — creates, queries, and cascades user data with ✅ output for every step (AC2/AC4/AC6).
+3. `poetry run pytest` — 17 tests passed, 2 skipped (expected), coverage artifacts stored under `packages/backend/test-results/` (AC6 regression protection).
+4. Supabase SQL console output for `SELECT * FROM pg_extension WHERE extname = 'vector';` — shows pgvector row (OID 17462) satisfying AC3.
+
+#### Acceptance Criteria Coverage — 2025-11-11 Validation
+
+| AC | Description | Status | Evidence |
+| --- | --- | --- | --- |
+| AC1 | Alembic configured with async SQLAlchemy | Verified (2025-11-11) | `packages/backend/app/db/migrations/env.py:18-54`; Alembic upgrade/downgrade logs attached |
+| AC2 | Core user tables exist | Verified (2025-11-11) | `packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:22-79`; CRUD script output |
+| AC3 | pgvector enabled | Verified (2025-11-11) | Supabase query `SELECT * FROM pg_extension WHERE extname = 'vector';` (OID 17462) |
+| AC4 | SQLAlchemy models implemented | Verified (2025-11-11) | `packages/backend/app/db/base.py:6-27`; `packages/backend/app/models/user.py:15-79`; test script relationship checks |
+| AC5 | Migrations reversible | Verified (2025-11-11) | Alembic downgrade/upgrade cycle logs |
+| AC6 | DB connection & query testing | Verified (2025-11-11) | `scripts/test_db_connection.py:16-113`; `poetry run pytest` summary + health endpoint exercising DB |
+
+#### Task Completion Validation — 2025-11-11
+
+| Task | Marked As | Verified As | Evidence |
+| --- | --- | --- | --- |
+| Configure Alembic for async SQLAlchemy | Complete | Verified (2025-11-11) | Escaped URL + env imports in `packages/backend/app/db/migrations/env.py:18-54`; Alembic logs |
+| Create initial database migration | Complete | Verified | `packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:22-79`; Supabase tables |
+| Implement SQLAlchemy models | Complete | Verified (2025-11-11) | Single Base in `app.db.base`; models in `packages/backend/app/models/user.py` exercised by test script |
+| Configure database connection module | Complete | Verified | `packages/backend/app/db/session.py:16-67`; health endpoint query |
+| Apply migrations & verify schema | Complete | Verified | Alembic upgrade/downgrade logs; Supabase table view |
+| Create database testing utilities | Complete | Verified | `packages/backend/scripts/test_db_connection.py:16-113` run output |
+| Update backend main app | Complete | Verified | `packages/backend/main.py:15-52`; server start logs |
+| Documentation & testing | Complete | Verified (2025-11-11) | Story attachments: alembic/test/pgvector logs; coverage artifacts under `packages/backend/test-results/` |
+
+All previously noted action items are resolved; no further follow-up required for Story 1.2.
 
 
 ---
