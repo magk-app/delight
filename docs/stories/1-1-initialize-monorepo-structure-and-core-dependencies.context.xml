@@ -11,165 +11,117 @@
 
   <story>
     <asA>developer</asA>
-    <iWant>a properly structured monorepo with backend, frontend, and shared packages</iWant>
-    <soThat>the team can work efficiently with proper tooling and dependency management</soThat>
+    <iWant>a properly structured monorepo with backend, frontend, and shared packages with all core dependencies installed</iWant>
+    <soThat>the team can work efficiently with proper tooling, dependency management, and can start both development servers successfully</soThat>
     <tasks>
-      - Task 1: Initialize Root Workspace Structure (AC: #1)
-        - Create root package.json with pnpm workspaces configuration
-        - Add pnpm-workspace.yaml defining workspace packages
-        - Create .gitignore with node_modules, .env, Python cache, etc.
-        - Create basic README.md with setup instructions
-      
+      - Task 1: Initialize Monorepo Root (AC: #1)
       - Task 2: Initialize Frontend Package (AC: #1, #2)
-        - Run npx create-next-app@latest in packages/frontend with flags
-        - Install Clerk: pnpm add @clerk/nextjs
-        - Install shadcn/ui dependencies
-        - Install Framer Motion
-        - Create .env.local.example with Clerk keys placeholders
-        - Configure next.config.js with API proxy (if needed)
-      
-      - Task 3: Initialize Backend Package (AC: #1, #3)
-        - Create packages/backend/ directory
-        - Run poetry init with Python 3.11+ requirement
-        - Add FastAPI, database, AI, and infrastructure dependencies via Poetry
-        - Add dev dependencies (pytest, ruff, black, mypy)
-        - Create basic app/main.py with FastAPI app initialization
-        - Create .env.example
-      
-      - Task 4: Create Shared Types Package (AC: #1)
-        - Create packages/shared/ directory with package.json
-        - Create index.ts barrel export file
-        - Create types/ directory
-      
-      - Task 5: Configure Docker Compose (AC: #4)
-        - Create docker-compose.yml at root
-        - Add PostgreSQL 16 service with pgvector extension
-        - Add Redis 7 service
-        - Configure ports and volumes
-      
-      - Task 6: Verify Development Environment (AC: #5, #6)
-        - Start Docker services
-        - Verify PostgreSQL and Redis connections
-        - Start and verify frontend/backend servers
-      
-      - Task 7: Create Setup Documentation (AC: #6)
-        - Update README.md with prerequisites and setup commands
-        - Create docs/DEVELOPMENT.md
-        - Document common issues
-      
-      - Task 8: Manual Testing (AC: All)
-        - Fresh clone test
-        - No Docker test
-        - Hot reload tests
-        - Environment variable loading test
+      - Task 3: Initialize Backend Package (AC: #1, #2)
+      - Task 4: Initialize Shared Package (AC: #1)
+      - Task 5: Set Up Infrastructure (AC: #1, #3)
+      - Task 6: Configure Development Environment (AC: #4)
+      - Task 7: Implement Health Check Endpoint (AC: #3)
+      - Task 8: Testing (All ACs)
     </tasks>
   </story>
 
   <acceptanceCriteria>
-    AC1: Directory Structure Created
-    - packages/frontend/ with Next.js 15, App Router, TypeScript, Tailwind CSS
-    - packages/backend/ with FastAPI and Poetry
-    - packages/shared/ for TypeScript types
-    - docker-compose.yml at root
-    - Root package.json with pnpm workspace configuration
-    
-    AC2: Frontend Dependencies Installed
-    - Next.js 15.x, React 19.x, TypeScript 5.3+
-    - Tailwind CSS 3.4+, @clerk/nextjs 5.0+
-    - shadcn/ui base components (Radix UI primitives)
-    - Framer Motion 11.0+
-    
-    AC3: Backend Dependencies Installed
-    - FastAPI 0.109+, Uvicorn 0.27+ with standard extras
-    - SQLAlchemy 2.0+ with asyncio, asyncpg 0.29+
-    - Alembic 1.13+, Pydantic 2.5+
-    - clerk-backend-sdk 0.3+
-    - LangChain 0.1+, LangGraph 0.0.20+
-    - langchain-postgres 0.0.3+, pgvector 0.2.4+
-    - transformers 4.36+, torch 2.1+ (emotion detection)
-    - ARQ 0.26+, Redis 5.0+
-    - sentry-sdk 1.40+ with fastapi extras
-    
-    AC4: Docker Compose Environment Works
-    - PostgreSQL 16+ container on port 5432 with pgvector extension
-    - Redis 7+ container on port 6379
-    - Both services accessible from host
-    
-    AC5: Development Servers Start Successfully
-    - Frontend at http://localhost:3000 with Next.js compilation
-    - Backend at http://localhost:8000 with FastAPI initialization
-    - Swagger UI at http://localhost:8000/docs
-    - No critical errors in console for either service
-    
-    AC6: Environment Configuration Setup
-    - Frontend .env.local with NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY, NEXT_PUBLIC_API_URL
-    - Backend .env with DATABASE_URL, REDIS_URL, CLERK_SECRET_KEY, SENTRY_DSN, OPENAI_API_KEY
-    - .gitignore excludes all .env files (except .env.example)
+    <criterion id="AC1">
+      <title>Monorepo Structure Created</title>
+      <description>Given I am setting up a new development environment, when I run the initialization commands, then the monorepo structure is created with: packages/frontend/ (Next.js 15 + TypeScript + Tailwind), packages/backend/ (FastAPI + Poetry + async SQLAlchemy), packages/shared/ (TypeScript types), Docker Compose for local Redis, root package.json with pnpm workspace configuration</description>
+      <source>docs/epics/epic-1-user-onboarding-foundation.md#Story-1.1, docs/tech-spec-epic-1.md#AC1</source>
+    </criterion>
+    <criterion id="AC2">
+      <title>Core Dependencies Installed</title>
+      <description>All core dependencies are present: Frontend (Next.js 15, React 19, TypeScript, Tailwind, shadcn/ui, @clerk/nextjs, framer-motion), Backend (FastAPI, SQLAlchemy 2.0 async, asyncpg, Pydantic, Alembic, clerk-backend-sdk, redis, arq, sentry-sdk), AI/ML (LangChain, LangGraph, langchain-postgres, pgvector, transformers, torch)</description>
+      <source>docs/tech-spec-epic-1.md#AC2, docs/tech-spec-epic-1.md#Dependencies</source>
+    </criterion>
+    <criterion id="AC3">
+      <title>Development Servers Start Successfully</title>
+      <description>Frontend starts successfully: pnpm dev (http://localhost:3000), Backend starts successfully: poetry run uvicorn main:app --reload (http://localhost:8000), Supabase PostgreSQL is accessible, Redis is accessible (Upstash or Docker), Health check endpoint responds: GET http://localhost:8000/api/v1/health</description>
+      <source>docs/tech-spec-epic-1.md#AC1, docs/tech-spec-epic-1.md#AC6</source>
+    </criterion>
+    <criterion id="AC4">
+      <title>Environment Configuration Complete</title>
+      <description>.env.example files exist for both frontend and backend with required environment variables documented: DATABASE_URL (Supabase), REDIS_URL, CLERK_PUBLISHABLE_KEY (frontend), CLERK_SECRET_KEY (backend), OPENAI_API_KEY, SENTRY_DSN. .env files are in .gitignore, README.md contains setup instructions</description>
+      <source>docs/tech-spec-epic-1.md#AC6, docs/architecture/project-structure.md</source>
+    </criterion>
   </acceptanceCriteria>
 
   <artifacts>
     <docs>
       <doc>
         <path>docs/tech-spec-epic-1.md</path>
-        <title>Epic Technical Specification: User Onboarding &amp; Foundation</title>
-        <section>Technology Stack Decisions</section>
-        <snippet>Defines all core technologies: Next.js 15 with App Router, FastAPI with async SQLAlchemy 2.0, PostgreSQL 16+ with pgvector extension (1536 dimensions for OpenAI embeddings), Clerk for authentication, LangGraph + LangChain for AI orchestration, ARQ + Redis for background jobs.</snippet>
+        <title>Epic 1 Technical Specification: User Onboarding & Foundation</title>
+        <section>Overview, Technology Stack Decisions, Dependencies</section>
+        <snippet>Comprehensive technical specification for Epic 1 covering monorepo setup, technology stack (Next.js 15, FastAPI, Supabase PostgreSQL, Clerk auth), all dependencies, and infrastructure constraints (cost target &lt;$0.50 per user per day).</snippet>
       </doc>
       <doc>
-        <path>docs/tech-spec-epic-1.md</path>
-        <title>Epic Technical Specification: User Onboarding &amp; Foundation</title>
-        <section>Dependencies and Integrations</section>
-        <snippet>Complete dependency lists with exact versions for frontend (package.json) and backend (pyproject.toml). Includes all AI dependencies (LangChain, LangGraph, transformers), infrastructure (ARQ, Redis, Sentry), and authentication (Clerk SDK).</snippet>
-      </doc>
-      <doc>
-        <path>docs/tech-spec-epic-1.md</path>
-        <title>Epic Technical Specification: User Onboarding &amp; Foundation</title>
-        <section>Acceptance Criteria (Authoritative)</section>
-        <snippet>Six authoritative acceptance criteria covering: AC1 Monorepo Structure, AC2 Database Schema, AC3 Clerk Authentication, AC4 User Preferences CRUD, AC5 Deployment Pipeline, AC6 Development Environment Reproducibility.</snippet>
-      </doc>
-      <doc>
-        <path>docs/architecture.md</path>
-        <title>Architecture: Delight</title>
-        <section>Project Initialization</section>
-        <snippet>Provides exact initialization commands for frontend (npx create-next-app with flags, Clerk installation) and backend (Poetry init, dependency additions). This is the primary reference for Story 1.1 implementation.</snippet>
-      </doc>
-      <doc>
-        <path>docs/architecture.md</path>
-        <title>Architecture: Delight</title>
-        <section>Project Structure</section>
-        <snippet>Complete directory tree showing expected layout: packages/frontend (Next.js with src/app router), packages/backend (FastAPI with app/), packages/shared (TypeScript types), docker-compose.yml at root, docs/ folder, workspace config files.</snippet>
-      </doc>
-      <doc>
-        <path>docs/architecture.md</path>
-        <title>Architecture: Delight</title>
-        <section>ADR-007: Clerk for Authentication</section>
-        <snippet>Decision rationale for using Clerk managed authentication instead of custom JWT: reduces development by 2-3 stories, provides OAuth/2FA/magic links out-of-box, free tier 10K MAU then $25/1000 MAU, SOC 2/GDPR/CCPA compliant.</snippet>
-      </doc>
-      <doc>
-        <path>docs/architecture.md</path>
-        <title>Architecture: Delight</title>
-        <section>ADR-008: Open Source Emotion Detection Model</section>
-        <snippet>Decision to use cardiffnlp/twitter-roberta-base-emotion-multilingual-latest: 400K+ downloads, ~50ms inference, 7 emotions (joy/anger/sadness/fear/love/surprise/neutral), self-hosted for privacy, no per-request costs.</snippet>
-      </doc>
-      <doc>
-        <path>docs/architecture.md</path>
-        <title>Architecture: Delight</title>
-        <section>ADR-009: GPT-4o-mini as Primary LLM</section>
-        <snippet>Cost-effective model selection: GPT-4o-mini ($0.15/$0.60 per 1M tokens) for chat/personas/quest generation (~$0.03/user/day), GPT-4o ($2.50/$10 per 1M tokens) reserved for narrative generation only. Meets $0.50/user/day operational target.</snippet>
-      </doc>
-      <doc>
-        <path>docs/epics.md</path>
-        <title>Delight - Epic Breakdown</title>
+        <path>docs/epics/epic-1-user-onboarding-foundation.md</path>
+        <title>Epic 1: User Onboarding & Foundation</title>
         <section>Story 1.1: Initialize Monorepo Structure and Core Dependencies</section>
-        <snippet>Original story definition with full acceptance criteria. Key points: monorepo structure with Next.js 15, FastAPI, shared packages; Docker Compose for PostgreSQL + Redis; all dependencies installed and verified; development servers start successfully.</snippet>
+        <snippet>Story requirements with acceptance criteria for monorepo initialization, core dependencies installation (Next.js 15, FastAPI, Clerk, AI/ML stack), development server startup, and environment configuration.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/project-structure.md</path>
+        <title>Project Structure</title>
+        <section>Complete monorepo directory structure</section>
+        <snippet>Canonical directory structure for frontend (App Router with route groups: (auth)/, (world)/, companion/, missions/, progress/), backend (api/v1/, core/, models/, schemas/, services/, agents/, workers/, db/), and shared packages (TypeScript types).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/technology-stack-details.md</path>
+        <title>Technology Stack Details</title>
+        <section>Frontend, Backend, Database, Authentication</section>
+        <snippet>Detailed technology choices: Frontend (Next.js 15 App Router, React 19, TypeScript, Tailwind, shadcn/ui), Backend (FastAPI, async SQLAlchemy 2.0, asyncpg), Database (Supabase managed PostgreSQL with pgvector), Authentication (Clerk managed service), Infrastructure (ARQ + Redis for job queue, Sentry for observability).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/development-environment.md</path>
+        <title>Development Environment</title>
+        <section>Prerequisites, Setup Commands</section>
+        <snippet>Prerequisites: Node.js 20+, Python 3.11+, Poetry, Supabase account, optional Docker for Redis. Setup includes pnpm workspace initialization, Poetry backend setup, Supabase configuration, and environment variable management.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/api-contracts.md</path>
+        <title>API Contracts</title>
+        <section>Health Check Endpoints</section>
+        <snippet>Health check endpoint specification: GET /api/v1/health returns JSON with status (healthy/degraded/unhealthy), database connection status, redis connection status, and timestamp. No authentication required.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/implementation-patterns.md</path>
+        <title>Implementation Patterns</title>
+        <section>Monorepo Organization, Dependency Management</section>
+        <snippet>Patterns for pnpm workspaces, Poetry dependency isolation, shared type definitions, environment configuration (.env.example templates), and development workflow (parallel frontend/backend development with health checks).</snippet>
+      </doc>
+      <doc>
+        <path>docs/product-brief-Delight-2025-11-09.md</path>
+        <title>Product Brief: Delight</title>
+        <section>Vision, Core Features</section>
+        <snippet>Delight is a self-improvement companion platform pairing emotionally intelligent AI coaching with structured progress systems. Vision: software that feels seamlessly supportive and ruthlessly effective. Foundation epic establishes technical infrastructure for companion chat, mission management, and narrative systems.</snippet>
       </doc>
     </docs>
-    
     <code>
-      <!-- No existing code artifacts - this is the first story that creates the foundation -->
-      <note>This is the first implementation story. All code will be created from scratch following the architecture specifications.</note>
+      <artifact>
+        <path>docker-compose.yml</path>
+        <kind>infrastructure</kind>
+        <symbol>docker-compose</symbol>
+        <lines>1-10</lines>
+        <reason>Existing Docker Compose configuration - needs updating to include only Redis (Supabase replaces PostgreSQL). Provides infrastructure service definitions for local development.</reason>
+      </artifact>
+      <artifact>
+        <path>README.md</path>
+        <kind>documentation</kind>
+        <symbol>README</symbol>
+        <lines>1-555</lines>
+        <reason>Existing project README - needs updating with monorepo setup instructions, Supabase configuration, Clerk setup, and development server startup commands. Will serve as primary developer onboarding document.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>package.json</symbol>
+        <lines>empty</lines>
+        <reason>Root package.json needs to be created with pnpm workspace configuration pointing to packages/* for monorepo management. Will coordinate frontend and shared package dependencies.</reason>
+      </artifact>
     </code>
-    
     <dependencies>
       <frontend>
         <package name="next" version="^15.0.0" />
@@ -179,14 +131,14 @@
         <package name="typescript" version="^5.3.0" />
         <package name="tailwindcss" version="^3.4.0" />
         <package name="framer-motion" version="^11.0.0" />
-        <package name="@radix-ui/react-*" version="latest" comment="shadcn/ui base components" />
+        <package name="@radix-ui/react-*" version="latest" />
         <package name="class-variance-authority" version="^0.7.0" />
         <package name="clsx" version="^2.1.0" />
         <package name="tailwind-merge" version="^2.2.0" />
+        <package name="eslint" version="^8.56.0" />
+        <package name="prettier" version="^3.2.0" />
       </frontend>
-      
       <backend>
-        <package name="python" version="^3.11" />
         <package name="fastapi" version="^0.109.0" />
         <package name="uvicorn[standard]" version="^0.27.0" />
         <package name="sqlalchemy[asyncio]" version="^2.0.25" />
@@ -195,233 +147,148 @@
         <package name="pydantic" version="^2.5.0" />
         <package name="pydantic-settings" version="^2.1.0" />
         <package name="clerk-backend-sdk" version="^0.3.0" />
+        <package name="redis" version="^5.0.1" />
+        <package name="arq" version="^0.26.0" />
+        <package name="sentry-sdk[fastapi]" version="^1.40.0" />
         <package name="langchain" version="^0.1.0" />
         <package name="langgraph" version="^0.0.20" />
         <package name="langchain-postgres" version="^0.0.3" />
         <package name="pgvector" version="^0.2.4" />
-        <package name="transformers" version="^4.36.0" comment="Emotion detection model" />
+        <package name="transformers" version="^4.36.0" />
         <package name="torch" version="^2.1.0" />
-        <package name="arq" version="^0.26.0" comment="Async Redis queue" />
-        <package name="redis" version="^5.0.1" />
-        <package name="sentry-sdk[fastapi]" version="^1.40.0" />
+        <package name="pytest" version="^7.4.0" group="dev" />
+        <package name="pytest-asyncio" version="^0.23.0" group="dev" />
+        <package name="httpx" version="^0.26.0" group="dev" />
+        <package name="ruff" version="^0.1.11" group="dev" />
+        <package name="black" version="^23.12.0" group="dev" />
+        <package name="mypy" version="^1.8.0" group="dev" />
       </backend>
-      
-      <backend-dev>
-        <package name="pytest" version="^7.4.0" />
-        <package name="pytest-asyncio" version="^0.23.0" />
-        <package name="httpx" version="^0.26.0" />
-        <package name="ruff" version="^0.1.11" comment="Python linter" />
-        <package name="black" version="^23.12.0" comment="Python formatter" />
-        <package name="mypy" version="^1.8.0" comment="Type checker" />
-      </backend-dev>
-      
       <infrastructure>
-        <service name="PostgreSQL" version="16+" image="postgres:16-alpine" note="With pgvector extension" />
-        <service name="Redis" version="7+" image="redis:7-alpine" />
-        <service name="Docker" version="24+" />
-        <tool name="pnpm" version="8+" note="Frontend workspace management" />
-        <tool name="Poetry" version="1.7+" note="Backend dependency management" />
+        <service name="Supabase" purpose="Managed PostgreSQL 16+ with pgvector" tier="free (500MB)" />
+        <service name="Upstash" purpose="Managed Redis (optional, alternative to Docker)" tier="free" />
+        <service name="Clerk" purpose="Authentication service with OAuth providers" tier="free (10,000 MAU)" />
+        <service name="Sentry" purpose="Error tracking and monitoring" tier="free (5,000 errors/month)" />
       </infrastructure>
     </dependencies>
   </artifacts>
 
   <constraints>
-    - Monorepo Structure: Use pnpm workspaces for frontend/shared (JavaScript/TypeScript), Poetry for backend (Python). Do NOT use lerna or other monorepo tools.
-    
-    - Frontend Framework: MUST use Next.js 15 with App Router (not Pages Router). Enable TypeScript, Tailwind CSS, ESLint, and src directory structure.
-    
-    - Backend Framework: MUST use FastAPI with async SQLAlchemy 2.0. All database operations must be async (asyncpg driver).
-    
-    - Authentication: MUST integrate Clerk SDK in both frontend (@clerk/nextjs) and backend (clerk-backend-sdk). Do NOT implement custom JWT authentication.
-    
-    - Database: PostgreSQL 16+ with pgvector extension enabled. Vector dimension MUST be 1536 (for OpenAI text-embedding-3-small).
-    
-    - Emotion Detection: Install transformers + torch for cardiffnlp/twitter-roberta-base-emotion-multilingual-latest model. This is required for Story 2.6 (emotional state detection).
-    
-    - Docker Compose: PostgreSQL and Redis MUST be containerized for local development. Use official Alpine images for smaller size.
-    
-    - Environment Variables: All secrets in .env files (NEVER commit). Provide .env.example files with placeholder values.
-    
-    - Git Ignore: MUST exclude: .env (all variants except .env.example), node_modules, __pycache__, *.pyc, .pytest_cache, .mypy_cache, dist, build.
-    
-    - Testing Infrastructure: This story does NOT implement tests, but MUST install testing dependencies (pytest, Jest) for future stories.
-    
-    - Documentation: README.md MUST include: prerequisites, setup commands for all packages, how to start services, environment variable configuration.
-    
-    - Cost Constraints: Install dependencies supporting $0.50/user/day operational target: GPT-4o-mini for primary AI, Clerk free tier, self-hosted emotion detection.
+    <constraint type="architecture">
+      <rule>Use Supabase (managed PostgreSQL) instead of local Docker PostgreSQL - pgvector extension pre-installed, free tier 500MB, production-ready from day one</rule>
+      <source>docs/tech-spec-epic-1.md#Technology-Stack-Decisions</source>
+    </constraint>
+    <constraint type="architecture">
+      <rule>Monorepo structure: pnpm workspaces for frontend/shared (Node.js), Poetry for backend (Python) - do NOT mix package managers</rule>
+      <source>docs/tech-spec-epic-1.md#Infrastructure-Constraints, docs/architecture/project-structure.md</source>
+    </constraint>
+    <constraint type="architecture">
+      <rule>Frontend: Next.js 15 App Router with React Server Components, organized by route groups: (auth)/, (world)/, companion/, missions/, progress/</rule>
+      <source>docs/architecture/project-structure.md</source>
+    </constraint>
+    <constraint type="architecture">
+      <rule>Backend: FastAPI with async SQLAlchemy 2.0, organized by layers: api/v1/ (routes), core/ (config), models/ (database), services/ (business logic), agents/ (LangGraph), workers/ (ARQ jobs)</rule>
+      <source>docs/architecture/project-structure.md</source>
+    </constraint>
+    <constraint type="security">
+      <rule>NEVER commit .env files - use .env.example templates only. Add .env to .gitignore. Document all required environment variables with examples.</rule>
+      <source>docs/tech-spec-epic-1.md#Security</source>
+    </constraint>
+    <constraint type="security">
+      <rule>Authentication handled by Clerk - install dependencies now (@clerk/nextjs, clerk-backend-sdk) but full integration deferred to Story 1.3</rule>
+      <source>docs/tech-spec-epic-1.md#Story-1.3</source>
+    </constraint>
+    <constraint type="performance">
+      <rule>Cost target: &lt;$0.50 per active user per day - guides choice of managed services (Supabase free tier, Clerk free tier, Upstash free tier)</rule>
+      <source>docs/tech-spec-epic-1.md#Infrastructure-Constraints</source>
+    </constraint>
+    <constraint type="performance">
+      <rule>API Response Time target (p95): &lt;500ms - use async SQLAlchemy, connection pooling, efficient queries</rule>
+      <source>docs/tech-spec-epic-1.md#Performance</source>
+    </constraint>
+    <constraint type="testing">
+      <rule>Testing strategy for Story 1.1: Focus on integration testing (services start successfully), verify health check endpoint, verify linters run without errors, verify builds complete</rule>
+      <source>docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md#Testing-Strategy</source>
+    </constraint>
+    <constraint type="dependency">
+      <rule>AI/ML dependencies installed in Story 1.1 for future use: LangChain/LangGraph (Epic 2: companion agent), transformers/torch (Story 2.6: emotion detection), langchain-postgres/pgvector (Epic 2: memory system)</rule>
+      <source>docs/tech-spec-epic-1.md#AI/LLM-Infrastructure</source>
+    </constraint>
   </constraints>
 
   <interfaces>
     <interface>
-      <name>FastAPI Application Entry Point</name>
-      <kind>Python module</kind>
-      <signature>
-        # packages/backend/app/main.py
-        from fastapi import FastAPI
-        
-        app = FastAPI(
-            title="Delight API",
-            description="Self-improvement companion platform",
-            version="0.1.0"
-        )
-        
-        @app.get("/")
-        async def root():
-            return {"message": "Delight API"}
-      </signature>
-      <path>packages/backend/app/main.py</path>
-      <note>Minimal FastAPI app initialization. Future stories will add routes, middleware, and database connection.</note>
+      <name>Health Check Endpoint</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/health → { status: "healthy" | "degraded" | "unhealthy", database: "connected" | "disconnected", redis: "connected" | "disconnected", timestamp: ISO8601 }</signature>
+      <path>packages/backend/app/api/v1/health.py</path>
+      <description>Public endpoint (no auth required) for monitoring system health. Checks database and Redis connectivity. Returns 200 OK with status details.</description>
     </interface>
-    
     <interface>
-      <name>Next.js App Router Entry</name>
-      <kind>React component</kind>
-      <signature>
-        // packages/frontend/src/app/page.tsx
-        export default function Home() {
-          return (
-            &lt;main&gt;
-              &lt;h1&gt;Delight&lt;/h1&gt;
-              &lt;p&gt;Self-improvement companion platform&lt;/p&gt;
-            &lt;/main&gt;
-          );
-        }
-      </signature>
-      <path>packages/frontend/src/app/page.tsx</path>
-      <note>Default home page created by create-next-app. Will be replaced in future stories with actual UI.</note>
+      <name>Shared TypeScript Types</name>
+      <kind>TypeScript barrel export</kind>
+      <signature>export type User = { id: string; clerk_user_id: string; email: string; timezone: string; created_at: string; updated_at: string; }</signature>
+      <path>packages/shared/index.ts</path>
+      <description>Shared type definitions re-exported through barrel file for clean imports in frontend. Initial types: User, UserPreferences (Story 1.2 will add more).</description>
     </interface>
-    
     <interface>
-      <name>Docker Compose Services</name>
-      <kind>Docker Compose configuration</kind>
-      <signature>
-        # docker-compose.yml
-        services:
-          postgres:
-            image: postgres:16-alpine
-            environment:
-              POSTGRES_DB: delight
-              POSTGRES_USER: delight
-              POSTGRES_PASSWORD: delight_dev
-            ports:
-              - "5432:5432"
-            volumes:
-              - postgres_data:/var/lib/postgresql/data
-            command: postgres -c shared_preload_libraries=vector
-          
-          redis:
-            image: redis:7-alpine
-            ports:
-              - "6379:6379"
-            volumes:
-              - redis_data:/data
-        
-        volumes:
-          postgres_data:
-          redis_data:
-      </signature>
-      <path>docker-compose.yml</path>
-      <note>Local development services. pgvector extension loaded via shared_preload_libraries. Will be created with CREATE EXTENSION in Story 1.2.</note>
+      <name>FastAPI Application Entry</name>
+      <kind>Application initialization</kind>
+      <signature>from fastapi import FastAPI; app = FastAPI(title="Delight API", version="0.1.0"); app.include_router(health_router, prefix="/api/v1")</signature>
+      <path>packages/backend/main.py</path>
+      <description>Main FastAPI application with CORS middleware, health check route registration, and future route inclusions (auth, missions, companion, etc.)</description>
     </interface>
   </interfaces>
 
   <tests>
     <standards>
-      This story focuses on manual testing of infrastructure setup. Automated testing will be added in future stories.
-      
-      Manual Testing Standards:
-      - Fresh Clone Test: Clone repo, follow README exactly, verify all services start without errors
-      - Service Verification: Check PostgreSQL connection (psql), Redis connection (redis-cli ping), frontend (browser), backend (Swagger UI)
-      - Hot Reload Test: Edit a component/endpoint, verify auto-reload works
-      - Environment Test: Change environment variable, restart service, verify new value loaded
-      - Error Handling: Attempt to start without Docker, verify clear error message
-      
-      Future Automated Testing (installed dependencies, not implemented yet):
-      - Frontend: Jest + React Testing Library for component tests
-      - Backend: pytest + httpx for API tests, pytest-asyncio for async tests
-      - Linting: ESLint (frontend), Ruff + Black (backend)
+      Testing for Story 1.1 focuses on integration and smoke testing to verify infrastructure setup. Frontend: ESLint for linting, future Jest + React Testing Library for unit tests, future Playwright for E2E. Backend: Ruff + Black for linting, pytest for unit/integration tests (70%+ coverage target for core logic). Health check endpoint must return 200 OK with correct JSON structure. All services (frontend, backend, Supabase, Redis) must start without errors. Build commands (pnpm build, poetry install) must complete successfully.
     </standards>
-    
     <locations>
-      - packages/frontend/__tests__/ (future unit tests)
-      - packages/frontend/e2e/ (future Playwright E2E tests)
-      - packages/backend/tests/ (future pytest tests)
-      - Root .github/workflows/ (future CI/CD)
+      - packages/frontend/__tests__/ (Jest unit tests - future)
+      - packages/frontend/e2e/ (Playwright E2E tests - future)
+      - packages/backend/tests/ (pytest tests)
+      - packages/backend/tests/integration/ (integration tests - future)
     </locations>
-    
     <ideas>
-      <test ac="AC1" id="test-1-1">
-        Test Idea: Fresh Clone and Setup
-        - Clone repository to new directory
-        - Run: pnpm install (root)
-        - Run: cd packages/backend && poetry install
-        - Run: docker-compose up -d
-        - Verify: All commands succeed without errors
-        - Verify: Directory structure matches architecture specification
-      </test>
-      
-      <test ac="AC2" id="test-1-2">
-        Test Idea: Frontend Dependencies Check
-        - Check package.json includes all required packages with correct versions
-        - Run: pnpm list next react typescript tailwindcss @clerk/nextjs framer-motion
-        - Verify: All packages installed with version constraints met
-      </test>
-      
-      <test ac="AC3" id="test-1-3">
-        Test Idea: Backend Dependencies Check
-        - Check pyproject.toml includes all required packages
-        - Run: poetry show fastapi sqlalchemy langchain langgraph transformers
-        - Verify: All packages installed with correct versions
-        - Verify: Both main and dev dependencies groups populated
-      </test>
-      
-      <test ac="AC4" id="test-1-4">
-        Test Idea: Docker Services
-        - Run: docker-compose up -d
-        - Run: docker ps
-        - Verify: Two containers running (postgres, redis)
-        - Run: psql -h localhost -U delight -d delight -c "SELECT version();"
-        - Run: redis-cli -h localhost ping
-        - Verify: Both connections succeed
-      </test>
-      
-      <test ac="AC5" id="test-1-5">
-        Test Idea: Development Servers
-        - Terminal 1: cd packages/frontend && pnpm dev
-        - Verify: Server starts at http://localhost:3000
-        - Browser: Visit http://localhost:3000
-        - Verify: Page loads without errors
-        - Terminal 2: cd packages/backend && poetry run uvicorn app.main:app --reload
-        - Verify: Server starts at http://localhost:8000
-        - Browser: Visit http://localhost:8000/docs
-        - Verify: Swagger UI loads
-      </test>
-      
-      <test ac="AC6" id="test-1-6">
-        Test Idea: Environment Configuration
-        - Verify: .env.example files exist in frontend and backend
-        - Verify: .gitignore excludes .env files
-        - Copy: cp .env.example .env (in both packages)
-        - Edit: Add dummy values to .env files
-        - Verify: Services can load environment variables (check startup logs)
-      </test>
-      
-      <test ac="All" id="test-1-7">
-        Test Idea: Hot Reload Functionality
-        - With frontend running: Edit src/app/page.tsx
-        - Verify: Browser auto-refreshes with changes
-        - With backend running: Edit app/main.py (add a print statement)
-        - Verify: Server auto-reloads (see log message)
-      </test>
-      
-      <test ac="All" id="test-1-8">
-        Test Idea: Documentation Accuracy
-        - Follow README.md setup instructions exactly
-        - Note any missing steps or unclear instructions
-        - Verify: All prerequisites documented
-        - Verify: All setup commands work as documented
-        - Verify: Troubleshooting section addresses common issues
-      </test>
+      <idea ac="AC1">
+        Test: Run pnpm install in root, verify packages/frontend/, packages/backend/, packages/shared/ directories exist with correct structure
+      </idea>
+      <idea ac="AC2">
+        Test: Run poetry show in backend, verify all required packages (fastapi, sqlalchemy, clerk-backend-sdk, langchain, transformers) are installed with correct versions
+      </idea>
+      <idea ac="AC2">
+        Test: Run pnpm list in frontend, verify all required packages (next, react, @clerk/nextjs, tailwindcss) are installed
+      </idea>
+      <idea ac="AC3">
+        Test: Start frontend dev server (pnpm dev), verify server responds at http://localhost:3000 with Next.js default page
+      </idea>
+      <idea ac="AC3">
+        Test: Start backend dev server (poetry run uvicorn main:app --reload), verify server responds at http://localhost:8000
+      </idea>
+      <idea ac="AC3">
+        Test: Curl health check endpoint: curl http://localhost:8000/api/v1/health, verify 200 OK response with JSON structure { status, database, redis, timestamp }
+      </idea>
+      <idea ac="AC3">
+        Test: Verify Supabase DATABASE_URL connection string works - backend can connect to Supabase PostgreSQL successfully
+      </idea>
+      <idea ac="AC3">
+        Test: Verify Redis connection (Upstash or Docker) - backend can connect to Redis successfully
+      </idea>
+      <idea ac="AC4">
+        Test: Verify .env.example files exist in packages/frontend/ and packages/backend/ with all required variables documented
+      </idea>
+      <idea ac="AC4">
+        Test: Verify .env is in .gitignore - run git check-ignore .env, should return exit code 0
+      </idea>
+      <idea ac="AC4">
+        Test: Verify README.md contains setup instructions with Supabase configuration, Clerk setup, and development server commands
+      </idea>
+      <idea ac="ALL">
+        Test: Run linters - frontend: pnpm lint (ESLint), backend: poetry run ruff check . and poetry run black --check . - all should pass
+      </idea>
+      <idea ac="ALL">
+        Test: Run build commands - frontend: pnpm build, backend: poetry install - both should complete without errors
+      </idea>
     </ideas>
   </tests>
 </story-context>
