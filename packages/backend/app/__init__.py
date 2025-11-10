@@ -1,4 +1,3 @@
 """
 Delight Backend Application Package
 """
-
