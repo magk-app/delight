@@ -301,14 +301,22 @@ docker run -d -p 6379:6379 redis:7-alpine
 **Frontend** (`packages/frontend/.env.local`):
 
 ```bash
-# Clerk Authentication (PUBLIC KEY - safe in browser)
+# Clerk Authentication
+# PUBLIC KEY - Safe to expose in browser (has NEXT_PUBLIC_ prefix)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+
+# SECRET KEY - Used for SERVER-SIDE Next.js middleware (NO NEXT_PUBLIC_ prefix)
+# This is SAFE because Next.js keeps non-NEXT_PUBLIC_ variables server-side only
+# The middleware runs on the server, so the secret never reaches the browser
+CLERK_SECRET_KEY=sk_test_...
 
 # API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# SECURITY: NEVER include CLERK_SECRET_KEY here!
-# Secret keys belong ONLY in backend environment
+# SECURITY NOTE:
+# Next.js App Router has both client-side AND server-side code in the frontend project.
+# Variables WITHOUT NEXT_PUBLIC_ prefix are ONLY available server-side (middleware, server components).
+# Variables WITH NEXT_PUBLIC_ prefix are available everywhere (including browser).
 ```
 
 **Backend** (`packages/backend/.env`):
@@ -401,8 +409,9 @@ Clerk authentication runs as a managed service even in local mode (no self-hoste
 **Frontend** (`packages/frontend/.env.local`):
 
 ```bash
-# Clerk Authentication (PUBLIC KEY)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...  # Public key (client-side)
+CLERK_SECRET_KEY=sk_test_...  # Secret key (server-side middleware only)
 
 # API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
@@ -489,14 +498,21 @@ curl http://localhost:8000/docs
 
 ### 🔐 Security Notes
 
-**CRITICAL:** Clerk has TWO keys with different security boundaries:
+**CRITICAL:** Understanding Clerk keys in Next.js App Router:
 
-- **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** → Frontend only, safe to expose in browser
-- **`CLERK_SECRET_KEY`** → Backend only, NEVER in frontend environment
+- **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** → Public key, safe to expose in browser (client-side)
+- **`CLERK_SECRET_KEY`** → Secret key for server-side operations (middleware, server components)
 
-**Why?** The publishable key is designed for client-side use. The secret key grants full administrative access and must remain server-side only.
+**Important Next.js Security Concept:**
 
-**Both `.env.example` files include comments to prevent mistakes.**
+In Next.js with App Router, your "frontend" project contains BOTH:
+
+1. **Client-side code** (runs in browser) - Can ONLY access `NEXT_PUBLIC_*` variables
+2. **Server-side code** (middleware, server components) - Can access ALL variables
+
+The `CLERK_SECRET_KEY` is used by server-side middleware (`packages/frontend/src/middleware.ts`) and **NEVER** gets sent to the browser. This is different from traditional SPAs where everything runs client-side.
+
+**Both `.env.example` files include detailed comments about this.**
 
 ---
 
