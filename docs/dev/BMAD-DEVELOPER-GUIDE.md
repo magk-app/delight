@@ -22,7 +22,9 @@ This guide provides a systematic, professional workflow for developing stories u
 
 ## 🚀 **First-Time Setup (Supabase + Clerk + OpenAI)**
 
-Before you start developing stories, set up your environment:
+**📖 Complete Setup Guide:** For detailed setup instructions with troubleshooting, see [`docs/SETUP.md`](../SETUP.md) (~15 minutes)
+
+**Quick Reference Below:** Here's a condensed version if you're already familiar with the process.
 
 ### **1. Supabase Setup (Database)**
 

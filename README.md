@@ -227,6 +227,8 @@ _(More user flows in [UX Design Specification](docs/ux-design-specification.md))
 
 ## 🛠️ Getting Started: Installation Guide
 
+**📖 Complete Setup Guide:** For detailed setup instructions, see [`docs/SETUP.md`](docs/SETUP.md) (~15 minutes)
+
 ### Prerequisites
 
 **For Non-Technical Users:**
@@ -240,8 +242,11 @@ Delight supports **two infrastructure modes** to balance speed and flexibility:
 
 - **Node.js 20+** with pnpm package manager (`npm install -g pnpm`)
 - **Python 3.11+** with Poetry (`pip install poetry`)
+- **Supabase account** (managed PostgreSQL with pgvector - free tier)
 - **Clerk account** (free tier) for authentication → [clerk.com](https://clerk.com)
 - **OpenAI API key** for AI capabilities → [platform.openai.com](https://platform.openai.com)
+- **Optional** Upstash account (managed Redis - free tier)
+
 
 **Additional for Local Mode only:**
 
@@ -529,6 +534,8 @@ _(Full API documentation available at `/docs` endpoint after starting the backen
 
 ## 📖 Project Documentation
 
+**📑 Documentation Index:** See [`docs/INDEX.md`](docs/INDEX.md) for complete documentation navigation by role and goal.
+
 Our documentation is designed to serve different audiences:
 
 **For everyone:**
@@ -538,7 +545,10 @@ Our documentation is designed to serve different audiences:
 
 **For developers:**
 
+- [Setup Guide](docs/SETUP.md) - Complete environment setup (~15 minutes)
+- [Developer Guide](docs/dev/BMAD-DEVELOPER-GUIDE.md) - Systematic development workflow
 - [Architecture Guide](docs/ARCHITECTURE.md) - Technical decisions, system design, and implementation patterns
+- [Quick Reference](docs/dev/QUICK-REFERENCE.md) - Command cheat sheet
 - [Workflow Status](docs/bmm-workflow-status.yaml) - Current development phase and progress
 
 **Coming soon:**
