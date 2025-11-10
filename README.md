@@ -227,6 +227,8 @@ _(More user flows in [UX Design Specification](docs/ux-design-specification.md))
 
 ## 🛠️ Getting Started: Installation Guide
 
+**📖 Complete Setup Guide:** For detailed setup instructions, see [`docs/SETUP.md`](docs/SETUP.md) (~15 minutes)
+
 ### Prerequisites
 
 **For Non-Technical Users:**
@@ -236,11 +238,12 @@ Running Delight locally requires some technical setup. If you're interested in t
 
 - Python 3.11 or newer
 - Node.js 18 or newer with pnpm package manager
-- PostgreSQL 14+ (database for storing your data)
-- Redis 7+ (for temporary data and job queuing)
+- Supabase account (managed PostgreSQL with pgvector - free tier)
+- Clerk account (managed authentication - free tier)
 - OpenAI API key (for AI capabilities)
+- Optional: Upstash account (managed Redis - free tier)
 
-### Installation Steps
+### Quick Installation Steps
 
 ```bash
 # 1. Clone the repository
@@ -307,6 +310,8 @@ _(Detailed setup instructions coming in `docs/setup.md` as the stack stabilizes)
 
 ## 📖 Project Documentation
 
+**📑 Documentation Index:** See [`docs/INDEX.md`](docs/INDEX.md) for complete documentation navigation by role and goal.
+
 Our documentation is designed to serve different audiences:
 
 **For everyone:**
@@ -316,7 +321,10 @@ Our documentation is designed to serve different audiences:
 
 **For developers:**
 
+- [Setup Guide](docs/SETUP.md) - Complete environment setup (~15 minutes)
+- [Developer Guide](docs/dev/BMAD-DEVELOPER-GUIDE.md) - Systematic development workflow
 - [Architecture Guide](docs/ARCHITECTURE.md) - Technical decisions, system design, and implementation patterns
+- [Quick Reference](docs/dev/QUICK-REFERENCE.md) - Command cheat sheet
 - [Workflow Status](docs/bmm-workflow-status.yaml) - Current development phase and progress
 
 **Coming soon:**
