@@ -30,21 +30,26 @@ Delight is a self-improvement companion platform that blends emotionally-aware A
 # Frontend initialization
 cd packages/frontend
 npx create-next-app@latest . --typescript --tailwind --app --eslint --src-dir
+npm install @clerk/nextjs
 
 # Backend initialization
 cd packages/backend
 poetry init
-poetry add fastapi uvicorn[standard] sqlalchemy[asyncio] asyncpg pydantic-settings
+poetry add fastapi uvicorn[standard] sqlalchemy[asyncio] asyncpg pydantic-settings alembic
 poetry add langchain langgraph langchain-postgres pgvector
-poetry add arq redis sentry-sdk
+poetry add arq redis sentry-sdk clerk-backend-sdk
+poetry add transformers torch  # For emotion detection model
 ```
 
 This establishes:
 
 - Next.js 15 with App Router, TypeScript, Tailwind CSS
-- FastAPI with async SQLAlchemy
+- Clerk for authentication (managed auth service)
+- FastAPI with async SQLAlchemy + Alembic migrations
 - LangChain/LangGraph for AI orchestration
 - PostgreSQL with pgvector extension for vector storage
+- GPT-4o-mini for cost-effective AI interactions
+- Open source emotion detection (cardiffnlp/roberta)
 - ARQ for background jobs
 - Sentry for error tracking and observability
 
@@ -60,10 +65,14 @@ This establishes:
 | **Styling**            | Tailwind CSS          | Latest                | All frontend epics                | Utility-first, theme system support        |
 | **Animation**          | Framer Motion         | Latest                | Character animations, transitions | Declarative, performant, React-native      |
 | **Backend Framework**  | FastAPI               | Latest                | All backend epics                 | Async-first, AI ecosystem integration      |
+| **Authentication**     | Clerk                 | Latest                | User auth, onboarding             | Managed auth, OAuth, reduces complexity    |
 | **AI Orchestration**   | LangGraph + LangChain | Latest                | Companion, Narrative Engine       | Stateful agents, multi-character support   |
+| **AI Models**          | GPT-4o-mini (primary) | Latest                | Chat, personas, quest generation  | Cost-effective, fast, good quality         |
+| **Emotion Detection**  | cardiffnlp/roberta    | Latest                | Emotional state tracking          | Open source, multilingual, 7 emotions      |
 | **Vector Storage**     | PostgreSQL pgvector   | PG 15+, pgvector 0.5+ | Memory, Companion                 | Unified storage, production-ready          |
 | **Database**           | PostgreSQL            | 15+                   | All data persistence              | Production-ready, async support, pgvector  |
 | **ORM**                | SQLAlchemy (async)    | 2.0+                  | Data models                       | Async support, mature ecosystem            |
+| **Migrations**         | Alembic               | Latest                | Database schema changes           | Industry standard for SQLAlchemy           |
 | **Background Jobs**    | ARQ                   | Latest                | Quest generation, nudges          | Async-native, Redis-based                  |
 | **Real-Time**          | SSE + WebSocket       | Native                | AI streaming, world updates       | SSE for AI, WebSocket for world state      |
 | **File Storage**       | S3-compatible         | -                     | Evidence uploads                  | Scalable, cost-effective                   |
@@ -204,7 +213,9 @@ delight/
 - **LangGraph** - Stateful agent orchestration
 - **LangChain** - LLM integration, memory abstractions
 - **PostgreSQL pgvector** - Vector storage extension (unified with main DB)
-- **OpenAI/Anthropic** - LLM providers (configurable)
+- **OpenAI GPT-4o-mini** - Primary LLM for chat, personas, quest generation (cost-effective)
+- **OpenAI GPT-4o** - Premium narrative generation (less frequent, higher quality)
+- **cardiffnlp/twitter-roberta-base-emotion** - Open source emotion classification (7 emotions)
 
 **Background Jobs:**
 
@@ -680,25 +691,33 @@ data: {"type": "complete", "message_id": "abc123"}
 
 **Authentication:**
 
-- JWT tokens (access + refresh)
-- Password hashing: bcrypt
-- Session management: Redis
+- **Clerk** - Managed authentication service
+  - Session management with JWTs (handled by Clerk)
+  - OAuth providers (Google, GitHub, etc.)
+  - Magic link authentication
+  - Multi-factor authentication (2FA)
+  - Password policies and breach detection
+- **Backend:** Clerk session verification middleware
+- **Frontend:** `@clerk/nextjs` for auth UI and session management
 
 **Authorization:**
 
 - User-scoped data access (users can only access their own missions, progress)
-- Role-based: User, Admin (future)
+- Clerk user IDs used as primary user identifier in database
+- Role-based: User, Admin (future, managed via Clerk metadata)
 
 **Data Protection:**
 
 - Encryption at rest: Database encryption (PostgreSQL)
 - Encryption in transit: HTTPS/TLS
 - Evidence uploads: S3 with signed URLs, user-only access
+- Clerk handles password security (not stored in our database)
 
 **Privacy:**
 
 - Opt-in for any tracking (tab monitoring, etc.)
 - User data export/deletion: GDPR-compliant endpoints
+- Clerk compliance: SOC 2 Type II, GDPR, CCPA compliant
 
 ---
 
@@ -720,11 +739,17 @@ data: {"type": "complete", "message_id": "abc123"}
 
 **Cost Management (Target: $0.50/user/day):**
 
-- LLM calls: Premium models for primary interactions, monitor token usage per user
-- Vector storage: PostgreSQL pgvector (unified database, no separate service)
-- Database: Connection pooling, efficient indexing on vector columns
-- Caching: Redis for narrative templates, character prompts, world state
-- Monitoring: Track LLM costs per user in real-time, implement soft limits
+- **LLM calls:** GPT-4o-mini for primary interactions (~$0.03/user/day), GPT-4o for narrative generation only
+- **Model Cost Breakdown:**
+  - Eliza chat: GPT-4o-mini @ $0.15/$0.60 per 1M tokens
+  - Narrative generation: GPT-4o @ $2.50/$10 per 1M tokens (infrequent)
+  - Embeddings: text-embedding-3-small @ $0.02 per 1M tokens
+  - Emotion detection: Self-hosted (free after infrastructure)
+- **Vector storage:** PostgreSQL pgvector (unified database, no separate service)
+- **Authentication:** Clerk free tier (10K MAU), then $25/1000 MAU
+- **Database:** Connection pooling, efficient indexing on vector columns
+- **Caching:** Redis for narrative templates, character prompts, world state
+- **Monitoring:** Track LLM costs per user in real-time, implement soft limits
 
 ---
 
@@ -973,7 +998,164 @@ cp packages/backend/.env.example packages/backend/.env
 
 ---
 
+### ADR-007: Clerk for Authentication
+
+**Decision:** Use Clerk as the managed authentication service instead of building JWT-based auth.
+
+**Rationale:**
+
+- **Reduced Complexity:** Eliminates 2-3 stories worth of auth development (password reset, email verification, session management)
+- **Security:** Clerk handles OAuth, 2FA, breach detection, password policies out-of-the-box
+- **User Experience:** Pre-built UI components, social login (Google, GitHub), magic links
+- **Cost Efficiency:** Free tier: 10,000 MAU, then $25/1000 MAU (reasonable for MVP)
+- **Compliance:** SOC 2 Type II, GDPR, CCPA compliant (reduces legal burden)
+- **Developer Experience:** Simple SDK integration, well-documented Next.js support
+
+**Alternatives Considered:**
+
+- Custom JWT implementation (more control, significantly more development time)
+- Auth0 (similar features, more expensive at scale)
+- Supabase Auth (good option, but Clerk has better Next.js integration)
+
+**Consequences:**
+
+- **Positive:** Faster time to market, better security, less maintenance burden
+- **Negative:** Vendor lock-in (mitigated by standardized OAuth flows)
+- **Migration Path:** If needed, Clerk data can be exported and migrated to custom auth
+
+**Story Impact:**
+
+- Story 1.3: "Implement JWT-Based Authentication" → "Integrate Clerk Authentication System"
+- Story 1.4: "Create User Onboarding Flow" → Move to Epic 2 (after app features exist)
+
+---
+
+### ADR-008: Open Source Emotion Detection Model
+
+**Decision:** Use `cardiffnlp/twitter-roberta-base-emotion-multilingual-latest` for emotion detection in chat messages.
+
+**Rationale:**
+
+- **Open Source:** Free to use, no API costs after infrastructure
+- **Proven:** 400K+ downloads on Hugging Face, actively maintained
+- **Performance:** Fast inference (~50ms on CPU), 7 emotions (joy, anger, sadness, fear, love, surprise, neutral)
+- **Multilingual:** Supports multiple languages (future-proofing)
+- **Privacy:** Self-hosted, user messages never leave our infrastructure
+- **Quality:** Trained on large Twitter dataset, good generalization to conversational text
+
+**Alternatives Considered:**
+
+- Hume AI API (excellent quality, $0.005 per request = expensive at scale)
+- GPT-4 emotion classification (works well, adds LLM cost + latency)
+- facebook/wav2vec2-large-emotion (audio only, not suitable for text chat)
+
+**Consequences:**
+
+- **Positive:** No per-request costs, privacy-friendly, low latency
+- **Negative:** Requires hosting infrastructure (CPU/GPU), model loading time on startup
+- **Implementation:** Use Hugging Face Inference API for MVP (free tier), migrate to self-hosted as scale increases
+
+**Integration:**
+
+```python
+# backend/app/services/emotion_service.py
+from transformers import pipeline
+
+emotion_classifier = pipeline(
+    "text-classification",
+    model="cardiffnlp/twitter-roberta-base-emotion-multilingual-latest",
+    return_all_scores=True
+)
+
+def detect_emotion(text: str) -> dict:
+    """Returns emotion scores: {joy: 0.8, anger: 0.1, ...}"""
+    results = emotion_classifier(text)[0]
+    return {r['label']: r['score'] for r in results}
+```
+
+**Story Impact:**
+
+- Story 2.6: "Implement Emotional State Detection" → Add model specification and acceptance criteria
+
+---
+
+### ADR-009: GPT-4o-mini as Primary LLM
+
+**Decision:** Use GPT-4o-mini for primary AI interactions (chat, personas, quest generation), reserve GPT-4o for narrative generation only.
+
+**Rationale:**
+
+- **Cost Efficiency:** GPT-4o-mini is 80% cheaper than GPT-4o ($0.15/$0.60 vs $2.50/$10 per 1M tokens)
+- **Performance:** Fast responses (<1s for typical chat), sufficient quality for conversational AI
+- **Quality Balance:** Good enough for personality-driven chat, structured quest generation
+- **Cost Target:** Meets $0.50/user/day operational target (~$0.03/user/day actual)
+- **Selective Premium:** Use GPT-4o only for narrative generation (less frequent, requires premium writing quality)
+
+**Use Case Breakdown:**
+
+| Feature              | Model                  | Rationale                               |
+| -------------------- | ---------------------- | --------------------------------------- |
+| Eliza Chat           | GPT-4o-mini            | Conversational, fast response needed    |
+| Character Personas   | GPT-4o-mini            | Personality consistency, high frequency |
+| Quest Decomposition  | GPT-4o-mini            | Structured output, simple logic         |
+| Narrative Generation | GPT-4o                 | Premium writing quality, less frequent  |
+| Embeddings           | text-embedding-3-small | Cheap, fast, sufficient quality         |
+
+**Alternatives Considered:**
+
+- GPT-4o everywhere (better quality, 5x cost)
+- Llama 3.2 self-hosted (cheapest, requires infrastructure + model serving)
+- Claude Sonnet (excellent quality, similar cost to GPT-4o-mini)
+
+**Consequences:**
+
+- **Positive:** Meets cost target, fast responses, scalable
+- **Negative:** Slightly lower quality than GPT-4o (acceptable trade-off)
+- **Future Optimization:** Can add fine-tuned GPT-4o-mini for personas (even cheaper)
+
+**Cost Estimate (per user per day):**
+
+- Eliza conversations: ~10K tokens × $0.60/1M = $0.006
+- Character interactions: ~5K tokens × $0.60/1M = $0.003
+- Quest generation: ~3K tokens × $0.60/1M = $0.002
+- Narrative generation: ~2K tokens × $10/1M = $0.02
+- Embeddings: ~5K tokens × $0.02/1M = $0.0001
+- **Total: ~$0.031/user/day** (well under $0.50 target)
+
+---
+
 ## Revision History
+
+### 2025-11-10 (Second Update): Tech Stack Validation & Refinements
+
+**Changes made based on user feedback and architecture validation:**
+
+1. **Authentication Strategy:** Switched from custom JWT implementation to Clerk managed authentication service
+   - Reduces development time by 2-3 stories
+   - Provides OAuth, 2FA, magic links out-of-the-box
+   - Free tier: 10K MAU, then $25/1000 MAU
+2. **AI Model Selection:** Standardized on GPT-4o-mini for primary interactions, GPT-4o for narrative generation only
+   - Target operational cost: ~$0.03/user/day (well under $0.50 target)
+   - Balance between quality and cost efficiency
+3. **Emotion Detection:** Selected `cardiffnlp/twitter-roberta-base-emotion-multilingual-latest` open source model
+   - 7 emotions (joy, anger, sadness, fear, love, surprise, neutral)
+   - Self-hosted (no per-request costs), ~50ms inference time
+   - Privacy-friendly (data stays on infrastructure)
+4. **Story Sequencing:** Moved Story 1.4 (User Onboarding Flow) to later in development
+
+   - Rationale: Can't design effective onboarding without app features existing first
+   - Will be completed after Epic 2 (Companion & Memory System)
+
+5. **Documentation Improvements:** Added three new ADRs (ADR-007, ADR-008, ADR-009) documenting authentication, emotion detection, and LLM selection decisions
+
+**Impact:**
+
+- Faster MVP development (Clerk eliminates auth complexity)
+- Better cost predictability (~$0.03/user/day for AI vs $0.50 target)
+- Open source emotion detection reduces vendor lock-in
+- More logical story sequence (core features → onboarding)
+
+---
 
 ### 2025-11-10: Architecture Validation Updates
 
@@ -997,5 +1179,5 @@ cp packages/backend/.env.example packages/backend/.env
 
 _Generated by BMAD Decision Architecture Workflow v1.3.2_  
 _Date: 2025-11-09_  
-_Updated: 2025-11-10_  
+_Updated: 2025-11-10 (twice)_  
 _For: Jack_

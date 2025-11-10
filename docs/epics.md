@@ -100,8 +100,10 @@ So that **the team can work efficiently with proper tooling and dependency manag
 
 **And** all core dependencies are installed:
 
-- Frontend: Next.js 15, React 19, TypeScript, Tailwind, shadcn/ui
-- Backend: FastAPI, SQLAlchemy 2.0 (async), PostgreSQL driver (asyncpg), Pydantic
+- Frontend: Next.js 15, React 19, TypeScript, Tailwind, shadcn/ui, @clerk/nextjs
+- Backend: FastAPI, SQLAlchemy 2.0 (async), PostgreSQL driver (asyncpg), Pydantic, Alembic, clerk-backend-sdk
+- AI: LangChain, LangGraph, langchain-postgres, pgvector, transformers (for emotion detection)
+- Infrastructure: ARQ, Redis, Sentry
 
 **And** development servers can start successfully:
 
@@ -113,7 +115,10 @@ So that **the team can work efficiently with proper tooling and dependency manag
 **Technical Notes:**
 
 - Use `npx create-next-app@latest` with App Router + TypeScript
+- Install Clerk: `npm install @clerk/nextjs`
 - Use Poetry for Python dependency management
+- Install Clerk backend SDK: `poetry add clerk-backend-sdk`
+- Install emotion detection model: `poetry add transformers torch`
 - Install pgvector extension in Docker PostgreSQL container
 - See Architecture doc lines 29-50 for exact initialization commands
 
@@ -133,9 +138,9 @@ So that **schema changes are tracked and can be applied consistently across envi
 
 **And** initial schema includes core tables:
 
-- `users` (id, email, hashed_password, timezone, created_at, updated_at)
+- `users` (id UUID PRIMARY KEY, clerk_user_id VARCHAR UNIQUE, email, timezone, created_at, updated_at)
+  - NOTE: clerk_user_id is the primary identifier from Clerk; passwords/sessions managed by Clerk
 - `user_preferences` (user_id FK, custom_hours JSONB, theme, communication_preferences JSONB)
-- `sessions` (id, user_id FK, token, expires_at)
 
 **And** pgvector extension is enabled in PostgreSQL
 
@@ -155,43 +160,68 @@ So that **schema changes are tracked and can be applied consistently across envi
 
 ---
 
-### Story 1.3: Implement JWT-Based Authentication System
+### Story 1.3: Integrate Clerk Authentication System
 
 As a **new user**,  
-I want **to register and log in securely**,  
-So that **my data is protected and I have a persistent account**.
+I want **to register and log in securely with multiple options**,  
+So that **my data is protected and I can use social login or email authentication**.
 
 **Acceptance Criteria:**
 
-**Given** the database schema is set up  
-**When** I register with email and password  
-**Then** my account is created with a hashed password (bcrypt)
+**Given** the database schema is set up and Clerk is configured  
+**When** I navigate to the app  
+**Then** I see the Clerk authentication UI with options to:
 
-**And** I receive a JWT access token and refresh token
+- Sign up with email/password
+- Sign in with Google OAuth
+- Sign in with GitHub OAuth
+- Use magic link authentication
 
-**And** when I make authenticated requests with the access token  
-**Then** the backend validates the JWT and grants access to protected endpoints
+**And** when I complete authentication  
+**Then** a user record is created in our database with my Clerk user ID
 
-**And** when my access token expires  
-**Then** I can use my refresh token to get a new access token
+**And** when I make authenticated requests to the backend  
+**Then** the backend validates my Clerk session and grants access to protected endpoints
 
 **And** when I log out  
-**Then** my session is invalidated
+**Then** my Clerk session is invalidated across all devices
+
+**And** the authentication UI matches our app's theme (medieval/modern)
 
 **Prerequisites:** Story 1.2 (database schema)
 
 **Technical Notes:**
 
-- Use `python-jose` for JWT encoding/decoding
-- Use `passlib` with bcrypt for password hashing
-- Endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`
-- Store JWT secret in environment variables
-- Access token expiry: 15 minutes, Refresh token: 7 days
-- Implement FastAPI dependency: `get_current_user()`
+- **Frontend:** Use `@clerk/nextjs` with App Router middleware
+  - Wrap app in `<ClerkProvider>`
+  - Protect routes with `middleware.ts` for authentication
+  - Use `<SignIn>` and `<SignUp>` components or build custom UI
+- **Backend:** Use `clerk-backend-sdk` for session verification
+  - Create FastAPI dependency: `get_current_user()` that verifies Clerk session tokens
+  - On first authentication, create user record in DB using Clerk webhook
+- **Clerk Configuration:**
+  - Set up Clerk project at clerk.com
+  - Configure OAuth providers (Google, GitHub)
+  - Set up webhook endpoint: `POST /api/v1/webhooks/clerk` (user.created, user.updated, user.deleted)
+  - Store Clerk API keys in environment variables
+- **User Sync:** When Clerk webhook fires for `user.created`, create corresponding user in our DB:
+
+  ```python
+  users.create(
+      clerk_user_id=clerk_event.data.id,
+      email=clerk_event.data.email_addresses[0].email_address,
+      timezone="UTC"  # default, updated in onboarding
+  )
+  ```
+
+- **Cost:** Free tier: 10,000 MAU, then $25/1000 MAU
+- **Security:** Clerk handles password hashing, session management, 2FA, breach detection
 
 ---
 
 ### Story 1.4: Create User Onboarding Flow (MVP)
+
+**⚠️ NOTE:** This story will be moved to later in the development sequence (after Epic 2: Companion & Memory System is complete). Rationale: Onboarding should showcase actual app features, which need to exist first.
 
 As a **new user**,  
 I want **a guided onboarding experience**,  
@@ -379,7 +409,9 @@ So that **conversations maintain state and can execute multi-step reasoning**.
 - Agent: `backend/app/agents/eliza_agent.py`
 - Use LangGraph `StateGraph` with typed state
 - System prompt emphasizes empathy, emotional intelligence, coaching tone
-- LLM: OpenAI GPT-4 or Anthropic Claude (configurable)
+- **LLM:** OpenAI GPT-4o-mini (cost-effective, fast, sufficient quality)
+  - Cost: $0.15/$0.60 per 1M tokens (input/output)
+  - Fallback to GPT-4o if response quality issues arise
 - State includes: `messages`, `user_context`, `retrieved_memories`, `emotional_state`
 
 ---
@@ -467,52 +499,94 @@ So that **I feel comfortable sharing my goals and feelings**.
 
 ---
 
-### Story 2.6: Implement Emotional State Detection (Future)
+### Story 2.6: Implement Emotional State Detection with Open Source Model
+
+**⚠️ CRITICAL FEATURE** - This is highly important for emotional intelligence.
 
 As a **user**,  
-I want **Eliza to sense when I'm overwhelmed or stuck**,  
-So that **she can offer timely support and grounding exercises**.
+I want **Eliza to sense when I'm overwhelmed, joyful, or stuck**,  
+So that **she can offer timely support and celebrate wins with me**.
 
 **Acceptance Criteria:**
 
 **Given** I'm having a conversation with Eliza  
-**When** my messages indicate stress, overwhelm, or avoidance  
-**Then** Eliza detects the emotional state from message content
+**When** my messages indicate emotional states  
+**Then** Eliza detects emotions using the open source model with 7 emotion categories:
 
-**And** she responds appropriately:
+- Joy, Anger, Sadness, Fear, Love, Surprise, Neutral
 
-- Offers calming ritual (breathing exercise, reflection prompt)
-- Suggests breaking down goals into smaller steps
-- Checks in more frequently via nudges
+**And** she responds appropriately based on detected emotion:
+
+- **Overwhelm/Fear:** Offers calming ritual (breathing exercise, reflection prompt)
+- **Sadness/Anger:** Empathetic acknowledgment, suggests breaking down goals
+- **Joy/Love:** Celebrates wins, encourages momentum
+- **Neutral:** Normal conversational flow
 
 **And** emotional state is tracked in user preferences:
 
-- `current_emotional_state` (calm/stressed/overwhelmed/motivated)
+- `current_emotional_state` JSONB with scores for each emotion
+- `dominant_emotion` VARCHAR (the highest scoring emotion)
 - `last_state_change` timestamp
 - Influences mission difficulty and nudge timing
+
+**And** emotion detection is fast (< 100ms per message) and privacy-preserving (self-hosted)
 
 **Prerequisites:** Story 2.4 (chat API)
 
 **Technical Notes:**
 
-- Add LLM-based emotion classification in Eliza agent
-- Use few-shot prompting or fine-tuned classifier
-- Store state in `user_preferences.emotional_state`
-- Future: Integrate with tone analysis, typing speed, app usage patterns
+- **Model:** `cardiffnlp/twitter-roberta-base-emotion-multilingual-latest` (Hugging Face)
+  - 400K+ downloads, actively maintained
+  - Fast inference (~50ms on CPU)
+  - Multilingual support
+  - 7 emotion classification: joy, anger, sadness, fear, love, surprise, neutral
+- **Service:** `backend/app/services/emotion_service.py`
+
+  ```python
+  from transformers import pipeline
+
+  emotion_classifier = pipeline(
+      "text-classification",
+      model="cardiffnlp/twitter-roberta-base-emotion-multilingual-latest",
+      return_all_scores=True
+  )
+
+  def detect_emotion(text: str) -> dict:
+      """Returns emotion scores: {joy: 0.8, anger: 0.1, ...}"""
+      results = emotion_classifier(text)[0]
+      return {r['label']: r['score'] for r in results}
+  ```
+
+- **Integration with Eliza:**
+
+  - Call emotion detection in `receive_input` node of LangGraph agent
+  - Pass emotion context to `reason` node for appropriate response
+  - Update `user_preferences.current_emotional_state` after each message
+
+- **Deployment:**
+
+  - MVP: Use Hugging Face Inference API (free tier: 1000 req/day)
+  - Production: Self-host model on backend (requires ~500MB model + PyTorch)
+  - Model loading: Cache in memory on server startup
+
+- **Privacy:** User messages never leave infrastructure (when self-hosted)
+- **Cost:** Free after infrastructure (no per-request API costs)
 
 ---
 
 ### Story 2.7: Add Multiple Character Personas (Future)
 
+**⚠️ CRITICAL DISTINCTION:** Eliza (AI companion) is fundamentally different from character personas. This system allows creating multiple distinct narrative characters that users interact with.
+
 As a **user**,  
-I want **to interact with different AI characters beyond Eliza**,  
-So that **I get specialized guidance for different goal types**.
+I want **to interact with different narrative AI characters beyond Eliza**,  
+So that **I get specialized guidance and story experiences for different goal types and world zones**.
 
 **Acceptance Criteria:**
 
 **Given** I've progressed in my journey  
 **When** I unlock new zones or achieve milestones  
-**Then** I meet new characters:
+**Then** I meet new narrative characters:
 
 - Lyra (Craft/creativity mentor, Arena)
 - Thorne (Health/physical mentor, Arena)
@@ -520,26 +594,38 @@ So that **I get specialized guidance for different goal types**.
 
 **And** each character has distinct:
 
-- Personality (defined in system prompts)
-- Conversation style
-- Areas of expertise
-- Relationship level (grows with interactions)
+- **Personality** (defined in system prompts, different from Eliza's empathetic coach persona)
+- **Conversation style** (e.g., Lyra is artistic/poetic, Thorne is direct/practical)
+- **Areas of expertise** (aligned with specific attributes)
+- **Relationship level** (grows with interactions, unlocks deeper conversations)
+- **Visual representation** (character avatar/theme distinct from Eliza)
+
+**And** the system supports creating new character personas:
+
+- Admin/system can define new characters via configuration
+- Each persona has customizable personality prompts
+- Personas tied to narrative scenarios (medieval, sci-fi, etc.)
 
 **And** characters can initiate conversations:
 
 - ARQ worker monitors user focus areas
 - Character appears when relevant (e.g., Lyra after 2 weeks of craft missions)
 - User receives notification: "Lyra seeks you in the Arena"
+- Initiated conversations have narrative context (not just general chat)
 
 **Prerequisites:** Story 2.4 (chat API), Story 6.2 (world zones)
 
 **Technical Notes:**
 
 - Agents: `backend/app/agents/character_agents.py`
-- Schema: `characters` table (id, name, personality_prompt, relationship_level)
+- Schema: `characters` table (id, name, persona_type ENUM[companion|narrative], personality_prompt, relationship_level, scenario_id FK)
+  - Eliza is `persona_type='companion'` (persistent, always available)
+  - Other characters are `persona_type='narrative'` (zone-specific, story-driven)
 - Worker: `backend/app/workers/character_initiator.py`
-- Each character gets own memory namespace
+- Each character gets own memory namespace (separate from Eliza's memories)
+- **LLM:** GPT-4o-mini for character conversations (consistent with Eliza)
 - See Architecture Pattern 2 for multi-character system
+- **Key Distinction:** Eliza = your personal companion/coach; Character personas = story NPCs you interact with in the world
 
 ---
 
@@ -815,11 +901,13 @@ So that **we support each other and share progress**.
 
 **Architecture Components:** Narrative service, LangGraph narrative agent, PostgreSQL JSONB for scenario templates, ARQ worker for quest unlocking
 
-### Story 4.1: Create Narrative State Schema and Scenario Templates
+### Story 4.1: Create Comprehensive Narrative State Schema and Scenario Templates
+
+**⚠️ COMPREHENSIVE SYSTEM:** This narrative state must be far more extensive than typical story systems - it tracks the entire world state including locations, events, persons, and items.
 
 As a **developer**,  
-I want **a flexible schema for narrative scenarios and user story state**,  
-So that **we can support multiple themes and dynamically generate content**.
+I want **a flexible, comprehensive schema for narrative scenarios and dynamic world state**,  
+So that **we can support multiple themes and maintain story consistency across all narrative elements**.
 
 **Acceptance Criteria:**
 
@@ -827,14 +915,57 @@ So that **we can support multiple themes and dynamically generate content**.
 **When** I create narrative infrastructure  
 **Then** the following tables exist:
 
-- `scenario_templates` (id, name, theme, narrative_arc JSONB, character_prompts JSONB, hidden_quests JSONB, time_rules JSONB)
-- `narrative_states` (id, user_id FK, scenario_id FK, current_chapter INT, unlocked_quests ARRAY, story_progress JSONB, created_at, updated_at)
+- `scenario_templates` (id, name, theme, narrative_arc JSONB, character_prompts JSONB, hidden_quests JSONB, time_rules JSONB, world_schema JSONB)
+- `narrative_states` (id, user_id FK, scenario_id FK, current_chapter INT, unlocked_quests ARRAY, story_progress JSONB, world_state JSONB, created_at, updated_at)
 
-**And** at least one scenario template is seeded:
+**And** the `world_state` JSONB tracks comprehensive narrative elements:
+
+```json
+{
+  "locations": {
+    "arena": {
+      "discovered": true,
+      "description": "...",
+      "npcs_present": ["Lyra", "Thorne"]
+    },
+    "observatory": { "discovered": false, "unlock_condition": "..." }
+  },
+  "events": [
+    {
+      "event_id": "first_meeting_lyra",
+      "occurred_at": "2025-11-01",
+      "impact": "relationship+1"
+    }
+  ],
+  "persons": {
+    "Lyra": {
+      "relationship_level": 3,
+      "last_interaction": "...",
+      "knows_about": ["user_craft_goals"]
+    },
+    "Thorne": { "relationship_level": 1, "status": "neutral" }
+  },
+  "items": {
+    "essence": 450,
+    "titles": ["The Persistent", "The Relentless"],
+    "artifacts": [
+      { "id": "medallion_of_craft", "acquired_at": "...", "description": "..." }
+    ]
+  },
+  "world_time": {
+    "current_act": 1,
+    "current_chapter": 3,
+    "days_in_story": 45
+  }
+}
+```
+
+**And** at least one comprehensive scenario template is seeded:
 
 - **Modern Reality**: Contemporary alter-ego journey with realistic characters
 - Defines 3 acts with progression triggers
 - Includes 3-5 hidden quest templates
+- Defines all possible locations, persons, items, and event types
 
 **And** scenario templates support multiple themes (medieval, sci-fi, etc.) for future expansion
 
@@ -844,8 +975,11 @@ So that **we can support multiple themes and dynamically generate content**.
 
 - See Architecture doc Pattern 1 (Living Narrative Engine) for schema details
 - JSONB structure allows flexibility without schema migrations for new scenarios
+- **World State Management:** Each narrative generation reads and updates world_state
+- **Consistency Enforcement:** Narrative agent validates all changes against scenario template rules
 - Index on `narrative_states.user_id` and `scenario_templates.theme`
 - Seed script: `backend/app/db/seeds/scenario_templates.py`
+- **Critical:** World state must prevent inconsistencies (e.g., can't reference items not yet acquired, locations not yet discovered)
 
 ---
 
@@ -887,6 +1021,15 @@ So that **users experience adaptive narratives tied to their real actions**.
 - Agent: `backend/app/agents/narrative_agent.py`
 - Uses scenario template as base context
 - Incorporates real user data (goals, completed missions, streaks)
+- **LLM:** OpenAI GPT-4o (premium model for high-quality narrative writing)
+  - Cost: $2.50/$10 per 1M tokens (input/output)
+  - Rationale: Narrative generation requires superior writing quality and story consistency
+  - Less frequent than chat interactions (~2-3 story beats per week per user)
+  - Budget impact: ~$0.02/user/day (within $0.50 target)
+- **Story Consistency Priority:** Most important theme - ensure no inconsistent values, items, or events
+  - Agent maintains strict adherence to scenario template rules
+  - Validates against previous story beats before generation
+  - Tracks all narrative elements (locations, items, events, character states) in JSONB
 - Output format: structured JSON with text, metadata, unlock flags
 
 ---

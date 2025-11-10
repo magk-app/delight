@@ -1,0 +1,130 @@
+# Sprint Status - Delight Project
+# Generated: 2025-11-10
+# Updated: 2025-11-10 (Tech stack validation changes)
+# This file tracks all epics, stories, and retrospectives from epics.md
+
+# RECENT CHANGES (2025-11-10):
+# - Story 1.3: Renamed from JWT to Clerk authentication
+# - Story 1.4: Moved to deferred (will complete after Epic 2)
+# - Story 2.6: Marked as CRITICAL, uses open source emotion model
+# - Story 4.1-4.4: Updated with comprehensive narrative state requirements
+# - Added notes about LLM models (GPT-4o-mini for chat, GPT-4o for narrative)
+
+# generated: 2025-11-10
+# project: delight
+# project_key: delight
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#   - deferred: Story planned but moved to later in sequence
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-10
+project: delight
+project_key: delight
+tracking_system: file-system
+story_location: "{project-root}/docs/stories"
+
+development_status:
+  # Epic 1: User Onboarding & Foundation
+  epic-1: backlog
+  1-1-initialize-monorepo-structure-and-core-dependencies: backlog
+  1-2-set-up-database-schema-and-migrations: backlog
+  1-3-integrate-clerk-authentication-system: backlog  # UPDATED: Changed from JWT to Clerk
+  1-4-create-user-onboarding-flow-mvp: deferred  # MOVED: Will be completed after Epic 2
+  1-5-set-up-deployment-pipeline-and-environment-configuration: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Companion & Memory System
+  epic-2: backlog
+  2-1-set-up-postgresql-pgvector-and-memory-schema: backlog
+  2-2-implement-memory-service-with-3-tier-architecture: backlog
+  2-3-build-eliza-agent-with-langgraph: backlog  # Uses GPT-4o-mini
+  2-4-create-companion-chat-api-with-sse-streaming: backlog
+  2-5-build-companion-chat-ui-frontend: backlog
+  2-6-implement-emotional-state-detection: backlog  # CRITICAL: Uses cardiffnlp/roberta emotion model
+  2-7-add-multiple-character-personas-future: backlog  # Distinction: Eliza vs narrative personas
+  epic-2-retrospective: optional
+
+  # Epic 3: Goal & Mission Management
+  epic-3: backlog
+  3-1-create-goal-data-models-and-crud-apis: backlog
+  3-2-implement-collaborative-goal-decomposition-with-eliza: backlog
+  3-3-build-mission-quest-system-with-priority-triads: backlog
+  3-4-implement-mission-execution-flow-with-timer: backlog
+  3-5-add-mission-session-notes-and-reflection: backlog
+  3-6-implement-adaptive-quest-generation-worker-future: backlog
+  3-7-add-collaborative-goals-and-guild-missions-future: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Narrative Engine
+  epic-4: backlog
+  4-1-create-comprehensive-narrative-state-schema: backlog  # Comprehensive world state (locations, events, persons, items)
+  4-2-build-narrative-generation-agent-with-langgraph: backlog  # Uses GPT-4o for premium writing quality
+  4-3-implement-pre-planned-hidden-quest-system: backlog  # Includes multiple endings + user-created endings
+  4-4-create-story-viewing-interface-mvp: backlog  # Beautiful book-like UI
+  4-5-implement-character-initiated-story-events-future: backlog  # LIMITED initially for narrative control
+  4-6-add-branching-narratives-based-on-user-choices-future: backlog
+  4-7-implement-lore-economy-and-unlockable-content-future: backlog  # IMPORTANT feature
+  epic-4-retrospective: optional
+
+  # Epic 5: Progress & Analytics
+  epic-5: backlog
+  5-1-implement-streak-tracking-system: backlog
+  5-2-build-daily-consistency-index-dci-dashboard: backlog
+  5-3-generate-highlight-reels-mvp: backlog
+  5-4-implement-progress-snapshots-and-goal-timelines: backlog
+  5-5-add-whats-working-analytics-insights-future: backlog
+  5-6-implement-achievement-gallery-and-badges-future: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: World State & Time System
+  epic-6: backlog
+  6-1-implement-time-aware-state-engine: backlog
+  6-2-create-world-zones-arena-observatory-commons-mvp: backlog
+  6-3-add-websocket-for-real-time-world-updates-mvp: backlog
+  6-4-implement-zone-unlocking-system-future: backlog
+  6-5-add-multiplayer-zone-features-future: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Nudge & Outreach
+  epic-7: backlog
+  7-1-set-up-notification-infrastructure: backlog
+  7-2-implement-drop-off-detection-and-smart-nudge-scheduling: backlog
+  7-3-build-in-app-notification-center-mvp: backlog
+  7-4-implement-opt-in-opt-out-management-ui: backlog
+  7-5-add-ai-driven-optimal-timing-intelligence-future: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Evidence & Reflection
+  epic-8: backlog
+  8-1-set-up-s3-file-storage-infrastructure: backlog
+  8-2-implement-evidence-upload-flow-mvp: backlog
+  8-3-create-evidence-gallery-and-mission-history: backlog
+  8-4-add-reflection-prompts-post-mission-mvp: backlog
+  8-5-implement-ai-validation-of-evidence-future: backlog
+  8-6-create-shared-achievement-galleries-future: backlog
+  epic-8-retrospective: optional
