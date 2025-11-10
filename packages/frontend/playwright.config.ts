@@ -30,9 +30,6 @@ export default defineConfig({
     video: "retain-on-failure",
     actionTimeout: 15 * 1000, // Action timeout: 15s
     navigationTimeout: 30 * 1000, // Navigation timeout: 30s
-
-    // Clerk auth context - tests can use authenticated state
-    storageState: process.env.CI ? undefined : "tests/support/.auth/user.json",
   },
 
   // Test results
@@ -44,14 +41,20 @@ export default defineConfig({
 
   // Multi-browser testing
   projects: [
-    // Setup project for authentication
-    { name: "setup", testMatch: /.*\.setup\.ts/ },
+    // Setup project for authentication (optional)
+    {
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+    },
 
     {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "tests/support/.auth/user.json",
+        // Use auth state if available, otherwise run unauthenticated
+        ...(process.env.CLERK_TEST_USER_PASSWORD && {
+          storageState: "tests/support/.auth/user.json",
+        }),
       },
       dependencies: ["setup"],
     },
@@ -59,7 +62,9 @@ export default defineConfig({
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
-        storageState: "tests/support/.auth/user.json",
+        ...(process.env.CLERK_TEST_USER_PASSWORD && {
+          storageState: "tests/support/.auth/user.json",
+        }),
       },
       dependencies: ["setup"],
     },
@@ -67,7 +72,9 @@ export default defineConfig({
       name: "webkit",
       use: {
         ...devices["Desktop Safari"],
-        storageState: "tests/support/.auth/user.json",
+        ...(process.env.CLERK_TEST_USER_PASSWORD && {
+          storageState: "tests/support/.auth/user.json",
+        }),
       },
       dependencies: ["setup"],
     },
