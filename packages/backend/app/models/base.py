@@ -1,8 +1,8 @@
 """
-SQLAlchemy declarative base for all models.
-All database models should inherit from Base.
+Re-export the shared declarative Base used across the application.
+All models depend on app.db.base.Base; this module keeps backwards compatibility.
 """
 
-from sqlalchemy.orm import declarative_base
+from app.db.base import Base
 
-Base = declarative_base()
+__all__ = ["Base"]

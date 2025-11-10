@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base
+from app.db.base import Base
 
 
 class User(Base):

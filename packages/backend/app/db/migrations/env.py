@@ -15,10 +15,9 @@ from alembic import context
 # Import application configuration
 from app.core.config import settings
 
-# Import Base and all models (ensures metadata is populated for autogenerate)
-from app.models.base import Base
-
-# Import all model files here so they register with Base.metadata
+# Import Base and ensure all models are loaded so metadata is populated
+from app.db.base import Base
+from app import models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
