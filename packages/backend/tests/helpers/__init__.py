@@ -12,4 +12,3 @@ __all__ = [
     "create_test_tables",
     "clear_test_data",
 ]
-

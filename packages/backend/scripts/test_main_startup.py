@@ -5,7 +5,7 @@ Verifies that FastAPI app starts correctly with database connection.
 
 import asyncio
 import sys
-from contextlib import asynccontextmanager
+
 
 # Test the lifespan handler works correctly
 async def test_lifespan():

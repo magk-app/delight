@@ -50,15 +50,13 @@ async def test_database() -> None:
             )
             session.add(test_prefs)
             await session.commit()
-            print(f"   ✅ Created preferences for user")
+            print("   ✅ Created preferences for user")
             print(f"   🎨 Theme: {test_prefs.theme}")
             print(f"   🕐 Custom hours: {test_prefs.custom_hours}")
 
             # Test 3: Query user by clerk_user_id (primary lookup pattern)
             print("\n3️⃣  Querying user by Clerk ID...")
-            result = await session.execute(
-                select(User).where(User.clerk_user_id == test_clerk_id)
-            )
+            result = await session.execute(select(User).where(User.clerk_user_id == test_clerk_id))
             queried_user = result.scalar_one()
             print(f"   ✅ Found user: {queried_user.email}")
 
@@ -82,9 +80,7 @@ async def test_database() -> None:
             print("   ✅ Deleted user (preferences auto-deleted via CASCADE)")
 
             # Verify deletion
-            result = await session.execute(
-                select(User).where(User.clerk_user_id == test_clerk_id)
-            )
+            result = await session.execute(select(User).where(User.clerk_user_id == test_clerk_id))
             deleted_user = result.scalar_one_or_none()
             if deleted_user is None:
                 print("   ✅ Verified: User successfully deleted")

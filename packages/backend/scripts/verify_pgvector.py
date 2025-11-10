@@ -8,9 +8,7 @@ from app.db.session import AsyncSessionLocal
 async def verify_pgvector():
     """Check if pgvector extension is enabled."""
     async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            text("SELECT * FROM pg_extension WHERE extname = 'vector';")
-        )
+        result = await session.execute(text("SELECT * FROM pg_extension WHERE extname = 'vector';"))
         row = result.fetchone()
 
         if row:

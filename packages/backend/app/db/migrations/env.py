@@ -19,7 +19,6 @@ from app.core.config import settings
 from app.models.base import Base
 
 # Import all model files here so they register with Base.metadata
-from app.models.user import User, UserPreferences  # Now created in Task 3
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
