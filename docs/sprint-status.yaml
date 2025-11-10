@@ -1,9 +1,10 @@
 # Sprint Status - Delight Project
 # Generated: 2025-11-10
-# Updated: 2025-11-10 (Tech stack validation changes)
+# Updated: 2025-11-10 (Epic 1 contexted)
 # This file tracks all epics, stories, and retrospectives from epics.md
 
 # RECENT CHANGES (2025-11-10):
+# - Epic 1: Marked as "contexted" - tech spec generated (tech-spec-epic-1.md)
 # - Story 1.3: Renamed from JWT to Clerk authentication
 # - Story 1.4: Moved to deferred (will complete after Epic 2)
 # - Story 2.6: Marked as CRITICAL, uses open source emotion model
@@ -50,11 +51,11 @@ story_location: "{project-root}/docs/stories"
 
 development_status:
   # Epic 1: User Onboarding & Foundation
-  epic-1: backlog
+  epic-1: contexted
   1-1-initialize-monorepo-structure-and-core-dependencies: backlog
   1-2-set-up-database-schema-and-migrations: backlog
-  1-3-integrate-clerk-authentication-system: backlog  # UPDATED: Changed from JWT to Clerk
-  1-4-create-user-onboarding-flow-mvp: deferred  # MOVED: Will be completed after Epic 2
+  1-3-integrate-clerk-authentication-system: backlog # UPDATED: Changed from JWT to Clerk
+  1-4-create-user-onboarding-flow-mvp: deferred # MOVED: Will be completed after Epic 2
   1-5-set-up-deployment-pipeline-and-environment-configuration: backlog
   epic-1-retrospective: optional
 
@@ -62,11 +63,11 @@ development_status:
   epic-2: backlog
   2-1-set-up-postgresql-pgvector-and-memory-schema: backlog
   2-2-implement-memory-service-with-3-tier-architecture: backlog
-  2-3-build-eliza-agent-with-langgraph: backlog  # Uses GPT-4o-mini
+  2-3-build-eliza-agent-with-langgraph: backlog # Uses GPT-4o-mini
   2-4-create-companion-chat-api-with-sse-streaming: backlog
   2-5-build-companion-chat-ui-frontend: backlog
-  2-6-implement-emotional-state-detection: backlog  # CRITICAL: Uses cardiffnlp/roberta emotion model
-  2-7-add-multiple-character-personas-future: backlog  # Distinction: Eliza vs narrative personas
+  2-6-implement-emotional-state-detection: backlog # CRITICAL: Uses cardiffnlp/roberta emotion model
+  2-7-add-multiple-character-personas-future: backlog # Distinction: Eliza vs narrative personas
   epic-2-retrospective: optional
 
   # Epic 3: Goal & Mission Management
@@ -82,13 +83,13 @@ development_status:
 
   # Epic 4: Narrative Engine
   epic-4: backlog
-  4-1-create-comprehensive-narrative-state-schema: backlog  # Comprehensive world state (locations, events, persons, items)
-  4-2-build-narrative-generation-agent-with-langgraph: backlog  # Uses GPT-4o for premium writing quality
-  4-3-implement-pre-planned-hidden-quest-system: backlog  # Includes multiple endings + user-created endings
-  4-4-create-story-viewing-interface-mvp: backlog  # Beautiful book-like UI
-  4-5-implement-character-initiated-story-events-future: backlog  # LIMITED initially for narrative control
+  4-1-create-comprehensive-narrative-state-schema: backlog # Comprehensive world state (locations, events, persons, items)
+  4-2-build-narrative-generation-agent-with-langgraph: backlog # Uses GPT-4o for premium writing quality
+  4-3-implement-pre-planned-hidden-quest-system: backlog # Includes multiple endings + user-created endings
+  4-4-create-story-viewing-interface-mvp: backlog # Beautiful book-like UI
+  4-5-implement-character-initiated-story-events-future: backlog # LIMITED initially for narrative control
   4-6-add-branching-narratives-based-on-user-choices-future: backlog
-  4-7-implement-lore-economy-and-unlockable-content-future: backlog  # IMPORTANT feature
+  4-7-implement-lore-economy-and-unlockable-content-future: backlog # IMPORTANT feature
   epic-4-retrospective: optional
 
   # Epic 5: Progress & Analytics
