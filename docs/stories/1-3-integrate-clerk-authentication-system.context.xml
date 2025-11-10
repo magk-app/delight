@@ -1,0 +1,389 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>3</storyId>
+    <title>Integrate Clerk Authentication System</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-10T17:51:36.671187</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-3-integrate-clerk-authentication-system.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>new Delight user</asA>
+    <iWant>to authenticate with email/password, Google, GitHub, or magic links through a trustworthy flow that feels native to Delight’s narrative world</iWant>
+    <soThat>my sensitive data stays secure while I move from first touch into the companion experience without friction</soThat>
+    <tasks><![CDATA[## Tasks / Subtasks
+
+### 1. Frontend Integration & Theming (AC1, AC2, AC5)
+- [ ] Install `@clerk/nextjs` and wrap `packages/frontend/src/app/layout.tsx` with `<ClerkProvider appearance={{ baseTheme: activeTheme }}>` pulling tokens from scenario context. [Source: docs/ux-design-specification.md#Visual-Design-System]
+- [ ] Add `/sign-in` and `/sign-up` routes in `src/app/(auth)/` rendering `<SignIn/>` / `<SignUp/>`, plus optional modal entry points for narrative continuity.
+- [ ] Implement `src/middleware.ts` to gate `/companion`, `/missions`, `/world`, `/progress`, `/api` routes while allowing static/marketing pages.
+- [ ] Guard top-level navigation with `<SignedIn>` / `<SignedOut>` components so users see context-aware CTAs.
+- [ ] Add logout button (e.g., in header avatar menu) calling `await clerk.signOut({ redirectUrl: '/sign-in' })`.
+- [ ] Theme snippet example:
+  ```tsx
+  // packages/frontend/src/app/layout.tsx
+  import { ClerkProvider } from '@clerk/nextjs';
+  import { delightTheme } from '@/lib/theme/delight-theme';
+
+  export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (
+      <ClerkProvider
+        publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        appearance={{
+          baseTheme: delightTheme,
+          variables: {
+            colorPrimary: 'var(--arena-amber)',
+            fontFamily: 'var(--delight-sans)'
+          }
+        }}
+      >
+        {children}
+      </ClerkProvider>
+    );
+  }
+  ```
+
+### 2. Backend Session Dependency & Route Protection (AC3, AC5)
+- [ ] Add `packages/backend/app/auth/dependencies.py` with `get_current_user` that:
+  1. Extracts the Bearer token (Clerk session) from `Authorization` header.
+  2. Calls `clerk.sessions.verify_session(token)`.
+  3. Fetches or creates the `User` record via Async SQLAlchemy.
+  4. Raises `HTTPException(status_code=401)` on verification failure.
+- [ ] Inject dependency into mission, narrative, progress, and companion routers.
+- [ ] Create pytest-asyncio tests that mock Clerk verification to cover allowed/denied requests.
+- [ ] Update `/api/v1/health` to include Clerk availability (cached ping) so we don’t regress Story 1.2’s action items.
+
+### 3. Webhook Processing & Database Sync (AC4, AC6)
+- [ ] Build `packages/backend/app/api/v1/webhooks.py` with `POST /api/v1/webhooks/clerk` that validates signatures using `CLERK_WEBHOOK_SECRET`.
+- [ ] Implement handlers:
+  - `user.created`: upsert `User`, seed `UserPreferences` with defaults.
+  - `user.updated`: sync email/timezone/preferences.
+  - `user.deleted`: soft-delete `User`, cascade to preferences.
+- [ ] Ensure all DB operations run inside a single async transaction to keep rows consistent.
+- [ ] Log each event via `structlog` with `event_type`, `clerk_user_id`, `result`.
+- [ ] Provide idempotency by keying operations on `clerk_event.id` stored in a processed-events table or Redis TTL list.
+
+### 4. End-to-End Testing & Tooling (AC3–AC8)
+- [ ] Extend frontend Playwright suite with flows for email signup, Google, GitHub, and magic link (use Clerk test users).
+- [ ] Add backend pytest coverage for webhook endpoint (valid signature, replay attack, invalid payload).
+- [ ] Document manual test plan aligning with the tech-spec checklist (sign up via each method, verify DB rows, exercise logout).
+- [ ] Capture logs showing webhook success and paste excerpts into PR/story evidence.
+
+### 5. Documentation, Env Config, and Ops (AC7, AC8)
+- [ ] Update `packages/frontend/.env.example` and `packages/backend/.env.example` with Clerk publishable/secret/webhook keys plus explanatory comments.
+- [ ] Enhance `README.md` and `docs/SETUP.md` with Clerk signup steps, webhook URL configuration, and how to run local tunneling (e.g., `clerk dev` or `ngrok`).
+- [ ] Add runbooks to `docs/dev/BMAD-DEVELOPER-GUIDE.md` describing how to rotate keys and audit auth logs.
+
+## Dependencies & Tooling
+- `@clerk/nextjs` (frontend) and `clerk-backend-sdk` (backend) pinned per tech spec to ensure API parity. [Source: docs/tech-spec-epic-1.md#Dependencies-and-Integrations]
+- Supabase (managed PostgreSQL) remains the source of truth for user data; ensure DATABASE_URL is configured before running migrations. [Source: docs/architecture.md#ADR-010-Supabase-for-Managed-PostgreSQL]
+- Playwright, pytest-asyncio, and structured logging stack (structlog + Sentry) must stay in sync with Stories 1.1/1.2 tooling.
+
+## Rollout & Monitoring Plan
+1. **Development** – Use Clerk test environment keys; run Playwright + pytest suites per commit.
+2. **Staging** – Deploy with staging Clerk instance, enabling webhook secret rotation tests. Monitor Sentry for auth errors.
+3. **Production** – Enable rate limiting on webhook endpoint (FastAPI middleware) and set up Sentry alert if failure rate >1% over 5 minutes.
+4. **Post-launch** – Review Clerk analytics + internal logs to confirm ≥90% success rate; interview pilot users about experience smoothness.
+
+## Reference Implementations & Code Snippets
+
+### Next.js Middleware Protection
+```ts
+// packages/frontend/src/middleware.ts
+import { authMiddleware } from '@clerk/nextjs';
+
+export default authMiddleware({
+  publicRoutes: ['/', '/sign-in', '/sign-up', '/docs(.*)', '/health'],
+  ignoredRoutes: ['/api/public/(.*)'],
+  afterAuth(auth, req) {
+    if (!auth.userId && !auth.isPublicRoute) {
+      const url = new URL('/sign-in', req.url);
+      url.searchParams.set('redirect_url', req.nextUrl.pathname);
+      return Response.redirect(url);
+    }
+  }
+});
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+};
+```
+
+### FastAPI Dependency
+```python
+# packages/backend/app/auth/dependencies.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from clerk_backend_sdk import Clerk
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.db.session import get_db
+from app.models.user import User
+
+security = HTTPBearer()
+clerk = Clerk(api_key=settings.CLERK_SECRET_KEY)
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    try:
+        session = clerk.sessions.verify_session(credentials.credentials)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Invalid or expired Clerk session'
+        ) from exc
+
+    result = await db.execute(select(User).where(User.clerk_user_id == session.user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        user = User(
+            clerk_user_id=session.user_id,
+            email=session.user.primary_email_address.email_address,
+            timezone=session.user.primary_email_address.timezone or 'UTC'
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    return user
+```
+
+### Webhook Signature Validation
+```python
+# packages/backend/app/api/v1/webhooks.py
+from clerk_backend_sdk import Clerk
+clerk = Clerk(api_key=settings.CLERK_SECRET_KEY)
+
+@router.post('/clerk', status_code=204)
+async def clerk_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    payload = await request.body()
+    signature = request.headers.get('Clerk-Signature')
+    event = clerk.webhooks.verify(
+        payload=payload,
+        signature=signature,
+        secret=settings.CLERK_WEBHOOK_SECRET
+    )
+    await process_clerk_event(event, db)
+```
+
+## Environment Configuration Checklist
+
+| Variable | Location | Purpose |
+| -------- | -------- | ------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `packages/frontend/.env.example` | Allows Clerk components to initialize on the client. |
+| `CLERK_SECRET_KEY` | `packages/backend/.env.example` | Used by backend SDK for session/webhook validation. |
+| `CLERK_WEBHOOK_SECRET` | Backend env | Validates webhook signatures. |
+| `CLERK_SIGN_IN_URL` / `CLERK_SIGN_UP_URL` | Optional overrides | Useful for localized routes or branded domains. |
+| `SUPABASE_DATABASE_URL` | Backend env | Required for user upsert logic. |
+| `SENTRY_DSN` | Both envs | To trace auth failures end to end. |
+
+Add these variables to onboarding docs and CI secrets; block merges when envs are missing by extending the preflight check introduced in Story 1.1. [Source: docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md#Tasks-/-Subtasks]
+
+## Observability & Alerting
+- **Structured Logs:** Use `structlog` context of `{event_type, clerk_user_id, result, correlation_id}` for every webhook + login event. [Source: docs/architecture.md#Logging-Strategy]
+- **Sentry Breadcrumbs:** Tag events with `component: 'auth'` and `provider: 'google'|'github'|'email'` to isolate issues quickly.
+- **Metrics:** Expose counters such as `auth_logins_total{method='google'}` and `auth_failures_total{reason='invalid_signature'}` (Prometheus-friendly labels).
+- **Alerts:** Trigger PagerDuty/Sentry when failure counts exceed thresholds or when Clerk status endpoint reports degraded service for >5 minutes.
+
+## Future Work & Hand-offs
+- **Story 1.4 (Onboarding Flow):** Will hook into the `onboarding_completed` flag seeded here; leave TODOs where the onboarding wizard will mount after authentication.
+- **Epic 2 Memory System:** Requires Clerk IDs for memory ownership; confirm GraphQL/REST layers expose `clerk_user_id`.
+- **Mobile Clients:** Document how React Native or Expo clients should reuse Clerk so we avoid divergent identity stacks.
+
+## AC ↔ Task Traceability
+
+| AC # | Key Deliverables | Related Tasks/Subtasks | Test Coverage |
+| ---- | ---------------- | ---------------------- | ------------- |
+| AC1 | `/sign-in`, `/sign-up` with four auth modalities | Frontend integration tasks 1–3 | Playwright `auth.spec.ts` scenarios |
+| AC2 | Themed Clerk UI, narrative copy | Frontend theming task + UX tokens | Visual regression snapshots |
+| AC3 | `get_current_user` dependency, route guards | Backend dependency + router updates | pytest `test_auth_dependency.py` |
+| AC4 | Webhook endpoint, signature validation, DB upsert | Webhook processing tasks | pytest webhook suite + logs |
+| AC5 | Logout + middleware redirects | Frontend logout + middleware tasks | Playwright logout test |
+| AC6 | Consistent DB state, unique `clerk_user_id` | Webhook upsert + DB transaction tasks | SQL assertions in tests |
+| AC7 | Logging, metrics, alerting | Observability + logging tasks | Manual log inspection + Sentry |
+| AC8 | Docs, `.env.example`, evidence | Documentation tasks | PR checklist & attachments |
+
+## Rollback Plan
+1. **Frontend** – Feature-flag Clerk enforcement (`NEXT_PUBLIC_ENABLE_CLERK=0`) to temporarily fall back to the static marketing landing if the auth service degrades.
+2. **Backend** – Keep the pre-Clerk JWT middleware behind a toggle so we can redeploy the previous container if Clerk suffers a prolonged outage; keep database migrations unchanged to simplify rollback.
+3. **Database** – Because webhook upserts are idempotent, restoring from a Supabase point-in-time snapshot will recover from accidental data corruption.
+4. **Monitoring** – Tie rollback triggers to Sentry/PagerDuty alerts plus manual QA verification.
+
+## Compliance & Privacy Checklist
+- [ ] Document the data flow (Clerk → Webhook → PostgreSQL) in `docs/architecture/security-architecture.md`.
+- [ ] Ensure we can honor GDPR “right to be forgotten” by locating rows via `clerk_user_id`. [Source: docs/product-brief-Delight-2025-11-09.md#Security-Metrics]
+- [ ] Mask PII in logs except for hashed Clerk IDs and redacted emails.
+- [ ] Store Clerk secrets exclusively in the platform secret manager; never commit `.env` with real keys.
+- [ ] Confirm webhook endpoints are exposed only over TLS (enforced by hosting provider configuration).
+
+## Localization & Accessibility Notes
+- Clerk components inherit Delight’s typography and palette; maintain WCAG AA contrast for both modern and fantasy themes. [Source: docs/ux-design-specification.md#Visual-Design-System]
+- Provide localized copy hooks (English default) so future translations can swap strings without touching logic.
+- Magic-link instructions must expose ARIA labels and focus states for keyboard/screen-reader users.
+- When social providers fail, fall back to descriptive text and iconography that do not rely solely on color cues (supporting color-vision deficiencies).
+
+## Development Timeline & Milestones
+
+| Week | Milestone | Description |
+| ---- | --------- | ----------- |
+| Week 1 | Frontend scaffolding | Install Clerk SDK, wrap layout, add auth routes, theme components, stub tests. |
+| Week 1 (end) | Backend skeleton | Add `get_current_user`, protect APIs, scaffold webhook endpoint, seed fixtures. |
+| Week 2 | Webhook + DB validation | Finish upsert logic, idempotency store, structured logs, Supabase verification. |
+| Week 2 (mid) | Playwright + pytest suites | Implement auth flows, webhook tests, health-check coverage. |
+| Week 2 (end) | Documentation & env updates | Update READMEs, `.env.example`, runbooks, attach evidence. |
+| Week 3 | Hardening & sign-off | Run manual checklist, fix issues, prepare for `story-context` workflow. |
+
+## QA Checklist
+- [ ] Playwright suite passes in CI with `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` pointing to test project.
+- [ ] pytest suite covers auth dependency, webhook, and unauthorized access paths.
+- [ ] Manual test evidence gathered for every auth method plus logout/deletion.
+- [ ] Logs show no plaintext secrets and include event metadata.
+- [ ] `/api/v1/health` displays accurate auth/database status.
+- [ ] Accessibility audit (Lighthouse/axe) runs on `/sign-in` and `/sign-up`.
+
+## Operational Runbook (Excerpt)
+1. **Rotate Clerk secrets:** Generate new keys in Clerk dashboard → update secret manager → redeploy backend → rotate publishable key on frontend.
+2. **Handle webhook failures:** Check Sentry alert → inspect logs for `event_id` → replay event by fetching from Clerk dashboard if needed.
+3. **Emergency disable social provider:** Use Clerk dashboard to temporarily disable Google/GitHub; ensure email/magic links remain available.
+4. **Audit access:** Quarterly, export Clerk audit log and compare against Supabase `auth_webhook_events` to ensure parity.
+
+## Glossary
+- **Clerk Session Token:** JWT issued by Clerk that proves user authentication.
+- **Magic Link:** Passwordless email-based authentication method that logs the user in after clicking a secure link.
+- **Scenario Theme:** UX-defined palette/typography representing Modern Reality, Medieval Fantasy, etc.
+- **Essence:** In-universe reward currency; auth success should mention it subtly to maintain narrative continuity. [Source: docs/product-brief-Delight-2025-11-09.md#MVP-Scope]
+
+## Threat Model Highlights
+
+| Asset | Threat | Severity | Mitigation |
+| ----- | ------ | -------- | ---------- |
+| Session tokens | Token theft via XSS/logging | High | HttpOnly cookies, never logging tokens, use CSP from Story 1.1. |
+| Webhook endpoint | Replay or forged events | High | Verify signatures + timestamps, store processed IDs, short timeout. |
+| User database | Unauthorized row creation | Medium | Unique `clerk_user_id`, use DB transactions and row-level logging. |
+| OAuth flows | Provider outage | Medium | Keep email/magic links active, display helpful UI messaging. |
+| Secrets | Accidental leakage in repo | High | `.env.example` only, CI secret scanning, git hooks. |
+
+## API Error Catalog
+- `401 Not authenticated` – Missing/invalid Clerk session; frontend should redirect to `/sign-in`.
+- `401 Invalid webhook signature` – Logged with `severity=error`, triggers alert if frequency > 5/min.
+- `409 Duplicate user` – Should be rare; indicates race before webhook processed. Auto-resolve using upsert but log for investigation.
+- `503 Clerk unavailable` – Health endpoint returns degraded status; middleware shows friendly error message.
+
+## Testing Artifacts to Produce
+- Playwright video and trace files for each auth method.
+- pytest coverage report highlighting new auth modules.
+- Supabase SQL export proving `users` and `user_preferences` rows exist for each test user.
+- Log excerpts demonstrating webhook success and failure handling.
+- Screenshot of `/api/v1/health` JSON showing `auth: \"connected\"`.
+
+## Acceptance Criteria Evidence Plan
+
+| AC | Evidence to Capture | Storage Location |
+| -- | ------------------- | ---------------- |
+| AC1 | Playwright recordings of email + social logins | `packages/frontend/tests/e2e/artifacts/` |
+| AC2 | Screenshots showing themed Clerk UI variants | `docs/stories/evidence/1-3/` |
+| AC3 | pytest log proving `get_current_user` denies invalid tokens | CI artifacts + validation report |
+| AC4 | Webhook logs + DB snapshot showing upserts | `docs/stories/evidence/1-3/webhook-log.md` |
+| AC5 | Video/screenshot of logout redirect and middleware guard | Evidence folder |
+| AC6 | SQL output from Supabase verifying unique constraint + preferences row | Stored with DB evidence |
+| AC7 | Sentry dashboard screenshot showing auth breadcrumbs | Evidence folder |
+| AC8 | README diff, `.env.example` diff, validation report | Repo + docs/stories/validation-report-*.md |
+
+## Dev ↔ QA Hand-off Checklist
+- [ ] Story status `drafted` with validation report attached.
+- [ ] Feature flag docs specify how to disable Clerk quickly.
+- [ ] QA has access to the Clerk test project and Supabase staging database.
+- [ ] All automated tests green and attached to PR summary.
+- [ ] Manual checklist completed with timestamps, tester initials, and links to evidence.
+
+## Release Readiness Checklist
+- [ ] `docs/stories/validation-report-*.md` updated with latest checklist results.
+- [ ] Sprint board card linked to evidence folder and tagged with “auth”.
+- [ ] Observability dashboards (Sentry, logging) updated with new filters/widgets.
+- [ ] Runbook stored in `docs/dev/BMAD-DEVELOPER-GUIDE.md` and referenced in PR.
+- [ ] Stakeholders (product, design, QA) sign off asynchronously in PR comments.]]></tasks>
+  </story>
+
+  <acceptanceCriteria><![CDATA[## Acceptance Criteria
+
+### AC1 – Multi-channel Authentication Surfaces
+**Given** a user opens `/sign-in` or `/sign-up`, **when** the Clerk component renders, **then** it must expose email/password, Google OAuth, GitHub OAuth, and magic link options, all fully functional. [Source: docs/epics/epic-1-user-onboarding-foundation.md#Story-1.3-Integrate-Clerk-Authentication-System]
+
+### AC2 – Delight-Themed Experience & Narrative Bridge
+Clerk UI must inherit Delight’s active scenario palette, typography, and copy so users immediately feel they are in the companion world; theme tokens derive from the UX specification’s “Modern Warmth” plus scenario overlays, and success states funnel users toward the Arena/Observatory entry points. [Source: docs/ux-design-specification.md#Visual-Design-System]
+
+### AC3 – Secure Backend Session Verification
+All protected FastAPI routes must depend on a shared `get_current_user` that verifies Clerk session tokens via `clerk-backend-sdk`, fetches the matching `User` record (creating it if missing), and returns HTTP 401 for expired/invalid sessions, with pytest coverage for positive and negative cases. [Source: docs/tech-spec-epic-1.md#APIs-and-Interfaces]
+
+### AC4 – Webhook-driven User Sync & Idempotency
+`POST /api/v1/webhooks/clerk` must validate Clerk signatures, handle `user.created`, `user.updated`, and `user.deleted`, upsert `users` + `user_preferences` records transactionally, and log outcomes using structured logging so we can audit identity events. [Source: docs/tech-spec-epic-1.md#APIs-and-Interfaces]
+
+### AC5 – Session Lifecycle & Logout Hygiene
+Logging out from the frontend (or via Clerk dashboard) must invalidate the session across all devices; authenticated pages should redirect signed-out visitors to `/sign-in`, while signed-in users are redirected away from auth routes. [Source: docs/epics/epic-1-user-onboarding-foundation.md#Story-1.3-Integrate-Clerk-Authentication-System]
+
+### AC6 – Database Consistency Across Events
+Every authentication event must ensure `users.clerk_user_id` remains unique, default timezone + notification preferences are initialized, and deletions cascade to `user_preferences`, matching Story 1.2’s schema. [Source: docs/tech-spec-epic-1.md#Data-Models-and-Contracts, docs/stories/1-2-set-up-database-schema-and-migrations.md#Acceptance-Criteria]
+
+### AC7 – Telemetry, Logging, and Alertability
+Auth flows must emit structured logs (Clerk event type, user id, result) and basic metrics so `/api/v1/health` and Sentry can surface auth outages; failures should never leak secrets. [Source: docs/architecture.md#Logging-Strategy]
+
+### AC8 – Documentation & Evidence
+`.env.example` files, README, and docs must list all Clerk variables and setup steps; the story deliverable must include manual/automated test evidence covering each auth surface plus webhook sync. [Source: docs/tech-spec-epic-1.md#Manual-Testing-Checklist-(Story-1.3)]]]></acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+    <doc path="docs/epics/epic-1-user-onboarding-foundation.md" section="Story 1.3" snippet="Defines the required Clerk sign-in options, backend validation, and theme alignment for this feature." />
+    <doc path="docs/tech-spec-epic-1.md" section="Manual Testing Checklist (Story 1.3)" snippet="Lists the email, Google, GitHub, magic-link, database verification, and logout tests that must pass before release." />
+    <doc path="docs/architecture.md" section="ADR-007: Clerk for Authentication" snippet="Chooses Clerk as the managed auth service, citing OAuth coverage, security, and cost expectations." />
+    <doc path="docs/architecture/project-structure.md" section="Project Structure Overview" snippet="Explains where frontend (app/(auth)/) and backend (app/auth, api/v1) modules must live inside the monorepo." />
+    <doc path="docs/ux-design-specification.md" section="Flow 1: Enhanced Onboarding - Deep Narrative Hook" snippet="Shows the narrative-first onboarding flow that the auth screens need to transition into without breaking immersion." />
+    <doc path="docs/product-brief-Delight-2025-11-09.md" section="Executive Summary" snippet="Reinforces the promise of a supportive, emotionally aware companion, framing why trustful auth is critical." />
+    <doc path="docs/stories/1-2-set-up-database-schema-and-migrations.md" section="Senior Developer Review (AI)" snippet="Highlights unresolved items—Alembic imports, duplicate Base, health endpoint accuracy—that Story 1.3 must respect while integrating auth." />
+    </docs>
+    <code>
+    <artifact path="packages/frontend/src/app/layout.tsx" kind="component" symbol="RootLayout" lines="1-40" reason="Wraps the entire UI with &lt;ClerkProvider&gt;; theme tokens and modals for AC1/AC2 live here." />
+    <artifact path="packages/frontend/src/middleware.ts" kind="middleware" symbol="clerkMiddleware config" lines="1-12" reason="Current auth middleware matcher to extend with scenario-aware routing and logout redirects." />
+    <artifact path="packages/backend/app/models/user.py" kind="model" symbol="User / UserPreferences" lines="1-90" reason="Stores clerk_user_id plus preference defaults that webhooks must update (AC4/AC6)." />
+    <artifact path="packages/backend/app/db/session.py" kind="infrastructure" symbol="AsyncSessionLocal" lines="1-80" reason="Async SQLAlchemy session factory reused by `get_current_user` and webhook handlers." />
+    <artifact path="packages/backend/app/api/v1/health.py" kind="endpoint" symbol="health_check" lines="1-120" reason="Health endpoint that must start reporting real database + Clerk status per AC7." />
+    <artifact path="packages/backend/tests/helpers/auth.py" kind="test-helper" symbol="create_mock_clerk_token" lines="1-60" reason="Helper to generate mock Clerk tokens; needs updates once real verification lands." />
+    </code>
+    <dependencies>
+    <dependency ecosystem="node" name="@clerk/nextjs" version="^5.0.0" reason="Clerk React bindings powering sign-in/sign-up surfaces." />
+    <dependency ecosystem="node" name="next" version="^15.0.0" reason="App Router framework hosting auth routes and middleware." />
+    <dependency ecosystem="node" name="@playwright/test" version="^1.40.0" reason="End-to-end auth regression suite." />
+    <dependency ecosystem="python" name="clerk-backend-sdk" version=">=0.3.0" reason="Session verification and webhook signature validation." />
+    <dependency ecosystem="python" name="fastapi" version=">=0.109.0" reason="Backend API framework handling auth-protected routes." />
+    <dependency ecosystem="python" name="sqlalchemy[asyncio]" version=">=2.0.25" reason="Async ORM used by get_current_user and webhook handlers." />
+    <dependency ecosystem="python" name="pytest-asyncio" version=">=0.23.0" reason="Async test framework for verifying auth dependencies and webhooks." />
+    </dependencies>
+  </artifacts>
+
+  <constraints><![CDATA[- Clerk is the sole identity provider (ADR-007); do not fall back to custom JWT flows.
+- Frontend auth routes and assets must stay under packages/frontend/src/app/(auth)/ per project-structure guidelines.
+- Backend models must continue using app.db.base.Base to avoid the duplicate-base bug flagged in Story 1.2 review.
+- Structured logging (event_type, clerk_user_id, correlation_id) and Sentry breadcrumbs are required for every auth/webhook event.
+- Health checks must hit both Supabase and Clerk before reporting "healthy" status to satisfy AC7.]]></constraints>
+  <interfaces>
+    <interface name="POST /api/v1/webhooks/clerk" kind="REST endpoint" signature="POST /api/v1/webhooks/clerk" path="packages/backend/app/api/v1/webhooks.py" description="Receives Clerk user events (created/updated/deleted), validates signatures, and upserts users + preferences." />
+    <interface name="get_current_user(credentials, db)" kind="FastAPI dependency" signature="async def get_current_user(credentials, db) -> User" path="packages/backend/app/auth/dependencies.py" description="Verifies Clerk session tokens, loads or creates User records, and raises HTTP 401 on failure." />
+    <interface name="Next.js auth middleware" kind="Next.js middleware" signature="export default authMiddleware({ matcher, publicRoutes })" path="packages/frontend/src/middleware.ts" description="Guards /companion, /missions, /world, /progress, and API routes; redirects signed-out users to /sign-in." />
+  </interfaces>
+  <tests>
+    <standards><![CDATA[Follow the tech spec test stack: Playwright for end-to-end auth flows, pytest + pytest-asyncio for FastAPI/webhook coverage, ESLint/Ruff for linting, and manual checklist steps (email, Google, GitHub, magic link, DB verification, logout).]]></standards>
+    <locations><![CDATA[- packages/frontend/tests/e2e/* for Playwright suites
+- packages/backend/tests/ (unit, integration, fixtures)
+- docs/stories/evidence/1-3/* for manual evidence uploads]]></locations>
+    <ideas><![CDATA[AC1: Playwright run covering email/password and both social providers, asserting successful redirect into /companion.
+AC3: pytest async test that injects invalid Clerk token and expects HTTP 401 from a protected mission endpoint.
+AC4: Integration test hitting POST /api/v1/webhooks/clerk with signed payloads to confirm users/user_preferences rows upsert and deletions cascade.
+AC5: UI automation verifying logout invalidates session and middleware redirects back to /sign-in with redirect_url preserved.
+AC7: Unit test verifying health endpoint returns "degraded" when Clerk ping fails and database succeeds.]]></ideas>
+  </tests>
+</story-context>
