@@ -3,17 +3,48 @@ Test Configuration and Fixtures
 Root conftest.py providing shared fixtures for all tests
 """
 
-import pytest
-import pytest_asyncio
-from httpx import AsyncClient
-from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import NullPool
+import importlib
+import os
 from typing import AsyncGenerator
 
+# Ensure tests default to an isolated database (can override with TEST_DATABASE_URL).
+_test_db_url = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+os.environ["TEST_DATABASE_URL"] = _test_db_url
+os.environ["DATABASE_URL"] = _test_db_url
+
+# Reload database session module so engine picks up the test database URL.
+import app.db.session as _db_session_module
+
+importlib.reload(_db_session_module)
+
+import pytest
+import pytest_asyncio
+from fastapi import FastAPI
+from httpx import AsyncClient
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.pool import NullPool
+
 # Import your FastAPI app and database dependencies
+from app.core.config import settings
 from app.db.base import Base
 from main import app as fastapi_app
+
+
+# ---------------------------------------------------------------------------
+# Dialect fallbacks so PostgreSQL types compile on SQLite during local tests.
+# ---------------------------------------------------------------------------
+
+
+@compiles(UUID, "sqlite")
+def compile_uuid_sqlite(element, compiler, **kw):
+    return "CHAR(36)"
+
+
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(element, compiler, **kw):
+    return "TEXT"
 
 
 # ============================================================================
@@ -24,16 +55,12 @@ from main import app as fastapi_app
 @pytest.fixture(scope="session")
 def test_database_url() -> str:
     """
-    Test database URL - isolated from development database
+    Test database URL - isolated from development database.
 
-    Uses in-memory SQLite for fast tests. For PostgreSQL-specific features,
-    override this fixture in specific test files.
+    Set TEST_DATABASE_URL to point at a dedicated PostgreSQL test database.
+    Defaults to in-memory SQLite with PostgreSQL type fallbacks for local runs.
     """
-    # SQLite in-memory database (fast, isolated)
-    return "sqlite+aiosqlite:///:memory:"
-
-    # Alternative: PostgreSQL test database (use for pgvector tests)
-    # return "postgresql+asyncpg://postgres:postgres@localhost:5432/delight_test"
+    return os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 
 @pytest.fixture(scope="session")
@@ -75,12 +102,13 @@ async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
         async_engine,
         class_=AsyncSession,
         expire_on_commit=False,
+        autoflush=False,
+        autocommit=False,
     )
 
     async with async_session_maker() as session:
-        async with session.begin():
-            yield session
-            # Transaction automatically rolled back
+        yield session
+        await session.rollback()
 
     # Drop all tables after test
     async with async_engine.begin() as conn:

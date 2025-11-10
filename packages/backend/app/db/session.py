@@ -10,17 +10,30 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-# Create async engine with connection pooling
+is_sqlite = settings.async_database_url.startswith("sqlite")
+engine_kwargs = {
+    "echo": settings.ENVIRONMENT == "development",
+    "future": True,
+}
+
+if is_sqlite:
+    # In-memory SQLite (used in tests) cannot use pooled connections
+    engine_kwargs["poolclass"] = NullPool
+else:
+    engine_kwargs.update(
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+    )
+
+# Create async engine with environment-aware pooling
 engine = create_async_engine(
     settings.async_database_url,  # Use async driver (postgresql+asyncpg://)
-    echo=settings.ENVIRONMENT == "development",  # Log SQL in development
-    future=True,  # Use SQLAlchemy 2.0 style
-    pool_pre_ping=True,  # Test connections before use (important for Supabase)
-    pool_size=10,  # Number of persistent connections
-    max_overflow=20,  # Additional connections under load (30 max total)
+    **engine_kwargs,
 )
 
 # Create async session factory

@@ -524,6 +524,13 @@ so that **schema changes are tracked, can be applied consistently across environ
 
 - [x] Update sprint-status.yaml story status (handled by workflow)
 
+#### Review Follow-ups (AI)
+
+- [x] [AI-Review][High] Ensure Alembic env imports all ORM modules so `Base.metadata` is populated before migrations (`packages/backend/app/db/migrations/env.py`).
+- [x] [AI-Review][High] Consolidate the declarative `Base` so models/tests/migrations share `app.db.base.Base` (`packages/backend/app/models/base.py`, `packages/backend/app/models/user.py`).
+- [x] [AI-Review][Medium] Replace the mock database status in `/api/v1/health` with a real async connectivity probe (`packages/backend/app/api/v1/health.py`).
+- [x] [AI-Review][Medium] Update pytest DB fixtures/factories to persist actual ORM rows with PostgreSQL-compatible types (`packages/backend/tests/conftest.py`, `packages/backend/tests/fixtures/factories.py`).
+
 ## Dev Notes
 
 ### Architecture Patterns and Constraints
@@ -984,6 +991,80 @@ Claude Sonnet 4.5 (via Cursor)
 | ---------- | ------ | ------------------------------------------ |
 | 2025-11-10 | SM     | Story drafted with complete specifications |
 | 2025-11-10 | Dev (Claude Sonnet 4.5) | Story 1.2 implementation completed - database schema and migrations |
+| 2025-11-10 | Jack   | Senior Developer Review (AI) notes appended |
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Jack  
+**Date:** 2025-11-10  
+**Outcome:** Blocked — critical issues prevent AC1/AC4 sign-off.
+
+### Summary
+- Async SQLAlchemy, migrations, and CRUD smoke tests exist, but Alembic never imports the ORM modules and the models inherit from a different declarative base. As a result, metadata used by migrations/tests is empty, so autogenerate can’t see schema changes and DB tests create no tables.
+- Health monitoring still returns mock data, so AC6’s verification path isn’t enforced in the API surface.
+- Action items focus on unifying the Base, wiring Alembic to load models, implementing real DB health checks, and updating the pytest fixtures/factories to exercise PostgreSQL types.
+
+### Key Findings
+- **High:** Alembic environment (`packages/backend/app/db/migrations/env.py:18-37`) imports `Base` but no model modules, so `Base.metadata` is empty whenever migrations or `alembic revision --autogenerate` runs.
+- **High:** Duplicate declarative base definitions (`packages/backend/app/db/base.py:6-23` vs `packages/backend/app/models/base.py:6-8`) mean the ORM classes (`packages/backend/app/models/user.py:14-74`) are never registered with the Base used by tests and migrations.
+- **Medium:** `/api/v1/health` still returns mock “connected” statuses (`packages/backend/app/api/v1/health.py:47-68`) despite Story 1.2’s requirement to verify real database connectivity.
+- **Medium:** Pytest DB fixtures/factories (`packages/backend/tests/conftest.py:24-88`, `packages/backend/tests/fixtures/factories.py:17-61`) rely on in-memory SQLite and return dicts instead of ORM rows, so they neither validate the PostgreSQL schema nor exercise cascade rules.
+
+### Acceptance Criteria Coverage
+
+| AC | Description | Status | Evidence |
+| --- | --- | --- | --- |
+| AC1 | Alembic configured with async SQLAlchemy | Partial | packages/backend/app/db/migrations/env.py:18-37 |
+| AC2 | Core user tables exist | Implemented | packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:22-71 |
+| AC3 | pgvector enabled | Implemented | packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:22-25 |
+| AC4 | SQLAlchemy models implemented | Partial | packages/backend/app/models/user.py:14-74; packages/backend/app/models/base.py:6-8 |
+| AC5 | Migrations reversible | Implemented | packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:74-79 |
+| AC6 | DB connection & query testing | Implemented | packages/backend/scripts/test_db_connection.py:16-99; packages/backend/main.py:15-33 |
+
+Summary: 4 of 6 ACs fully implemented; AC1 and AC4 remain incomplete due to metadata/registration gaps.
+
+### Task Completion Validation
+
+| Task | Marked As | Verified As | Evidence |
+| --- | --- | --- | --- |
+| Configure Alembic for async SQLAlchemy | Complete | Partial — missing model imports | packages/backend/app/db/migrations/env.py:18-37 |
+| Create initial database migration | Complete | Verified | packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:22-79 |
+| Implement SQLAlchemy models | Complete | Partial — duplicate Base prevents registration | packages/backend/app/models/user.py:14-74; packages/backend/app/models/base.py:6-8 |
+| Configure database connection module | Complete | Verified | packages/backend/app/db/session.py:16-54 |
+| Apply migrations & verify schema | Complete | Verified | packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py:22-79 |
+| Create database testing utilities | Complete | Verified | packages/backend/scripts/test_db_connection.py:16-99 |
+| Update backend main app | Complete | Verified | packages/backend/main.py:15-33 |
+| Documentation & testing | Complete | Not fully reviewed in code artifacts | — |
+
+Summary: 5 tasks verified, 2 partial, 1 not assessed (docs/tests outside repo scope).
+
+### Test Coverage and Gaps
+- Manual async CRUD script exercises create/query/cascade flows (`packages/backend/scripts/test_db_connection.py:16-99`), and the FastAPI lifespan handler ensures startup DB connectivity.
+- Pytest “integration” tests currently use SQLite with empty metadata, so they neither validate PostgreSQL types nor persist ORM rows once the Base issue is resolved.
+- No automated checks enforce Alembic autogenerate output or the `/api/v1/health` DB probe.
+
+### Architectural Alignment
+- Overall stack matches the Epic 1 spec (FastAPI + async SQLAlchemy + Supabase/pgvector per docs/tech-spec-epic-1.md), but the duplicate Base contradicts the “single declarative base” guidance and prevents the migrations pipeline from functioning as intended.
+
+### Security Notes
+- No secrets were committed, but the mock health endpoint means DB outages would go unreported to operators.
+
+### Best-Practices and References
+1. docs/tech-spec-epic-1.md — Database & ORM requirements (lines 94-222)
+2. docs/stories/1-2-set-up-database-schema-and-migrations.md — Alembic async configuration notes (lines 178-240)
+3. docs/architecture.md — ADR-010 Supabase/pgvector rationale (lines 32000-36000)
+
+### Action Items
+
+**Code Changes Required**
+- [ ] [High] Import all ORM modules inside `app/db/migrations/env.py` so Alembic metadata includes `User`/`UserPreferences` before running revisions (`packages/backend/app/db/migrations/env.py:18`).
+- [ ] [High] Consolidate on a single declarative Base (e.g., `app/db/base.py`) and update every model/test/migration helper to import from it (`packages/backend/app/models/base.py:6`, `packages/backend/app/models/user.py:11`).
+- [ ] [Medium] Update `/api/v1/health` to run a real async DB connectivity check instead of returning mock constants (`packages/backend/app/api/v1/health.py:47-68`).
+- [ ] [Medium] Switch pytest DB fixtures/factories to a PostgreSQL-compatible backend and persist actual ORM rows so schema/test coverage matches production (`packages/backend/tests/conftest.py:24-88`, `packages/backend/tests/fixtures/factories.py:17-61`).
+
+**Advisory Notes**
+- Note: Once the Base consolidation lands, re-run `alembic revision --autogenerate` to confirm future schema diffs are detected.
+
 
 ---
 

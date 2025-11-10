@@ -751,6 +751,13 @@ mypy = "^1.8.0"
 - [ ] Update user preferences via API
 - [ ] Verify preferences persisted in database
 
+## Post-Review Follow-ups
+
+- **Story 1.2 (High)** – Alembic environment must import all ORM modules so metadata is populated before generating migrations (`packages/backend/app/db/migrations/env.py`). _Status: Resolved 2025-11-10_
+- **Story 1.2 (High)** – Consolidate declarative Base usage so models/tests/migrations rely on `app.db.base.Base` and stay in sync (`packages/backend/app/models/base.py`). _Status: Resolved 2025-11-10_
+- **Story 1.2 (Medium)** – Update `/api/v1/health` to report real database connectivity instead of mock statuses (`packages/backend/app/api/v1/health.py`). _Status: Resolved 2025-11-10_
+- **Story 1.2 (Medium)** – Improve pytest DB fixtures/factories to create real ORM rows with PostgreSQL-compatible types (`packages/backend/tests/conftest.py`). _Status: Resolved 2025-11-10_
+
 ---
 
 **Epic 1 Technical Specification Complete**
