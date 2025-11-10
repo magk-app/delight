@@ -1,22 +1,22 @@
 /**
  * Quest Factory
- * 
+ *
  * Creates test quests and missions via API.
  * Supports different quest types (short-term, long-term, project).
  * Auto-cleanup on test completion.
- * 
+ *
  * Knowledge Base: bmad/bmm/testarch/knowledge/data-factories.md
  */
 
-import { faker } from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
 
 export interface Quest {
   id: string;
   userId: string;
   title: string;
   description: string;
-  type: 'short_term' | 'long_term' | 'project';
-  status: 'active' | 'completed' | 'abandoned';
+  type: "short_term" | "long_term" | "project";
+  status: "active" | "completed" | "abandoned";
   missions?: Mission[];
 }
 
@@ -25,7 +25,7 @@ export interface Mission {
   questId: string;
   title: string;
   description: string;
-  status: 'todo' | 'in_progress' | 'completed';
+  status: "todo" | "in_progress" | "completed";
   order: number;
 }
 
@@ -48,14 +48,14 @@ export class QuestFactory {
       userId,
       title: faker.lorem.sentence(3),
       description: faker.lorem.paragraph(),
-      type: 'short_term' as const,
-      status: 'active' as const,
+      type: "short_term" as const,
+      status: "active" as const,
       ...overrides,
     };
 
     const response = await fetch(`${this.apiBaseUrl}/quests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(questData),
     });
 
@@ -65,7 +65,7 @@ export class QuestFactory {
 
     const created = await response.json();
     this.createdQuests.push(created.id);
-    
+
     return created;
   }
 
@@ -100,14 +100,14 @@ export class QuestFactory {
       questId,
       title: faker.lorem.sentence(2),
       description: faker.lorem.sentence(),
-      status: 'todo' as const,
+      status: "todo" as const,
       order: 0,
       ...overrides,
     };
 
     const response = await fetch(`${this.apiBaseUrl}/missions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(missionData),
     });
 
@@ -125,7 +125,7 @@ export class QuestFactory {
     for (const questId of this.createdQuests) {
       try {
         await fetch(`${this.apiBaseUrl}/quests/${questId}`, {
-          method: 'DELETE',
+          method: "DELETE",
         });
       } catch (error) {
         console.warn(`Failed to cleanup quest ${questId}:`, error);
@@ -134,4 +134,3 @@ export class QuestFactory {
     this.createdQuests = [];
   }
 }
-

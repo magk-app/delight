@@ -30,16 +30,19 @@ cp tests/.env.example tests/.env
 Edit `tests/.env` and configure:
 
 1. **Clerk Authentication**
+
    - `CLERK_TEST_USER_EMAIL`: Test user email (create in Clerk Dashboard)
    - `CLERK_TEST_USER_PASSWORD`: Test user password
    - `CLERK_PUBLISHABLE_KEY`: From Clerk Dashboard > API Keys
    - `CLERK_SECRET_KEY`: From Clerk Dashboard > API Keys
 
 2. **API Endpoints**
+
    - `BASE_URL`: Frontend URL (default: `http://localhost:3000`)
    - `API_URL`: Backend API URL (default: `http://localhost:8000/api/v1`)
 
 3. **Database** (optional, for advanced testing)
+
    - `DATABASE_URL`: PostgreSQL connection string for test data seeding
 
 4. **AI Services** (optional)
@@ -86,10 +89,12 @@ pnpm exec playwright show-trace test-results/.../trace.zip
 ### CI/CD
 
 Tests run automatically on:
+
 - Pull requests
 - Commits to `main` branch
 
 CI configuration uses:
+
 - 2 retries for flaky test mitigation
 - Single worker (sequential execution)
 - Video/trace capture on failure only
@@ -124,21 +129,22 @@ tests/
 Tests use **custom fixtures** for data setup with auto-cleanup:
 
 ```typescript
-import { test, expect } from '../support/fixtures';
+import { test, expect } from "../support/fixtures";
 
-test('my test', async ({ page, userFactory, questFactory }) => {
+test("my test", async ({ page, userFactory, questFactory }) => {
   // Create test data
   const user = await userFactory.createUser();
   const quest = await questFactory.createQuest(user.id);
 
   // Run test
   await page.goto(`/quests/${quest.id}`);
-  
+
   // Fixtures automatically clean up after test
 });
 ```
 
 **Benefits:**
+
 - No manual cleanup needed
 - Test isolation guaranteed
 - Consistent data generation (faker)
@@ -149,13 +155,16 @@ test('my test', async ({ page, userFactory, questFactory }) => {
 **Always wait for network responses** instead of arbitrary timeouts:
 
 ```typescript
-import { waitForApiResponse, waitForStreamComplete } from '../support/helpers/wait';
+import {
+  waitForApiResponse,
+  waitForStreamComplete,
+} from "../support/helpers/wait";
 
 // ❌ BAD: Arbitrary sleep
 await page.waitForTimeout(5000);
 
 // ✅ GOOD: Wait for API response
-await waitForApiResponse(page, '/api/v1/quests');
+await waitForApiResponse(page, "/api/v1/quests");
 
 // ✅ GOOD: Wait for SSE stream (AI responses)
 await waitForStreamComplete(page, '[data-testid="companion-message"]');
@@ -180,7 +189,7 @@ Use `data-testid` attributes for stable selectors:
 await page.click('[data-testid="send-button"]');
 
 // ❌ BAD: Brittle CSS selector
-await page.click('.btn.btn-primary.send');
+await page.click(".btn.btn-primary.send");
 
 // ❌ BAD: XPath (hard to maintain)
 await page.click('//button[@class="send"]');
@@ -191,16 +200,19 @@ await page.click('//button[@class="send"]');
 ### Test Design
 
 1. **Test Isolation**: Each test should be independent
+
    - Use fixtures for data setup
    - Rely on auto-cleanup
    - Don't depend on test execution order
 
 2. **Deterministic Waits**: Never use `waitForTimeout`
+
    - Wait for network responses
    - Wait for specific elements
    - Use `waitForLoadState` when appropriate
 
 3. **Explicit Assertions**: Always assert expected outcomes
+
    - Don't just check for "no errors"
    - Verify data, UI state, navigation
 
@@ -221,14 +233,17 @@ await page.click('//button[@class="send"]');
 When tests fail:
 
 1. **View Trace**: `pnpm exec playwright show-trace test-results/.../trace.zip`
+
    - See screenshots, network calls, console logs
    - Step through test execution
 
 2. **Run in UI Mode**: `pnpm exec playwright test --ui`
+
    - Watch tests run live
    - Time-travel debugging
 
 3. **Run Headed**: `pnpm exec playwright test --headed`
+
    - See browser during test execution
 
 4. **Debug Mode**: `pnpm exec playwright test --debug`
@@ -238,23 +253,27 @@ When tests fail:
 ### Common Pitfalls
 
 ❌ **Don't**: Use arbitrary timeouts
+
 ```typescript
 await page.waitForTimeout(5000);
 ```
 
 ✅ **Do**: Wait for network or specific conditions
+
 ```typescript
-await waitForApiResponse(page, '/api/v1/quests');
+await waitForApiResponse(page, "/api/v1/quests");
 ```
 
 ---
 
 ❌ **Don't**: Use brittle selectors
+
 ```typescript
-await page.click('.btn.primary');
+await page.click(".btn.primary");
 ```
 
 ✅ **Do**: Use data-testid attributes
+
 ```typescript
 await page.click('[data-testid="submit-button"]');
 ```
@@ -262,11 +281,13 @@ await page.click('[data-testid="submit-button"]');
 ---
 
 ❌ **Don't**: Create test data manually
+
 ```typescript
 await fetch('/api/v1/users', { method: 'POST', ... });
 ```
 
 ✅ **Do**: Use factories with auto-cleanup
+
 ```typescript
 const user = await userFactory.createUser();
 ```
@@ -274,13 +295,15 @@ const user = await userFactory.createUser();
 ---
 
 ❌ **Don't**: Skip cleanup
+
 ```typescript
 // Test creates data, never cleans up
 ```
 
 ✅ **Do**: Use fixtures for automatic cleanup
+
 ```typescript
-test('...', async ({ questFactory }) => {
+test("...", async ({ questFactory }) => {
   // Creates quest, automatically cleaned up
   const quest = await questFactory.createQuest(userId);
 });
@@ -291,15 +314,18 @@ test('...', async ({ questFactory }) => {
 This framework implements patterns from the BMAD Test Architect knowledge base:
 
 - **Fixture Architecture** (`bmad/bmm/testarch/knowledge/fixture-architecture.md`)
+
   - Pure function → fixture → mergeTests composition
   - Auto-cleanup pattern
 
 - **Data Factories** (`bmad/bmm/testarch/knowledge/data-factories.md`)
+
   - Faker-based generation
   - Override support
   - Nested factories
 
 - **Network-First** (`bmad/bmm/testarch/knowledge/network-first.md`)
+
   - Intercept before navigate
   - HAR capture
   - Deterministic waiting
@@ -327,4 +353,3 @@ This framework implements patterns from the BMAD Test Architect knowledge base:
 
 **Framework Version**: 4.0 (BMAD v6)  
 **Last Updated**: 2025-11-10
-

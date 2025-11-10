@@ -1,25 +1,25 @@
 /**
  * Authentication Setup
- * 
+ *
  * Runs before all tests to authenticate once and save state.
  * Other tests reuse this auth state for faster execution.
- * 
+ *
  * Setup project dependency in playwright.config.ts
  */
 
-import { test as setup, expect } from '@playwright/test';
-import { login } from '../support/helpers/auth';
-import path from 'path';
-import fs from 'fs';
+import { test as setup, expect } from "@playwright/test";
+import { login } from "../support/helpers/auth";
+import path from "path";
+import fs from "fs";
 
-const authFile = 'tests/support/.auth/user.json';
+const authFile = "tests/support/.auth/user.json";
 
-setup('authenticate', async ({ page }) => {
-  const email = process.env.CLERK_TEST_USER_EMAIL || 'test@example.com';
+setup("authenticate", async ({ page }) => {
+  const email = process.env.CLERK_TEST_USER_EMAIL || "test@example.com";
   const password = process.env.CLERK_TEST_USER_PASSWORD;
 
   if (!password) {
-    console.warn('⚠️  CLERK_TEST_USER_PASSWORD not set - skipping auth setup');
+    console.warn("⚠️  CLERK_TEST_USER_PASSWORD not set - skipping auth setup");
     return;
   }
 
@@ -38,6 +38,5 @@ setup('authenticate', async ({ page }) => {
   // Save authenticated state
   await page.context().storageState({ path: authFile });
 
-  console.log('✅ Authentication setup complete');
+  console.log("✅ Authentication setup complete");
 });
-

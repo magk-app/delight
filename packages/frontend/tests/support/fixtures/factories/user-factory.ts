@@ -1,17 +1,17 @@
 /**
  * User Factory
- * 
+ *
  * Creates test users via API with faker-generated data.
  * Supports overrides for specific test scenarios.
  * Auto-cleanup on test completion.
- * 
+ *
  * Knowledge Base: bmad/bmm/testarch/knowledge/data-factories.md
- * 
+ *
  * Usage:
  *   const user = await userFactory.createUser({ email: 'specific@example.com' });
  */
 
-import { faker } from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
 
 export interface User {
   id: string;
@@ -41,13 +41,13 @@ export class UserFactory {
 
     // Create user via API
     const response = await fetch(`${this.apiBaseUrl}/users`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
         // Add auth header if needed
         ...(process.env.CLERK_SECRET_KEY && {
-          'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`
-        })
+          Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        }),
       },
       body: JSON.stringify(userData),
     });
@@ -58,7 +58,7 @@ export class UserFactory {
 
     const created = await response.json();
     this.createdUsers.push(created.id);
-    
+
     return created;
   }
 
@@ -71,8 +71,8 @@ export class UserFactory {
 
     // Initialize companion for user
     await fetch(`${this.apiBaseUrl}/users/${user.id}/companion/initialize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
     });
 
     return user;
@@ -86,11 +86,11 @@ export class UserFactory {
     for (const userId of this.createdUsers) {
       try {
         await fetch(`${this.apiBaseUrl}/users/${userId}`, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
             ...(process.env.CLERK_SECRET_KEY && {
-              'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`
-            })
+              Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+            }),
           },
         });
       } catch (error) {
@@ -100,4 +100,3 @@ export class UserFactory {
     this.createdUsers = [];
   }
 }
-
