@@ -53,7 +53,7 @@ development_status:
   # Epic 1: User Onboarding & Foundation
   epic-1: contexted
   1-1-initialize-monorepo-structure-and-core-dependencies: done # ✅ All tests passing, all issues resolved
-  1-2-set-up-database-schema-and-migrations: backlog
+  1-2-set-up-database-schema-and-migrations: drafted
   1-3-integrate-clerk-authentication-system: backlog # UPDATED: Changed from JWT to Clerk
   1-4-create-user-onboarding-flow-mvp: deferred # MOVED: Will be completed after Epic 2
   1-5-set-up-deployment-pipeline-and-environment-configuration: backlog
