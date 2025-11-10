@@ -3,9 +3,13 @@ Health Check Endpoint
 Monitors system health including database and Redis connectivity.
 """
 
-from fastapi import APIRouter, status
 from datetime import datetime
 from typing import Literal
+
+from fastapi import APIRouter, status
+from sqlalchemy import text
+
+from app.db.session import AsyncSessionLocal
 
 router = APIRouter()
 
@@ -48,12 +52,16 @@ async def health_check():
         Story 1.2 will add actual database connectivity checks.
         Story 2.1 will add Redis connectivity checks.
     """
-    # TODO: Add actual database connectivity check in Story 1.2
-    # TODO: Add actual Redis connectivity check in Story 2.1
+    # Database connectivity check
+    database_status: Literal["connected", "disconnected"]
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        database_status = "connected"
+    except Exception:
+        database_status = "disconnected"
 
-    # For now, return mock "connected" status since infrastructure isn't fully set up
-    # This allows the health endpoint to work immediately for testing
-    database_status: Literal["connected", "disconnected"] = "connected"
+    # TODO: Add actual Redis connectivity check in Story 2.1
     redis_status: Literal["connected", "disconnected"] = "connected"
 
     # Determine overall system status based on components

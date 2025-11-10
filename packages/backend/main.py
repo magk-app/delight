@@ -3,9 +3,35 @@ Delight Backend API
 FastAPI application with health check endpoint and Swagger UI documentation.
 """
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.v1 import health
+from app.db.session import engine
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan handler for startup and shutdown.
+
+    Startup: Test database connection
+    Shutdown: Clean up database connections
+    """
+    # Startup: Test database connection
+    async with engine.begin() as conn:
+        # Connection test - if this succeeds, database is accessible
+        pass
+    print("✅ Database connection established")
+
+    yield
+
+    # Shutdown: Clean up database connections
+    await engine.dispose()
+    print("✅ Database connections closed")
+
 
 app = FastAPI(
     title="Delight API",
@@ -15,6 +41,7 @@ app = FastAPI(
     docs_url="/docs",  # Swagger UI endpoint
     redoc_url="/redoc",  # ReDoc alternative documentation
     openapi_url="/openapi.json",  # OpenAPI JSON schema
+    lifespan=lifespan,  # Add lifespan handler
 )
 
 # CORS configuration for frontend communication

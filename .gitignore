@@ -110,6 +110,14 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.pgdump
+# Don't ignore schema.sql or seed files we intentionally create
+!*schema*.sql
+!*seed*.sql
 
 
 .claude/
