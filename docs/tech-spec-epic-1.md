@@ -59,15 +59,15 @@ This epic implements the foundational layer of the architecture defined in `arch
 
 ### Services and Modules
 
-| Service/Module | Responsibility | Inputs | Outputs | Owner/Location |
-|----------------|---------------|--------|---------|----------------|
-| **Frontend (Next.js)** | User interface, client-side routing, SSR/RSC | User actions, API responses | Rendered UI, API requests | `packages/frontend/` |
-| **Backend API Gateway (FastAPI)** | REST API endpoints, request validation, response serialization | HTTP requests | JSON responses, SSE streams | `packages/backend/app/main.py` |
-| **Database Service** | Data persistence, schema management, migrations | SQL queries via SQLAlchemy | Query results | PostgreSQL container |
-| **Auth Service (Clerk)** | User authentication, session management, OAuth | Login attempts, tokens | Session tokens, webhooks | External (Clerk) |
-| **Auth Middleware** | Session validation, user context injection | Clerk session tokens | Validated user object | `packages/backend/app/auth/` |
-| **Migration System (Alembic)** | Schema versioning, migration application | Migration scripts | Database schema changes | `packages/backend/app/db/migrations/` |
-| **Health Check Service** | System status monitoring | Internal checks | Health status JSON | `packages/backend/app/health/` |
+| Service/Module                    | Responsibility                                                 | Inputs                      | Outputs                     | Owner/Location                        |
+| --------------------------------- | -------------------------------------------------------------- | --------------------------- | --------------------------- | ------------------------------------- |
+| **Frontend (Next.js)**            | User interface, client-side routing, SSR/RSC                   | User actions, API responses | Rendered UI, API requests   | `packages/frontend/`                  |
+| **Backend API Gateway (FastAPI)** | REST API endpoints, request validation, response serialization | HTTP requests               | JSON responses, SSE streams | `packages/backend/app/main.py`        |
+| **Database Service**              | Data persistence, schema management, migrations                | SQL queries via SQLAlchemy  | Query results               | PostgreSQL container                  |
+| **Auth Service (Clerk)**          | User authentication, session management, OAuth                 | Login attempts, tokens      | Session tokens, webhooks    | External (Clerk)                      |
+| **Auth Middleware**               | Session validation, user context injection                     | Clerk session tokens        | Validated user object       | `packages/backend/app/auth/`          |
+| **Migration System (Alembic)**    | Schema versioning, migration application                       | Migration scripts           | Database schema changes     | `packages/backend/app/db/migrations/` |
+| **Health Check Service**          | System status monitoring                                       | Internal checks             | Health status JSON          | `packages/backend/app/health/`        |
 
 ### Data Models and Contracts
 
@@ -112,19 +112,19 @@ import uuid
 
 class User(Base):
     __tablename__ = 'users'
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     clerk_user_id = Column(String(255), unique=True, nullable=False, index=True)
     email = Column(String(255), nullable=False)
     timezone = Column(String(50), default='UTC')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     preferences = relationship("UserPreferences", back_populates="user", uselist=False)
 
 class UserPreferences(Base):
     __tablename__ = 'user_preferences'
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), unique=True)
     custom_hours = Column(JSONB)
@@ -133,7 +133,7 @@ class UserPreferences(Base):
     onboarding_completed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     user = relationship("User", back_populates="preferences")
 ```
 
@@ -158,7 +158,7 @@ export interface UserPreferences {
     end: string;
     timezone: string;
   };
-  theme: 'modern' | 'medieval' | 'sci-fi';
+  theme: "modern" | "medieval" | "sci-fi";
   communication_preferences?: {
     email: boolean;
     sms: boolean;
@@ -230,19 +230,19 @@ async def get_current_user(
         session = clerk.sessions.verify_session(
             credentials.credentials
         )
-        
+
         # Fetch user from local database
         result = await db.execute(
             select(User).where(User.clerk_user_id == session.user_id)
         )
         user = result.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found in database"
             )
-        
+
         return user
     except Exception as e:
         raise HTTPException(
@@ -318,29 +318,32 @@ async def get_current_user(
 
 ### Performance
 
-| Metric | Target | Rationale |
-|--------|--------|-----------|
-| **API Response Time (p95)** | < 500ms | Maintain responsive UX for all CRUD operations |
-| **Database Query Time (p95)** | < 100ms | Ensure efficient database interactions |
-| **Page Load Time (First Contentful Paint)** | < 1.5s | Modern web performance standard |
-| **Server Cold Start** | < 5s | Acceptable for serverless/container environments |
-| **Migration Execution** | < 30s per migration | Minimize deployment downtime |
+| Metric                                      | Target              | Rationale                                        |
+| ------------------------------------------- | ------------------- | ------------------------------------------------ |
+| **API Response Time (p95)**                 | < 500ms             | Maintain responsive UX for all CRUD operations   |
+| **Database Query Time (p95)**               | < 100ms             | Ensure efficient database interactions           |
+| **Page Load Time (First Contentful Paint)** | < 1.5s              | Modern web performance standard                  |
+| **Server Cold Start**                       | < 5s                | Acceptable for serverless/container environments |
+| **Migration Execution**                     | < 30s per migration | Minimize deployment downtime                     |
 
 ### Security
 
 1. **Authentication & Authorization**
+
    - All authentication handled by Clerk (OAuth 2.0, OIDC compliant)
    - Session tokens verified on every protected API request
    - No passwords stored in Delight database (Clerk handles)
    - Clerk provides: breach detection, 2FA, session management
 
 2. **Data Protection**
+
    - Environment variables for all secrets (DATABASE_URL, CLERK_SECRET_KEY, etc.)
    - `.env` files excluded from git via `.gitignore`
    - Production secrets stored in deployment platform secret manager
    - Database connections use TLS in production
 
 3. **API Security**
+
    - CORS configured to allow only known origins (frontend domain)
    - Clerk webhook signatures verified to prevent spoofing
    - Input validation via Pydantic models on all endpoints
@@ -354,18 +357,21 @@ async def get_current_user(
 ### Reliability/Availability
 
 1. **Database Reliability**
+
    - PostgreSQL connection pooling (SQLAlchemy async engine)
    - Graceful degradation: show cached data if database unavailable
    - Automated backups (daily) via hosting provider
    - Point-in-time recovery capability
 
 2. **Service Availability**
+
    - Health check endpoint monitored by deployment platform
    - Automatic container restart on crash
    - Zero-downtime deployments via rolling updates
    - Target uptime: 99.5% (MVP), 99.9% (post-MVP)
 
 3. **Error Handling**
+
    - All API errors return structured JSON with error codes
    - Frontend displays user-friendly error messages
    - Sentry captures exceptions with context (user ID, request details)
@@ -378,17 +384,20 @@ async def get_current_user(
 ### Observability
 
 1. **Logging**
+
    - Structured JSON logs (timestamp, level, message, context)
    - Log levels: DEBUG (dev), INFO (staging), WARNING/ERROR (production)
    - Logs include request_id for tracing across services
    - Sensitive data (emails, tokens) masked in logs
 
 2. **Metrics**
+
    - Health check endpoint exposes: database status, Redis status, uptime
    - Application metrics: request count, response time, error rate
    - Infrastructure metrics: CPU, memory, disk usage (platform-provided)
 
 3. **Error Tracking**
+
    - Sentry integration captures all unhandled exceptions
    - Frontend errors include: stack trace, user context, browser info
    - Backend errors include: stack trace, request details, database state
@@ -481,6 +490,7 @@ mypy = "^1.8.0"
 ### External Service Integrations
 
 1. **Clerk Authentication**
+
    - Integration: Clerk JavaScript SDK (frontend), Clerk Backend SDK (backend)
    - Configuration: Clerk Publishable Key (public), Clerk Secret Key (backend only)
    - Webhook endpoint: `POST /api/v1/webhooks/clerk` with signature verification
@@ -494,6 +504,7 @@ mypy = "^1.8.0"
 ## Acceptance Criteria (Authoritative)
 
 ### AC1: Monorepo Structure Initialized
+
 - **Given** a new development environment
 - **When** repository is cloned and setup commands executed
 - **Then**:
@@ -504,6 +515,7 @@ mypy = "^1.8.0"
   - All services start successfully: `pnpm dev` (frontend), `poetry run uvicorn main:app --reload` (backend)
 
 ### AC2: Database Schema and Migrations Working
+
 - **Given** PostgreSQL is running via Docker Compose
 - **When** Alembic migrations are applied (`alembic upgrade head`)
 - **Then**:
@@ -514,6 +526,7 @@ mypy = "^1.8.0"
   - `alembic downgrade -1` successfully rolls back last migration
 
 ### AC3: Clerk Authentication Integrated
+
 - **Given** Clerk project configured with OAuth providers
 - **When** user registers or logs in via frontend
 - **Then**:
@@ -526,6 +539,7 @@ mypy = "^1.8.0"
   - Backend validates token and returns user object via `get_current_user` dependency
 
 ### AC4: User Preferences CRUD Working
+
 - **Given** authenticated user session
 - **When** user updates preferences via `PATCH /api/v1/users/preferences`
 - **Then**:
@@ -535,6 +549,7 @@ mypy = "^1.8.0"
   - `GET /api/v1/users/me` returns user with preferences
 
 ### AC5: Deployment Pipeline Configured
+
 - **Given** code pushed to main branch
 - **When** CI/CD pipeline executes
 - **Then**:
@@ -548,6 +563,7 @@ mypy = "^1.8.0"
   - Deployment to staging environment succeeds
 
 ### AC6: Development Environment Reproducible
+
 - **Given** new developer clones repository
 - **When** following setup instructions in README
 - **Then**:
@@ -561,32 +577,36 @@ mypy = "^1.8.0"
 
 ## Traceability Mapping
 
-| AC | Spec Section | Components/APIs | Test Idea |
-|----|--------------|-----------------|-----------|
-| AC1 | Services and Modules, Dependencies | Monorepo structure, package.json, pyproject.toml, docker-compose.yml | Test: Run `pnpm dev` and `poetry run uvicorn`, verify both servers respond |
-| AC2 | Data Models, Workflows (Migration) | Alembic, PostgreSQL schema, SQLAlchemy models | Test: Run migrations up and down, query tables, verify pgvector extension |
-| AC3 | APIs (Auth), Workflows (Registration) | Clerk webhooks, `POST /api/v1/webhooks/clerk`, get_current_user dependency | Test: Mock Clerk webhook, verify user created; test token validation |
-| AC4 | APIs (User Preferences), Data Models | `GET /api/v1/users/me`, `PATCH /api/v1/users/preferences`, UserPreferences model | Test: Authenticated PATCH request, verify database update, GET to confirm |
-| AC5 | NFR (Reliability), APIs (Health Check) | CI/CD pipeline, health check endpoint, Docker builds | Test: Health check returns 200; verify database and Redis connections |
-| AC6 | NFR (Reliability), Dependencies | Docker Compose, environment configuration, README | Test: Fresh checkout, run setup script, verify all services start |
+| AC  | Spec Section                           | Components/APIs                                                                  | Test Idea                                                                  |
+| --- | -------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| AC1 | Services and Modules, Dependencies     | Monorepo structure, package.json, pyproject.toml, docker-compose.yml             | Test: Run `pnpm dev` and `poetry run uvicorn`, verify both servers respond |
+| AC2 | Data Models, Workflows (Migration)     | Alembic, PostgreSQL schema, SQLAlchemy models                                    | Test: Run migrations up and down, query tables, verify pgvector extension  |
+| AC3 | APIs (Auth), Workflows (Registration)  | Clerk webhooks, `POST /api/v1/webhooks/clerk`, get_current_user dependency       | Test: Mock Clerk webhook, verify user created; test token validation       |
+| AC4 | APIs (User Preferences), Data Models   | `GET /api/v1/users/me`, `PATCH /api/v1/users/preferences`, UserPreferences model | Test: Authenticated PATCH request, verify database update, GET to confirm  |
+| AC5 | NFR (Reliability), APIs (Health Check) | CI/CD pipeline, health check endpoint, Docker builds                             | Test: Health check returns 200; verify database and Redis connections      |
+| AC6 | NFR (Reliability), Dependencies        | Docker Compose, environment configuration, README                                | Test: Fresh checkout, run setup script, verify all services start          |
 
 ## Risks, Assumptions, Open Questions
 
 ### Risks
 
 1. **Risk**: Clerk dependency creates vendor lock-in
+
    - **Mitigation**: Clerk provides standard OAuth/OIDC, migration path exists to self-hosted auth
    - **Impact**: Medium (migration effort if needed)
 
 2. **Risk**: pgvector installation may fail on some PostgreSQL versions
+
    - **Mitigation**: Use PostgreSQL 16+ which has better pgvector support; Docker image ensures consistency
    - **Impact**: Low (controlled via Docker)
 
 3. **Risk**: Next.js 15 App Router is relatively new, may have bugs
+
    - **Mitigation**: Monitor Next.js issues, have fallback to Pages Router if critical issues arise
    - **Impact**: Low (mature framework, active community)
 
 4. **Risk**: Poetry dependency resolution can be slow on first install
+
    - **Mitigation**: Use `poetry install --no-root` in CI, cache dependencies
    - **Impact**: Low (one-time cost per developer)
 
@@ -597,15 +617,19 @@ mypy = "^1.8.0"
 ### Assumptions
 
 1. **Assumption**: Developers have Docker installed and configured
+
    - **Validation**: Document Docker as prerequisite in README
 
 2. **Assumption**: Clerk free tier (10,000 MAU) sufficient for MVP
+
    - **Validation**: Monitor usage, plan for paid tier if growth exceeds
 
 3. **Assumption**: Single-region deployment acceptable for MVP (no multi-region)
+
    - **Validation**: Confirmed by cost constraints, can expand post-MVP
 
 4. **Assumption**: PostgreSQL on managed hosting (Railway/Render) sufficient for performance
+
    - **Validation**: Load testing after MVP to confirm
 
 5. **Assumption**: Developers comfortable with TypeScript, Python, async/await patterns
@@ -614,14 +638,17 @@ mypy = "^1.8.0"
 ### Open Questions
 
 1. **Question**: Should we use Railway, Render, or Fly.io for MVP hosting?
+
    - **Decision Needed**: Compare pricing, PostgreSQL support, deployment ease
    - **Timeline**: Before Story 1.5 (deployment pipeline)
 
 2. **Question**: What's the backup strategy for PostgreSQL data?
+
    - **Decision Needed**: Daily automated backups vs continuous replication
    - **Timeline**: During Story 1.5 setup
 
 3. **Question**: Should frontend and backend share a single repository or separate repos?
+
    - **Decision**: Single monorepo (current approach) - confirmed
    - **Rationale**: Easier for solo dev, shared types, atomic commits
 
@@ -634,11 +661,13 @@ mypy = "^1.8.0"
 ### Test Levels
 
 1. **Unit Tests**
+
    - **Frontend**: React component tests (Jest + React Testing Library)
    - **Backend**: FastAPI route tests (pytest + httpx)
    - **Target Coverage**: 70%+ for core logic (models, utilities)
 
 2. **Integration Tests**
+
    - Database integration: Test SQLAlchemy models with real PostgreSQL (test database)
    - API integration: Test end-to-end request flows with test client
    - Clerk webhook integration: Mock webhook payloads, verify user creation
@@ -658,18 +687,22 @@ mypy = "^1.8.0"
 ### Critical Test Scenarios
 
 1. **User Registration Flow**
+
    - Test: User signs up via Clerk → webhook creates user in DB
    - Expected: User record exists with clerk_user_id
 
 2. **Authentication Dependency**
+
    - Test: Valid token passes `get_current_user`, invalid token returns 401
    - Expected: Dependency correctly validates and rejects tokens
 
 3. **Migration Reversibility**
+
    - Test: Apply migration → downgrade → re-apply
    - Expected: Database schema matches, no orphaned data
 
 4. **Health Check Accuracy**
+
    - Test: Database down → health check returns "unhealthy"
    - Expected: Endpoint accurately reflects service status
 
@@ -706,4 +739,3 @@ mypy = "^1.8.0"
 This specification provides the technical blueprint for implementing the foundation of Delight. All subsequent epics depend on this infrastructure being solid and well-tested.
 
 **Next Step**: Use the `create-story` workflow to draft Story 1.1 (Initialize Monorepo Structure).
-
