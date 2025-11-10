@@ -1,2 +1,1 @@
 """Database setup and migrations"""
-
