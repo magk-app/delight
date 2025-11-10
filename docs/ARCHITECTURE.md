@@ -9,15 +9,15 @@
 
 ## Executive Summary
 
-Delight is a self-improvement companion platform that blends emotionally-aware AI coaching with narrative world-building. The architecture is designed to support a **living narrative engine** where real-world goal achievement drives personalized story progression, multi-character AI interactions, and adaptive quest systems. The system prioritizes **experimental flexibility** while maintaining a path to **cost-optimized production** (<$0.10/user/day target).
+Delight is a self-improvement companion platform that blends emotionally-aware AI coaching with narrative world-building. The architecture is designed to support a **living narrative engine** where real-world goal achievement drives personalized story progression, multi-character AI interactions, and adaptive quest systems. The system prioritizes **premium AI experience** with a target operational cost of **$0.50/user/day** (pricing: $1/day subscription + pay-as-you-go for premium features).
 
 **Key Architectural Approach:**
 
 - **Frontend:** Next.js 15 + React 19 for modern, performant UI with streaming support
 - **Backend:** FastAPI for async-first API layer optimized for AI orchestration
 - **AI Layer:** LangGraph + LangChain for stateful multi-agent character system
-- **Memory:** Chroma (embedded) for vector storage, PostgreSQL for structured data
-- **Real-Time:** Hybrid SSE + HTTP for AI streaming and user actions
+- **Memory:** PostgreSQL with pgvector extension for unified vector + structured storage
+- **Real-Time:** Hybrid SSE + HTTP for AI streaming and user actions, WebSocket for world state updates
 - **Novel Patterns:** Living narrative engine, character-initiated interactions, pre-planned hidden quest system
 
 ---
@@ -35,8 +35,8 @@ npx create-next-app@latest . --typescript --tailwind --app --eslint --src-dir
 cd packages/backend
 poetry init
 poetry add fastapi uvicorn[standard] sqlalchemy[asyncio] asyncpg pydantic-settings
-poetry add langchain langgraph langchain-chroma
-poetry add arq redis chromadb
+poetry add langchain langgraph langchain-postgres pgvector
+poetry add arq redis sentry-sdk
 ```
 
 This establishes:
@@ -44,8 +44,9 @@ This establishes:
 - Next.js 15 with App Router, TypeScript, Tailwind CSS
 - FastAPI with async SQLAlchemy
 - LangChain/LangGraph for AI orchestration
-- Chroma for vector storage
+- PostgreSQL with pgvector extension for vector storage
 - ARQ for background jobs
+- Sentry for error tracking and observability
 
 ---
 
@@ -60,8 +61,8 @@ This establishes:
 | **Animation**          | Framer Motion         | Latest            | Character animations, transitions | Declarative, performant, React-native      |
 | **Backend Framework**  | FastAPI               | Latest            | All backend epics                 | Async-first, AI ecosystem integration      |
 | **AI Orchestration**   | LangGraph + LangChain | Latest            | Companion, Narrative Engine       | Stateful agents, multi-character support   |
-| **Vector Storage**     | Chroma                | Latest (embedded) | Memory, Companion                 | Simple setup, LangChain integration        |
-| **Database**           | PostgreSQL            | 15+               | All data persistence              | Production-ready, async support            |
+| **Vector Storage**     | PostgreSQL pgvector   | PG 15+, pgvector 0.5+ | Memory, Companion             | Unified storage, production-ready          |
+| **Database**           | PostgreSQL            | 15+               | All data persistence              | Production-ready, async support, pgvector  |
 | **ORM**                | SQLAlchemy (async)    | 2.0+              | Data models                       | Async support, mature ecosystem            |
 | **Background Jobs**    | ARQ                   | Latest            | Quest generation, nudges          | Async-native, Redis-based                  |
 | **Real-Time**          | SSE + HTTP (Hybrid)   | Native            | AI streaming, world updates       | Simple, perfect for one-way streaming      |
@@ -289,6 +290,60 @@ delight/
 2. User completes missions → Trigger monitor (ARQ worker) checks conditions
 3. Condition met → Hidden quest unlocks, narrative content served
 4. User progresses → Story state advances, new chapters unlock
+
+**Scenario Template Storage:**
+
+Multiple narrative scenarios (Modern Reality, Medieval Fantasy, etc.) are stored using PostgreSQL JSONB for flexibility and dynamic generation:
+
+```sql
+CREATE TABLE scenario_templates (
+  id UUID PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  theme VARCHAR(50) NOT NULL,  -- 'modern', 'medieval', 'scifi', etc.
+  narrative_arc JSONB NOT NULL,  -- Chapter structure, story beats, act progression
+  character_prompts JSONB NOT NULL,  -- Personality definitions for each character
+  hidden_quests JSONB NOT NULL,  -- Pre-planned surprises with trigger conditions
+  time_rules JSONB,  -- Zone availability by time (optional overrides)
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_scenario_theme ON scenario_templates(theme);
+```
+
+**Template Structure Example:**
+```json
+{
+  "narrative_arc": {
+    "act_1": {
+      "title": "Arrival",
+      "chapters": ["The Journey Begins", "First Steps"],
+      "progression_trigger": {"missions_completed": 5}
+    },
+    "act_2": {...},
+    "act_3": {...}
+  },
+  "character_prompts": {
+    "eliza": "You are Eliza, a wise and empathetic guide...",
+    "lyra": "You are Lyra, master artisan of the Guild..."
+  },
+  "hidden_quests": [
+    {
+      "id": "relentless_achievement",
+      "trigger": {"streak_days": 20, "attribute": "craft"},
+      "title": "The Relentless",
+      "narrative": "...",
+      "rewards": {"essence": 500, "title": "The Relentless"}
+    }
+  ]
+}
+```
+
+This approach allows:
+- Easy addition of new scenarios without code changes
+- User-specific narrative customization
+- Version control for narrative content
+- Dynamic template selection based on user preferences
 
 ---
 
@@ -668,6 +723,38 @@ data: {"type": "complete", "message_id": "abc123"}
 
 ---
 
+## Documentation
+
+### Mintlify Documentation Platform
+
+Delight uses **Mintlify** for developer and user documentation:
+
+**Structure:**
+```
+docs/
+├── mint.json              # Mintlify configuration
+├── introduction.md        # Getting started
+├── quickstart.md          # Quick setup guide
+├── api-reference/         # API documentation
+├── architecture/          # System design docs
+└── guides/                # Feature guides
+```
+
+**Setup:**
+```bash
+npm install -g mintlify
+mintlify dev  # Run docs locally at localhost:3000
+```
+
+**Benefits:**
+- Interactive API documentation
+- Beautiful, searchable interface
+- Versioned documentation
+- Code examples with syntax highlighting
+- OpenAPI spec integration
+
+---
+
 ## Development Environment
 
 ### Prerequisites
@@ -678,6 +765,7 @@ data: {"type": "complete", "message_id": "abc123"}
 - **PostgreSQL:** 15+ (or Docker)
 - **Redis:** 7+ (or Docker)
 - **Docker:** (optional, for local services)
+- **Mintlify CLI:** For documentation development
 
 ### Setup Commands
 
