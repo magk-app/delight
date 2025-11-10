@@ -1,0 +1,27 @@
+{
+  "name": "delight",
+  "version": "0.1.0",
+  "description": "AI-powered self-improvement companion platform",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter frontend dev\" \"cd packages/backend && poetry run uvicorn main:app --reload\"",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "cd packages/backend && poetry run uvicorn main:app --reload",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint && cd packages/backend && poetry run ruff check .",
+    "lint:fix": "pnpm --filter frontend lint --fix && cd packages/backend && poetry run ruff check --fix . && poetry run black .",
+    "test": "pnpm --filter frontend test && cd packages/backend && poetry run pytest",
+    "test:frontend": "pnpm --filter frontend test",
+    "test:backend": "cd packages/backend && poetry run pytest"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
