@@ -43,17 +43,27 @@ This epic implements the foundational layer of the architecture defined in `arch
 
 - **Frontend**: Next.js 15 with App Router, React Server Components, TypeScript, Tailwind CSS
 - **Backend**: FastAPI with async SQLAlchemy 2.0, providing REST APIs and SSE streaming
-- **Database**: PostgreSQL 16+ with pgvector extension for vector embeddings (1536 dimensions for OpenAI text-embedding-3-small)
+- **Database**: **Supabase** (managed PostgreSQL 16+ with pgvector extension pre-installed)
 - **Authentication**: Clerk (managed auth service) handling passwords, sessions, OAuth, magic links
 - **Job Queue**: ARQ + Redis for background workers (quest generation, nudges, world state updates)
 - **Monorepo**: pnpm workspaces for frontend/shared, Poetry for backend Python dependencies
 
 ### Infrastructure Constraints
 
-- **Cost target**: <$0.10 per active user per day (guides infrastructure choices)
-- **Development environment**: Docker Compose for local PostgreSQL + Redis
+- **Cost target**: <$0.50 per active user per day (guides infrastructure choices)
+- **Development environment**: Supabase (managed PostgreSQL), Upstash or Docker Redis
 - **Deployment**: Containerized services (Docker) with environment-based configuration
 - **Observability**: Sentry for error tracking, health check endpoints for uptime monitoring
+
+### AI/LLM Infrastructure (Epic 2+)
+
+- **LLM Provider**: OpenAI API (MVP)
+  - Chat/Eliza: GPT-4o-mini ($0.15/$0.60 per 1M tokens)
+  - Narrative: GPT-4o ($2.50/$10 per 1M tokens)
+  - Embeddings: text-embedding-3-small ($0.02 per 1M tokens)
+- **Emotion Detection**: cardiffnlp/roberta (self-hosted, open source)
+- **Future**: Local LLM support (Ollama, vLLM) with GPU infrastructure
+- **Abstraction**: LLMService class for provider flexibility
 
 ## Detailed Design
 
@@ -63,7 +73,7 @@ This epic implements the foundational layer of the architecture defined in `arch
 | --------------------------------- | -------------------------------------------------------------- | --------------------------- | --------------------------- | ------------------------------------- |
 | **Frontend (Next.js)**            | User interface, client-side routing, SSR/RSC                   | User actions, API responses | Rendered UI, API requests   | `packages/frontend/`                  |
 | **Backend API Gateway (FastAPI)** | REST API endpoints, request validation, response serialization | HTTP requests               | JSON responses, SSE streams | `packages/backend/app/main.py`        |
-| **Database Service**              | Data persistence, schema management, migrations                | SQL queries via SQLAlchemy  | Query results               | PostgreSQL container                  |
+| **Database Service**              | Data persistence, schema management, migrations                | SQL queries via SQLAlchemy  | Query results               | Supabase (managed PostgreSQL)         |
 | **Auth Service (Clerk)**          | User authentication, session management, OAuth                 | Login attempts, tokens      | Session tokens, webhooks    | External (Clerk)                      |
 | **Auth Middleware**               | Session validation, user context injection                     | Clerk session tokens        | Validated user object       | `packages/backend/app/auth/`          |
 | **Migration System (Alembic)**    | Schema versioning, migration application                       | Migration scripts           | Database schema changes     | `packages/backend/app/db/migrations/` |
@@ -481,9 +491,9 @@ mypy = "^1.8.0"
 
 ### Infrastructure Dependencies
 
-- **PostgreSQL**: Version 16+ (Docker: postgres:16-alpine)
-- **Redis**: Version 7+ (Docker: redis:7-alpine)
-- **Docker**: Version 24+ for containerization
+- **Supabase**: Managed PostgreSQL 16+ with pgvector (free tier: 500MB database)
+- **Redis**: Version 7+ (Docker: redis:7-alpine, or Upstash serverless)
+- **Docker**: (optional) Only for Redis if not using Upstash
 - **pnpm**: Version 8+ for frontend workspace management
 - **Poetry**: Version 1.7+ for backend dependency management
 
@@ -516,12 +526,12 @@ mypy = "^1.8.0"
 
 ### AC2: Database Schema and Migrations Working
 
-- **Given** PostgreSQL is running via Docker Compose
+- **Given** Supabase PostgreSQL is connected via DATABASE_URL
 - **When** Alembic migrations are applied (`alembic upgrade head`)
 - **Then**:
   - `users` table exists with correct schema (id, clerk_user_id, email, timezone, timestamps)
   - `user_preferences` table exists with foreign key to users
-  - `pgvector` extension is enabled
+  - `pgvector` extension is enabled (pre-installed in Supabase)
   - `alembic_version` table tracks migration history
   - `alembic downgrade -1` successfully rolls back last migration
 
@@ -567,13 +577,14 @@ mypy = "^1.8.0"
 - **Given** new developer clones repository
 - **When** following setup instructions in README
 - **Then**:
-  - Docker Compose starts PostgreSQL and Redis
+  - Developer creates Supabase project and gets DATABASE_URL
   - Backend dependencies install via `poetry install`
   - Frontend dependencies install via `pnpm install`
-  - Environment variables configured from `.env.example` files
+  - Environment variables configured from `.env.example` files (including DATABASE_URL, CLERK_SECRET_KEY, OPENAI_API_KEY)
   - Both services start and communicate successfully
   - Health check returns healthy status
   - Developer can make authenticated requests to backend
+  - Optional: Docker Redis or Upstash for local job queue
 
 ## Traceability Mapping
 
@@ -594,6 +605,14 @@ mypy = "^1.8.0"
 
    - **Mitigation**: Clerk provides standard OAuth/OIDC, migration path exists to self-hosted auth
    - **Impact**: Medium (migration effort if needed)
+
+**Note on Authentication Demo (Story 1.3):**
+
+- Clerk provides pre-built `<SignIn>` and `<SignUp>` components that can be used immediately
+- No custom auth UI needed for MVP - Clerk components are production-ready and styled
+- Demo approach: Create `/sign-in` and `/sign-up` routes using Clerk components
+- Backend testing: Use Clerk dashboard to create test user, then verify webhook creates database record
+- API testing: Get session token from Clerk, test authenticated endpoints with `curl` or Postman
 
 2. **Risk**: pgvector installation may fail on some PostgreSQL versions
 

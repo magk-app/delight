@@ -39,6 +39,7 @@ poetry add fastapi uvicorn[standard] sqlalchemy[asyncio] asyncpg pydantic-settin
 poetry add langchain langgraph langchain-postgres pgvector
 poetry add arq redis sentry-sdk clerk-backend-sdk
 poetry add transformers torch  # For emotion detection model
+poetry add openai  # For GPT-4o-mini and embeddings
 ```
 
 This establishes:
@@ -47,10 +48,11 @@ This establishes:
 - Clerk for authentication (managed auth service)
 - FastAPI with async SQLAlchemy + Alembic migrations
 - LangChain/LangGraph for AI orchestration
-- PostgreSQL with pgvector extension for vector storage
-- GPT-4o-mini for cost-effective AI interactions
+- **Supabase** for managed PostgreSQL with pgvector extension (no local database setup needed)
+- OpenAI GPT-4o-mini for cost-effective AI interactions
+- OpenAI GPT-4o for premium narrative generation
 - Open source emotion detection (cardiffnlp/roberta)
-- ARQ for background jobs
+- ARQ for background jobs with Redis
 - Sentry for error tracking and observability
 
 ---
@@ -69,8 +71,8 @@ This establishes:
 | **AI Orchestration**   | LangGraph + LangChain | Latest                | Companion, Narrative Engine       | Stateful agents, multi-character support   |
 | **AI Models**          | GPT-4o-mini (primary) | Latest                | Chat, personas, quest generation  | Cost-effective, fast, good quality         |
 | **Emotion Detection**  | cardiffnlp/roberta    | Latest                | Emotional state tracking          | Open source, multilingual, 7 emotions      |
+| **Database**           | Supabase (PostgreSQL) | PG 15+, pgvector 0.5+ | All data persistence              | Managed DB, pgvector included, easy setup  |
 | **Vector Storage**     | PostgreSQL pgvector   | PG 15+, pgvector 0.5+ | Memory, Companion                 | Unified storage, production-ready          |
-| **Database**           | PostgreSQL            | 15+                   | All data persistence              | Production-ready, async support, pgvector  |
 | **ORM**                | SQLAlchemy (async)    | 2.0+                  | Data models                       | Async support, mature ecosystem            |
 | **Migrations**         | Alembic               | Latest                | Database schema changes           | Industry standard for SQLAlchemy           |
 | **Background Jobs**    | ARQ                   | Latest                | Quest generation, nudges          | Async-native, Redis-based                  |
@@ -208,14 +210,52 @@ delight/
 - **Pydantic** - Data validation and settings
 - **Uvicorn** - ASGI server
 
-**AI & Memory:**
+**AI & LLM Infrastructure:**
 
 - **LangGraph** - Stateful agent orchestration
 - **LangChain** - LLM integration, memory abstractions
-- **PostgreSQL pgvector** - Vector storage extension (unified with main DB)
-- **OpenAI GPT-4o-mini** - Primary LLM for chat, personas, quest generation (cost-effective)
+- **PostgreSQL pgvector** (via Supabase) - Vector storage extension (unified with main DB)
+- **OpenAI GPT-4o-mini** - Primary LLM for chat, personas, quest generation (MVP)
 - **OpenAI GPT-4o** - Premium narrative generation (less frequent, higher quality)
-- **cardiffnlp/twitter-roberta-base-emotion** - Open source emotion classification (7 emotions)
+- **OpenAI text-embedding-3-small** - 1536-dim embeddings for memory/search
+- **cardiffnlp/twitter-roberta-base-emotion** - Open source emotion classification (7 emotions, self-hosted)
+
+**LLM Strategy (MVP → Future):**
+
+- **MVP**: OpenAI API only (no local LLMs, no GPU infrastructure needed)
+  - Chat/Eliza: GPT-4o-mini @ $0.15/$0.60 per 1M tokens
+  - Narrative: GPT-4o @ $2.50/$10 per 1M tokens
+  - Embeddings: text-embedding-3-small @ $0.02 per 1M tokens
+  - Total: ~$0.03/user/day (well under $0.50 target)
+- **Future (Local LLM Options)**:
+  - **Ollama**: Easy local deployment (llama3.1, mistral, qwen)
+  - **vLLM**: High-performance GPU inference server
+  - **LM Studio**: User-friendly local inference for testing
+  - **GPU Infrastructure**: RunPod, Lambda Labs, or Vast.ai for cloud GPUs
+  - **Hybrid Mode**: OpenAI for production, local LLMs for experimentation
+
+**LLM Abstraction Layer:**
+
+```python
+# backend/app/services/llm_service.py
+class LLMService:
+    def __init__(self, provider: str = 'openai'):
+        if provider == 'openai':
+            self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        elif provider == 'local':
+            self.client = LocalLLMClient(url=settings.LOCAL_LLM_URL)
+
+    async def chat(self, messages, model='gpt-4o-mini', stream=True):
+        # Unified interface for any provider
+        ...
+```
+
+**GPU Considerations:**
+
+- **MVP**: No GPU needed (using OpenAI API)
+- **Local LLM Experimentation**: CUDA-enabled machine (RTX 3090, 4090, or A100)
+- **Production Local LLMs**: Cloud GPU providers (RunPod, Lambda Labs, Vast.ai)
+- **Inference Stack**: FastAPI + vLLM or TGI (Text Generation Inference)
 
 **Background Jobs:**
 
@@ -755,22 +795,39 @@ data: {"type": "complete", "message_id": "abc123"}
 
 ## Deployment Architecture
 
-**Experimental Version:**
+**MVP/Development (Recommended):**
 
-- **Frontend:** Vercel (Next.js optimized)
-- **Backend:** Railway or Fly.io (Docker containers)
-- **Database:** Railway PostgreSQL with pgvector or Supabase (has pgvector support)
-- **Redis:** Upstash (serverless Redis)
-- **File Storage:** S3-compatible (AWS S3 or MinIO)
+- **Frontend:** Vercel (Next.js optimized, free tier)
+- **Backend:** Railway or Fly.io (Docker containers, free tier → $5/month)
+- **Database:** **Supabase** (managed PostgreSQL with pgvector, free tier: 500MB)
+- **Redis:** Upstash (serverless Redis, free tier: 10K commands/day)
+- **File Storage:** Supabase Storage or AWS S3 (generous free tiers)
+- **Monitoring:** Sentry (free tier: 5K errors/month)
 
-**Production Version:**
+**Why Supabase for MVP:**
 
-- **Frontend:** Vercel (edge network)
-- **Backend:** AWS ECS/Fargate or Fly.io (auto-scaling)
-- **Database:** AWS RDS PostgreSQL with pgvector extension (managed)
-- **Redis:** AWS ElastiCache or Upstash
-- **File Storage:** AWS S3
-- **Monitoring:** Sentry (errors, performance, session replay), CloudWatch for infrastructure
+- ✅ pgvector extension pre-installed
+- ✅ Free tier sufficient for development and early users
+- ✅ Zero setup - connection string ready immediately
+- ✅ Built-in connection pooling (PgBouncer)
+- ✅ Automatic backups (point-in-time recovery)
+- ✅ Web dashboard for database management
+- ✅ Can upgrade seamlessly as you scale
+
+**Production/Scale:**
+
+- **Frontend:** Vercel (edge network with CDN)
+- **Backend:** AWS ECS/Fargate or Fly.io (auto-scaling, multi-region)
+- **Database:** Supabase Pro ($25/month) or AWS RDS PostgreSQL with pgvector
+- **Redis:** AWS ElastiCache or Upstash Pro
+- **File Storage:** AWS S3 with CloudFront CDN
+- **Monitoring:** Sentry Pro + CloudWatch for infrastructure metrics
+
+**Migration Path:**
+
+- Start with Supabase free tier (MVP)
+- Upgrade to Supabase Pro when exceeding 500MB or 2GB bandwidth
+- Optional: Migrate to self-hosted PostgreSQL or AWS RDS later if needed (SQLAlchemy makes this seamless)
 
 ---
 
@@ -816,10 +873,11 @@ mintlify dev  # Run docs locally at localhost:3000
 - **Node.js:** 20.x+
 - **Python:** 3.11+
 - **Poetry:** Latest
-- **PostgreSQL:** 15+ (or Docker)
-- **Redis:** 7+ (or Docker)
-- **Docker:** (optional, for local services)
-- **Mintlify CLI:** For documentation development
+- **Supabase Account:** Free tier (https://supabase.com)
+- **Clerk Account:** Free tier (https://clerk.com)
+- **OpenAI API Key:** For GPT-4o-mini/GPT-4o
+- **Redis:** 7+ (or Docker/Upstash for development)
+- **Mintlify CLI:** (optional) For documentation development
 
 ### Setup Commands
 
@@ -831,23 +889,52 @@ cd delight
 # Frontend setup
 cd packages/frontend
 npm install
-npm run dev  # http://localhost:3000
 
 # Backend setup
 cd packages/backend
 poetry install
-poetry run uvicorn app.main:app --reload  # http://localhost:8000
 
-# Database setup
+# Environment variables setup
+cp packages/backend/.env.example packages/backend/.env
+# Edit .env with your keys:
+#   - DATABASE_URL (from Supabase project settings)
+#   - CLERK_SECRET_KEY (from Clerk dashboard)
+#   - OPENAI_API_KEY (from OpenAI platform)
+#   - REDIS_URL (local or Upstash)
+
+# Database migrations (connects to Supabase)
 poetry run alembic upgrade head
 
-# Redis (Docker)
-docker run -d -p 6379:6379 redis:7
+# Start services
+cd packages/frontend && npm run dev  # http://localhost:3000
+cd packages/backend && poetry run uvicorn app.main:app --reload  # http://localhost:8000
 
-# Environment variables
-cp packages/backend/.env.example packages/backend/.env
-# Edit .env with your keys
+# Redis (optional Docker, or use Upstash free tier)
+docker run -d -p 6379:6379 redis:7
 ```
+
+### Supabase Setup
+
+1. **Create Supabase Project:** https://supabase.com/dashboard
+2. **Enable pgvector Extension:**
+   - Navigate to SQL Editor in Supabase dashboard
+   - Run: `CREATE EXTENSION IF NOT EXISTS vector;`
+3. **Get Connection String:**
+   - Settings → Database → Connection string (URI)
+   - Format: `postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres`
+4. **Update .env:**
+   - Set `DATABASE_URL` to your Supabase connection string
+
+### Clerk Setup
+
+1. **Create Clerk Application:** https://dashboard.clerk.com
+2. **Configure OAuth Providers:** Enable Google, GitHub in dashboard
+3. **Get API Keys:**
+   - Publishable Key (for frontend)
+   - Secret Key (for backend)
+4. **Set Webhook:**
+   - Create webhook pointing to: `https://your-backend.com/api/v1/webhooks/clerk`
+   - Subscribe to: `user.created`, `user.updated`, `user.deleted`
 
 ---
 
@@ -1124,7 +1211,127 @@ def detect_emotion(text: str) -> dict:
 
 ---
 
+### ADR-010: Supabase for Managed PostgreSQL
+
+**Decision:** Use Supabase as the primary managed PostgreSQL database for MVP, with option to migrate to self-hosted PostgreSQL or AWS RDS later.
+
+**Rationale:**
+
+- **Simplified Setup:** pgvector extension pre-installed, no Docker/infrastructure management needed
+- **Free Tier:** 500MB database + 2GB bandwidth/month sufficient for MVP and early users
+- **Developer Experience:** Immediate connection string, web dashboard, no devops required
+- **Built-in Features:**
+  - Connection pooling (PgBouncer) for efficient connections
+  - Automatic daily backups with point-in-time recovery
+  - Database logs and performance metrics
+  - SQL editor with syntax highlighting
+- **Production Ready:** Used by thousands of production apps, proven scalability
+- **Cost Effective:** Free → $25/month Pro tier → custom enterprise pricing
+- **Migration Path:** Standard PostgreSQL connection (SQLAlchemy makes migration seamless)
+
+**Alternatives Considered:**
+
+- **Docker PostgreSQL locally** (initially planned)
+
+  - Pros: Full control, works offline
+  - Cons: Every developer needs to set up Docker, manage local database, no backups
+  - Verdict: Too much friction for MVP
+
+- **Railway PostgreSQL**
+
+  - Pros: Similar managed experience, generous free tier
+  - Cons: pgvector setup requires manual extension installation
+  - Verdict: Good alternative, but Supabase has better pgvector support
+
+- **AWS RDS PostgreSQL**
+
+  - Pros: Enterprise-grade, highly scalable
+  - Cons: No free tier ($15+/month minimum), more complex setup
+  - Verdict: Overkill for MVP, better for production scale
+
+- **Neon (Serverless Postgres)**
+  - Pros: True serverless, scales to zero
+  - Cons: Newer service, less mature than Supabase
+  - Verdict: Promising, but Supabase is more battle-tested
+
+**Consequences:**
+
+- **Positive:**
+
+  - Zero local database setup required (just connection string)
+  - Developers can start coding immediately after `git clone`
+  - Built-in database management UI for debugging
+  - Automatic backups from day one
+  - pgvector works out-of-the-box
+
+- **Negative:**
+
+  - Requires internet connection for development (minor)
+  - Free tier limits (500MB database) - acceptable for MVP
+  - Vendor dependency (mitigated by standard PostgreSQL compatibility)
+
+- **Migration Strategy:**
+  - MVP: Supabase free tier
+  - Early growth: Supabase Pro ($25/month) for 8GB database + more bandwidth
+  - Scale: Can migrate to AWS RDS or self-hosted PostgreSQL using same SQLAlchemy models (just change DATABASE_URL)
+
+**Cost Comparison (per month):**
+
+| Provider     | MVP (Free)      | Growth         | Scale             |
+| ------------ | --------------- | -------------- | ----------------- |
+| **Supabase** | $0 (500MB)      | $25 (8GB)      | $599+ (custom)    |
+| Railway      | $0 (1GB)        | $5-20          | $50+              |
+| AWS RDS      | N/A             | $15-30 (small) | $100+ (optimized) |
+| Self-hosted  | $0 (your infra) | $10-50 (VPS)   | $100+ (managed)   |
+
+**Story Impact:**
+
+- Story 1.1: Update initialization to use Supabase connection
+- Story 1.2: Simplify setup (no Docker Compose for database)
+- Story 2.1: pgvector extension already available, just enable it
+
+---
+
 ## Revision History
+
+### 2025-11-10 (Third Update): Database & LLM Infrastructure Refinements
+
+**Changes made based on user feedback:**
+
+1. **Database Strategy:** Switched from Docker PostgreSQL to Supabase managed PostgreSQL
+
+   - Eliminates local database setup complexity
+   - pgvector pre-installed, free tier sufficient for MVP
+   - Better developer experience (connection string only)
+
+2. **LLM Infrastructure Documentation:** Added comprehensive AI/LLM section
+
+   - MVP: OpenAI API only (GPT-4o-mini, GPT-4o, embeddings)
+   - Future: Local LLM options (Ollama, vLLM, LM Studio)
+   - GPU considerations for production local LLMs
+   - LLM abstraction layer for provider flexibility
+
+3. **Development Environment:** Simplified setup process
+
+   - No Docker required for database (Supabase)
+   - Added Supabase and Clerk setup instructions
+   - Redis optional (can use Upstash free tier)
+
+4. **Deployment Architecture:** Made Supabase primary recommendation for MVP
+
+   - Clear migration path to RDS or self-hosted later
+   - Updated cost comparisons and free tier limits
+
+5. **Documentation:** Added ADR-010 documenting Supabase decision
+
+**Impact:**
+
+- Faster onboarding for new developers (no Docker setup)
+- Lower barrier to entry (just need API keys)
+- Clear AI/LLM strategy from MVP to scale
+- More flexible infrastructure choices
+
+---
 
 ### 2025-11-10 (Second Update): Tech Stack Validation & Refinements
 

@@ -207,12 +207,18 @@ The MVP commits to a single-player but emotionally aware loop that proves Deligh
 
 ### Technical Preferences
 
-- Adopt a three-tier memory stack (personal, project, task) built on Mem0 + Qdrant with LangChain utilities for short-term context, as laid out in `docs/delight-plan.md`.
-- Hybrid retrieval strategy mixing knowledge graphs (NetworkX/Neo4j) with vector search ensures the companion recalls relevant goals and emotional cues efficiently.
-- Application stack: FastAPI backend (packages/backend) orchestrating workflows + memory, Next.js frontend (packages/frontend) for immersive UI, shared TypeScript types for consistency.
-- AI orchestration: LangChain/LangGraph, Mem0 for persistence, Redis for working memory, with optional MemGPT/Letta upgrade after MVP.
-- Knowledge graph + analytics: NetworkX prototype scaling to Neo4j; quantitative metrics stored in Postgres powering the Consistency Dashboard.
-- Experience layer blends AI coaching, mission generator, configurable nudges, and narrative overlay; future upgrades may include MemGPT-style hierarchical memory once MVP stabilizes.
+- **Database & Memory:** Supabase (managed PostgreSQL with pgvector) for unified structured and vector storage - simplifies MVP setup, includes automatic backups, free tier sufficient for early development
+- **Authentication:** Clerk for managed auth (OAuth, 2FA, magic links) - reduces development time, handles security best practices
+- **AI/LLM Strategy:**
+  - MVP: OpenAI API (GPT-4o-mini for chat/personas, GPT-4o for narrative generation)
+  - Cost target: ~$0.03/user/day (well under $0.50 operational budget)
+  - Future: Local LLM options (Ollama, vLLM) for cost optimization
+  - Emotion detection: cardiffnlp/roberta (open source, self-hosted)
+- **Memory Architecture:** Three-tier system (personal, project, task memories) using PostgreSQL pgvector with LangChain integration
+- **Application Stack:** FastAPI backend (async Python) + Next.js 15 frontend (App Router, React 19) + shared TypeScript types
+- **AI Orchestration:** LangGraph for stateful agents, LangChain for LLM abstractions, Redis (ARQ) for background job processing
+- **Deployment:** Vercel (frontend), Railway/Fly.io (backend), Supabase (database), Upstash (Redis) - all with generous free tiers
+- **Observability:** Sentry for error tracking and performance monitoring
 
 ### Risks and Assumptions
 

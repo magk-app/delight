@@ -78,7 +78,7 @@ This breakdown follows the 8-epic architecture structure defined in the Architec
 
 **Epic Goal:** Establish the technical foundation and user authentication system that enables all subsequent features. This epic sets up the monorepo structure, deployment pipeline, core backend/frontend infrastructure, and basic user onboarding flow.
 
-**Architecture Components:** Next.js 15, FastAPI, PostgreSQL + pgvector, Docker, deployment pipeline, auth system
+**Architecture Components:** Next.js 15, FastAPI, Supabase (managed PostgreSQL + pgvector), Clerk authentication, deployment pipeline
 
 ### Story 1.1: Initialize Monorepo Structure and Core Dependencies
 
@@ -95,14 +95,14 @@ So that **the team can work efficiently with proper tooling and dependency manag
 - `packages/frontend/` with Next.js 15 + TypeScript + Tailwind
 - `packages/backend/` with FastAPI + Poetry + async SQLAlchemy
 - `packages/shared/` for TypeScript types
-- Docker Compose for local PostgreSQL + Redis
+- Environment configuration for Supabase, Clerk, OpenAI
 - Root package.json with workspace configuration
 
 **And** all core dependencies are installed:
 
 - Frontend: Next.js 15, React 19, TypeScript, Tailwind, shadcn/ui, @clerk/nextjs
 - Backend: FastAPI, SQLAlchemy 2.0 (async), PostgreSQL driver (asyncpg), Pydantic, Alembic, clerk-backend-sdk
-- AI: LangChain, LangGraph, langchain-postgres, pgvector, transformers (for emotion detection)
+- AI: LangChain, LangGraph, langchain-postgres, pgvector, transformers (for emotion detection), openai
 - Infrastructure: ARQ, Redis, Sentry
 
 **And** development servers can start successfully:
@@ -118,9 +118,11 @@ So that **the team can work efficiently with proper tooling and dependency manag
 - Install Clerk: `npm install @clerk/nextjs`
 - Use Poetry for Python dependency management
 - Install Clerk backend SDK: `poetry add clerk-backend-sdk`
+- Install AI dependencies: `poetry add langchain langgraph langchain-postgres pgvector openai`
 - Install emotion detection model: `poetry add transformers torch`
-- Install pgvector extension in Docker PostgreSQL container
-- See Architecture doc lines 29-50 for exact initialization commands
+- **Supabase Setup:** Create project at supabase.com, get DATABASE_URL
+- **No Docker needed for database** - Supabase provides managed PostgreSQL
+- See Architecture doc lines 29-54 for exact initialization commands
 
 ---
 
@@ -132,7 +134,7 @@ So that **schema changes are tracked and can be applied consistently across envi
 
 **Acceptance Criteria:**
 
-**Given** the monorepo is initialized  
+**Given** the monorepo is initialized and Supabase project created  
 **When** I set up the database system  
 **Then** Alembic is configured for migrations in `backend/app/db/migrations/`
 
@@ -142,21 +144,25 @@ So that **schema changes are tracked and can be applied consistently across envi
   - NOTE: clerk_user_id is the primary identifier from Clerk; passwords/sessions managed by Clerk
 - `user_preferences` (user_id FK, custom_hours JSONB, theme, communication_preferences JSONB)
 
-**And** pgvector extension is enabled in PostgreSQL
+**And** pgvector extension is enabled in Supabase PostgreSQL:
 
-**And** I can run migrations successfully:
+- Run in Supabase SQL Editor: `CREATE EXTENSION IF NOT EXISTS vector;`
 
-- `alembic upgrade head` applies all migrations
+**And** I can run migrations successfully (connecting to Supabase):
+
+- `alembic upgrade head` applies all migrations to Supabase database
 - `alembic downgrade -1` rolls back successfully
 
-**Prerequisites:** Story 1.1 (monorepo structure)
+**Prerequisites:** Story 1.1 (monorepo structure, Supabase project created)
 
 **Technical Notes:**
 
 - Use SQLAlchemy 2.0 declarative base with async support
-- Install pgvector extension: `CREATE EXTENSION IF NOT EXISTS vector;`
+- DATABASE_URL format: `postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres`
+- pgvector extension pre-installed in Supabase, just needs to be enabled
 - Store migrations in `backend/app/db/migrations/`
 - Base models in `backend/app/models/base.py`
+- **Supabase Benefits:** Automatic backups, connection pooling (PgBouncer), web UI for database inspection
 
 ---
 
@@ -311,9 +317,9 @@ So that **we have unified storage for structured and vector data without managin
 
 **Acceptance Criteria:**
 
-**Given** the base database is configured  
+**Given** the base database is configured (Story 1.2) and Supabase is connected  
 **When** I set up the memory system  
-**Then** pgvector extension is enabled
+**Then** pgvector extension is confirmed enabled (already available in Supabase)
 
 **And** memory tables are created:
 
@@ -326,14 +332,16 @@ So that **we have unified storage for structured and vector data without managin
 - Supports cosine similarity distance function
 - Indexed for performance (HNSW or IVFFlat)
 
-**Prerequisites:** Story 1.2 (database schema)
+**Prerequisites:** Story 1.2 (database schema with Supabase)
 
 **Technical Notes:**
 
-- Use `pgvector` extension for vector operations
+- Use `pgvector` extension for vector operations (pre-installed in Supabase)
 - Embedding dimension: 1536 (OpenAI text-embedding-3-small)
 - Create index: `CREATE INDEX ON memories USING hnsw (embedding vector_cosine_ops);`
 - memory_type: 'personal' (long-term identity), 'project' (goals/plans), 'task' (missions/actions)
+- **Supabase Advantage:** pgvector extension already available, just enable with `CREATE EXTENSION IF NOT EXISTS vector;`
+- No need to manually install or compile pgvector extension
 - See Architecture doc Pattern 1 for memory architecture
 
 ---
