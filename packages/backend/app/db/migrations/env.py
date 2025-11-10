@@ -23,8 +23,9 @@ from app import models  # noqa: F401
 # access to the values within the .ini file in use.
 config = context.config
 
-# Override sqlalchemy.url with async DATABASE_URL from environment
-config.set_main_option("sqlalchemy.url", settings.async_database_url)
+# Override sqlalchemy.url with async DATABASE_URL from environment.
+# ConfigParser treats '%' as interpolation markers, so escape them.
+config.set_main_option("sqlalchemy.url", settings.async_database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
