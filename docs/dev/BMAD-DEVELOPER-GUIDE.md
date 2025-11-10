@@ -20,6 +20,70 @@ This guide provides a systematic, professional workflow for developing stories u
 
 ---
 
+## 🚀 **First-Time Setup (Supabase + Clerk + OpenAI)**
+
+Before you start developing stories, set up your environment:
+
+### **1. Supabase Setup (Database)**
+
+```bash
+# 1. Go to https://app.supabase.com
+# 2. Click "New Project"
+# 3. Name: "delight-dev" (or your choice)
+# 4. Database Password: (save this!)
+# 5. Region: Choose closest to you
+# 6. Wait ~2 minutes for provisioning
+
+# 7. Enable pgvector extension:
+#    - Go to SQL Editor
+#    - Run: CREATE EXTENSION IF NOT EXISTS vector;
+
+# 8. Get connection string:
+#    - Go to Project Settings > Database
+#    - Copy "Connection string" (Transaction mode)
+#    - Format: postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+
+# 9. Add to packages/backend/.env:
+DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+```
+
+### **2. Clerk Setup (Authentication)**
+
+```bash
+# 1. Go to https://clerk.com
+# 2. Create account and new application
+# 3. Name: "Delight Dev"
+# 4. Enable providers: Email, Google, GitHub (optional)
+
+# 5. Get keys from Dashboard:
+#    - Copy "Publishable Key" (starts with pk_test_)
+#    - Copy "Secret Key" (starts with sk_test_)
+
+# 6. Add to packages/frontend/.env.local:
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+
+# 7. Add to packages/backend/.env:
+CLERK_SECRET_KEY=sk_test_...
+```
+
+### **3. OpenAI Setup (AI/LLM)**
+
+```bash
+# 1. Go to https://platform.openai.com
+# 2. Create account and add payment method
+# 3. Go to API Keys
+# 4. Create new secret key (save immediately!)
+
+# 5. Add to packages/backend/.env:
+OPENAI_API_KEY=sk-proj-...
+
+# Cost estimate: ~$0.03/user/day (well under budget)
+```
+
+**Total setup time: ~15 minutes**
+
+---
+
 ## 🎯 **Table of Contents**
 
 1. [Story Development Workflow](#story-development-workflow)
@@ -55,10 +119,11 @@ Each stage has specific deliverables and exit criteria. Never skip stages.
 # - All prerequisites marked "done"
 # - No blocking dependencies
 
-1-1-initialize-monorepo-structure-and-core-dependencies: backlog  # ← Start here
+1-1-initialize-monorepo-structure-and-core-dependencies: backlog # ← Start here
 ```
 
 **Exit Criteria:**
+
 - ✅ Story selected
 - ✅ Prerequisites verified as "done"
 - ✅ No blockers identified
@@ -84,6 +149,7 @@ Then [outcome]
 **Prerequisites:** [Required stories]
 
 **Technical Notes:**
+
 - Implementation guidance
 - Architecture references
 - Code examples
@@ -97,6 +163,7 @@ Then [outcome]
 4. **Technical Notes** → How should it be built?
 
 **Exit Criteria:**
+
 - ✅ Story fully read and understood
 - ✅ Questions noted (ask before coding)
 - ✅ Acceptance criteria clear
@@ -112,6 +179,7 @@ Use the BMAD workflow to break down the story:
 ```
 
 **What This Does:**
+
 - Analyzes the story requirements
 - Identifies all files to create/modify
 - Creates implementation plan with steps
@@ -123,6 +191,7 @@ Use the BMAD workflow to break down the story:
 This gives you a roadmap before you start coding.
 
 **Exit Criteria:**
+
 - ✅ Story context created (or implementation plan documented)
 - ✅ File list identified
 - ✅ Technical approach decided
@@ -150,6 +219,7 @@ git checkout -b story/1-1-monorepo-setup
 ```
 
 **Commit message convention:**
+
 ```
 Story [X.Y]: [Short title]
 
@@ -161,6 +231,7 @@ Acceptance criteria:
 ```
 
 **Exit Criteria:**
+
 - ✅ Branch created
 - ✅ Working in feature branch (not main)
 
@@ -176,6 +247,7 @@ Based on acceptance criteria, create a checklist:
 ## Story 1.3: Integrate Clerk Authentication
 
 ### Implementation Checklist
+
 - [ ] Install Clerk packages (frontend + backend)
 - [ ] Configure Clerk project (API keys)
 - [ ] Frontend: Wrap app in ClerkProvider
@@ -189,11 +261,13 @@ Based on acceptance criteria, create a checklist:
 - [ ] Test: Logout flow
 
 ### Files to Create
+
 - packages/frontend/middleware.ts
 - packages/backend/app/core/auth.py
 - packages/backend/app/api/v1/webhooks/clerk.py
 
 ### Files to Modify
+
 - packages/frontend/app/layout.tsx
 - packages/backend/app/main.py
 - packages/frontend/.env.local
@@ -201,14 +275,19 @@ Based on acceptance criteria, create a checklist:
 ```
 
 **Exit Criteria:**
+
 - ✅ Checklist created with all acceptance criteria
 - ✅ File list identified
 
 #### **2.2 Set Up Development Environment**
 
 ```bash
-# Start required services
-docker-compose up -d
+# Verify environment variables (Supabase, Clerk, OpenAI)
+cd packages/backend
+cat .env  # Check DATABASE_URL, CLERK_SECRET_KEY, OPENAI_API_KEY
+
+cd packages/frontend
+cat .env.local  # Check NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 # Backend (Terminal 1)
 cd packages/backend
@@ -219,14 +298,18 @@ poetry run uvicorn app.main:app --reload
 cd packages/frontend
 npm run dev
 
-# Tests in watch mode (Terminal 3 - optional)
+# Optional: Tests in watch mode (Terminal 3)
 cd packages/backend
 poetry run pytest-watch
 ```
 
+**Note:** No Docker required for database! Supabase provides managed PostgreSQL. Only use Docker for local Redis if not using Upstash.
+
 **Exit Criteria:**
-- ✅ All services running
+
+- ✅ Environment variables set (Supabase, Clerk, OpenAI)
 - ✅ Dev servers accessible
+- ✅ Backend connects to Supabase successfully
 - ✅ No startup errors
 
 #### **2.3 Implement Feature (TDD Approach - Recommended)**
@@ -272,6 +355,7 @@ If not using TDD:
 - ✅ **Write comments** - Explain "why", not "what"
 
 **Exit Criteria:**
+
 - ✅ All checklist items implemented
 - ✅ No console errors
 - ✅ Manual testing shows it works
@@ -297,6 +381,7 @@ npm run type-check              # TypeScript check
 **Fix all warnings and errors before proceeding.**
 
 **Exit Criteria:**
+
 - ✅ No linting errors
 - ✅ Code formatted consistently
 - ✅ Type checking passes
@@ -333,7 +418,9 @@ npm run type-check              # TypeScript check
 ## Manual Testing
 
 ### AC 1: User can sign up with email/password
+
 **Steps:**
+
 1. Navigate to http://localhost:3000
 2. Click "Sign Up"
 3. Enter email: test@example.com
@@ -346,6 +433,7 @@ npm run type-check              # TypeScript check
 **Evidence:** Screenshot saved to `docs/stories/testing/1-3-signup.png`
 
 ### AC 2: User can sign in with Google OAuth
+
 [Same format]
 ```
 
@@ -353,17 +441,20 @@ npm run type-check              # TypeScript check
 
 ```markdown
 ### Happy Path Testing
+
 - [ ] AC 1: [Description] → ✅ Pass / ❌ Fail
 - [ ] AC 2: [Description] → ✅ Pass / ❌ Fail
 - [ ] AC 3: [Description] → ✅ Pass / ❌ Fail
 
 ### Edge Cases
+
 - [ ] Invalid credentials → Shows error message
 - [ ] Network failure → Shows retry option
 - [ ] Missing required fields → Shows validation errors
 - [ ] Session expired → Redirects to login
 
 ### Cross-Browser (if UI)
+
 - [ ] Chrome ✅
 - [ ] Firefox ✅
 - [ ] Safari ✅
@@ -371,6 +462,7 @@ npm run type-check              # TypeScript check
 ```
 
 **Exit Criteria:**
+
 - ✅ All acceptance criteria tested manually
 - ✅ All tests pass
 - ✅ Edge cases covered
@@ -392,19 +484,19 @@ client = TestClient(app)
 
 class TestAuthentication:
     """Tests for Story 1.3: Clerk Authentication"""
-    
+
     def test_protected_route_without_auth_returns_401(self):
         """AC: Backend validates Clerk session"""
         response = client.get("/api/v1/protected-route")
         assert response.status_code == 401
         assert "detail" in response.json()
-    
+
     def test_protected_route_with_valid_token_returns_200(self):
         """AC: Authenticated requests grant access"""
         headers = {"Authorization": "Bearer valid-clerk-token"}
         response = client.get("/api/v1/protected-route", headers=headers)
         assert response.status_code == 200
-    
+
     def test_webhook_creates_user_on_clerk_signup(self):
         """AC: User record created in database"""
         payload = {
@@ -427,23 +519,25 @@ Location: `packages/frontend/__tests__/[component].test.tsx`
 
 ```typescript
 // packages/frontend/__tests__/auth.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import { ClerkProvider } from '@clerk/nextjs';
-import { AuthGuard } from '@/components/AuthGuard';
+import { render, screen, waitFor } from "@testing-library/react";
+import { ClerkProvider } from "@clerk/nextjs";
+import { AuthGuard } from "@/components/AuthGuard";
 
-describe('Story 1.3: Clerk Authentication', () => {
-  it('should render sign in button when not authenticated', () => {
+describe("Story 1.3: Clerk Authentication", () => {
+  it("should render sign in button when not authenticated", () => {
     render(
-      <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}>
+      <ClerkProvider
+        publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      >
         <AuthGuard>Protected Content</AuthGuard>
       </ClerkProvider>
     );
-    
-    expect(screen.getByText('Sign In')).toBeInTheDocument();
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+
+    expect(screen.getByText("Sign In")).toBeInTheDocument();
+    expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
   });
-  
-  it('should show protected content when authenticated', async () => {
+
+  it("should show protected content when authenticated", async () => {
     // Mock authenticated state
     // ... test implementation
   });
@@ -467,6 +561,7 @@ npm test -- --coverage --watchAll=false
 ```
 
 **Exit Criteria:**
+
 - ✅ All critical paths have unit tests
 - ✅ All tests pass
 - ✅ Coverage ≥70% for backend, ≥60% for frontend (or project target)
@@ -484,17 +579,17 @@ from sqlalchemy.orm import Session
 
 class TestAuthIntegration:
     """Integration tests for authentication flow"""
-    
+
     def test_complete_signup_flow(self, db: Session):
         """Test complete user signup and authentication"""
         # 1. Trigger Clerk webhook (user.created)
         webhook_response = client.post("/api/v1/webhooks/clerk", json={...})
         assert webhook_response.status_code == 200
-        
+
         # 2. Verify user created in DB
         user = db.query(User).filter_by(clerk_user_id="user_123").first()
         assert user is not None
-        
+
         # 3. Attempt authenticated request
         response = client.get("/api/v1/user/profile", headers={...})
         assert response.status_code == 200
@@ -507,28 +602,28 @@ Location: `packages/frontend/e2e/auth.spec.ts`
 
 ```typescript
 // packages/frontend/e2e/auth.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Story 1.3: Authentication Flow', () => {
-  test('complete signup and login flow', async ({ page }) => {
+test.describe("Story 1.3: Authentication Flow", () => {
+  test("complete signup and login flow", async ({ page }) => {
     // 1. Navigate to app
-    await page.goto('http://localhost:3000');
-    
+    await page.goto("http://localhost:3000");
+
     // 2. Click sign up
-    await page.click('text=Sign Up');
-    
+    await page.click("text=Sign Up");
+
     // 3. Fill form
-    await page.fill('input[name="email"]', 'test@example.com');
-    await page.fill('input[name="password"]', 'Test123!');
-    
+    await page.fill('input[name="email"]', "test@example.com");
+    await page.fill('input[name="password"]', "Test123!");
+
     // 4. Submit
     await page.click('button[type="submit"]');
-    
+
     // 5. Verify redirect to dashboard
-    await expect(page).toHaveURL('/dashboard');
-    
+    await expect(page).toHaveURL("/dashboard");
+
     // 6. Verify authenticated state
-    await expect(page.locator('text=Welcome')).toBeVisible();
+    await expect(page.locator("text=Welcome")).toBeVisible();
   });
 });
 ```
@@ -547,6 +642,7 @@ npm run test:e2e
 ```
 
 **Exit Criteria:**
+
 - ✅ Critical user journeys tested end-to-end
 - ✅ All integration tests pass
 - ✅ API + DB + UI work together
@@ -557,6 +653,7 @@ npm run test:e2e
 ## Testing Completion Checklist
 
 ### Manual Testing
+
 - [ ] All acceptance criteria tested manually
 - [ ] Happy path verified
 - [ ] Edge cases tested
@@ -564,6 +661,7 @@ npm run test:e2e
 - [ ] Testing document created
 
 ### Automated Testing
+
 - [ ] Unit tests written for critical functions
 - [ ] Integration tests written (if applicable)
 - [ ] E2E tests written (for UI flows)
@@ -571,6 +669,7 @@ npm run test:e2e
 - [ ] Coverage targets met
 
 ### Quality Checks
+
 - [ ] No console errors
 - [ ] No unhandled exceptions
 - [ ] Performance acceptable
@@ -590,6 +689,7 @@ Before marking story as "done", review your own code:
 ## Self-Review Checklist
 
 ### Code Quality
+
 - [ ] Code follows project conventions
   - [ ] Backend: snake_case, PEP 8, type hints
   - [ ] Frontend: camelCase, ESLint rules, TypeScript strict
@@ -599,24 +699,28 @@ Before marking story as "done", review your own code:
 - [ ] No hardcoded values (use config/env vars)
 
 ### Error Handling
+
 - [ ] Try-catch blocks for async operations
 - [ ] User-friendly error messages
 - [ ] Errors logged appropriately
 - [ ] Graceful degradation implemented
 
 ### Performance
+
 - [ ] No N+1 queries (database)
 - [ ] Appropriate indexes added
 - [ ] Images optimized (if applicable)
 - [ ] No memory leaks
 
 ### Security
+
 - [ ] No secrets in code
 - [ ] Input validation implemented
 - [ ] SQL injection prevented (use ORM)
 - [ ] XSS prevented (sanitize inputs)
 
 ### Testing
+
 - [ ] All acceptance criteria tested
 - [ ] Unit tests written
 - [ ] Integration tests written (if needed)
@@ -624,12 +728,14 @@ Before marking story as "done", review your own code:
 - [ ] Coverage targets met
 
 ### Documentation
+
 - [ ] README updated (if needed)
 - [ ] API endpoints documented
 - [ ] New env vars documented
 - [ ] Complex logic commented
 
 ### Integration
+
 - [ ] Works with existing features
 - [ ] No breaking changes
 - [ ] Database migrations applied
@@ -647,12 +753,14 @@ For collaborative projects:
 ```
 
 **What This Does:**
+
 - Analyzes code changes
 - Checks against best practices
 - Identifies potential issues
 - Generates review report
 
 **Exit Criteria:**
+
 - ✅ Self-review checklist complete
 - ✅ All items checked off
 - ✅ No blockers identified
@@ -683,7 +791,7 @@ For collaborative projects:
 
 **Example: Update README for New Env Vars**
 
-```markdown
+````markdown
 ## Environment Variables
 
 ### Backend (`packages/backend/.env`)
@@ -693,6 +801,7 @@ For collaborative projects:
 CLERK_SECRET_KEY=your_clerk_secret_key
 CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
 ```
+````
 
 #### **5.2 Create Story Summary**
 
@@ -730,11 +839,13 @@ CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
 ## Testing Results
 
 ### Manual Testing
+
 - ✅ All acceptance criteria verified
 - ✅ Edge cases tested (invalid credentials, expired session)
 - ✅ Cross-browser tested (Chrome, Firefox, Safari)
 
 ### Automated Testing
+
 - ✅ Unit tests: 8 passing
 - ✅ Integration tests: 3 passing
 - ✅ Coverage: Backend 82%, Frontend 67%
@@ -742,12 +853,14 @@ CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
 ## Technical Decisions
 
 **Why Clerk over custom JWT?**
+
 - Reduces development time by 2-3 stories
 - Provides OAuth, 2FA, magic links out-of-the-box
 - Better security (managed service)
 - Cost: Free tier covers MVP
 
 **Webhook Architecture:**
+
 - Clerk sends webhooks on user events → our backend syncs to DB
 - Idempotent processing (handles duplicate webhooks)
 - Validates webhook signatures for security
@@ -776,26 +889,31 @@ None
 ## 2025-11-10: Story 1.3 Complete - Clerk Authentication
 
 ### Summary
+
 Implemented Clerk authentication system with OAuth support, user sync webhooks, and protected routes.
 
 ### Changes Made
+
 - Added Clerk authentication middleware
 - Implemented user sync webhook
 - Created sign in/out UI components
 - Added authentication tests
 
 ### Technical Details
+
 - Frontend: @clerk/nextjs with App Router
 - Backend: clerk-backend-sdk for session verification
 - Database: Users table with clerk_user_id
 
 ### Metrics
+
 - Files modified: 8
 - Tests added: 11 (8 unit, 3 integration)
 - Time taken: ~6 hours
 - Coverage: Backend 82%, Frontend 67%
 
 ### Version Impact
+
 Story 1.3 complete → Epic 1 progress: 3/5 stories done (60%)
 ```
 
@@ -850,6 +968,7 @@ git push origin story/1-3-clerk-auth
 - ✅ Reference story/epic
 
 **Exit Criteria:**
+
 - ✅ All documentation updated
 - ✅ Story summary created
 - ✅ Change log updated
@@ -865,23 +984,27 @@ git push origin story/1-3-clerk-auth
 ## Pre-Merge Checklist
 
 ### Code
+
 - [ ] All acceptance criteria met
 - [ ] All tests passing
 - [ ] Linting clean
 - [ ] No console errors
 
 ### Documentation
+
 - [ ] Story summary created
 - [ ] README updated (if needed)
 - [ ] API docs updated (if needed)
 - [ ] Change log updated
 
 ### Integration
+
 - [ ] Merges cleanly with main
 - [ ] No conflicts
 - [ ] Works with latest main branch
 
 ### Sprint Tracking
+
 - [ ] sprint-status.yaml updated to "done"
 - [ ] Next story identified
 ```
@@ -893,7 +1016,6 @@ git push origin story/1-3-clerk-auth
 ```yaml
 # Update status
 1-3-integrate-clerk-authentication-system: done
-
 # Verify epic progress
 # Epic 1 stories:
 # 1-1: done
@@ -934,11 +1056,13 @@ git pull origin main
 #### **6.4 Celebrate! 🎉**
 
 Take a moment to:
+
 - ✅ Acknowledge what you built
 - ✅ Note what you learned
 - ✅ Celebrate the win (even small ones matter!)
 
 **Exit Criteria:**
+
 - ✅ Story merged to main
 - ✅ Branch cleaned up
 - ✅ Ready for next story
@@ -958,6 +1082,7 @@ Take a moment to:
 ```
 
 **What it does:**
+
 - Analyzes story requirements
 - Identifies files to create/modify
 - Creates implementation roadmap
@@ -974,12 +1099,14 @@ Take a moment to:
 ```
 
 **What it does:**
+
 - Guides through implementation
 - Answers technical questions
 - Reviews code quality
 - Helps with debugging
 
 **Menu options:**
+
 - Check workflow status
 - Create story context
 - Mark story as done
@@ -994,6 +1121,7 @@ Take a moment to:
 ```
 
 **What it does:**
+
 - Reviews code changes
 - Checks best practices
 - Identifies issues
@@ -1008,6 +1136,7 @@ Take a moment to:
 ```
 
 **What it does:**
+
 - Verifies all acceptance criteria met
 - Confirms tests passing
 - Updates story status
@@ -1047,12 +1176,12 @@ Take a moment to:
      └─ Test: Complete user journeys
      └─ Tools: Playwright
      └─ When: Critical flows only
-     
+
   Integration Tests (Some)
   └─ Test: Multiple components together
   └─ Tools: pytest, React Testing Library
   └─ When: API + DB + UI interactions
-  
+
 Unit Tests (Many)
 └─ Test: Individual functions
 └─ Tools: pytest, Jest
@@ -1062,12 +1191,14 @@ Unit Tests (Many)
 ### **What to Test**
 
 #### **Always Test:**
+
 - ✅ All acceptance criteria (manual minimum)
 - ✅ Happy path (everything works)
 - ✅ Error cases (what breaks)
 - ✅ Edge cases (boundary conditions)
 
 #### **Backend Tests:**
+
 ```python
 # Unit: Individual functions
 def test_hash_password():
@@ -1087,29 +1218,30 @@ def test_user_created_in_db():
 ```
 
 #### **Frontend Tests:**
+
 ```typescript
 // Unit: Component rendering
-it('renders button with correct text', () => {
+it("renders button with correct text", () => {
   render(<Button>Click me</Button>);
-  expect(screen.getByText('Click me')).toBeInTheDocument();
+  expect(screen.getByText("Click me")).toBeInTheDocument();
 });
 
 // Integration: User interaction
-it('submits form on click', async () => {
+it("submits form on click", async () => {
   render(<SignUpForm />);
-  await userEvent.type(screen.getByLabelText('Email'), 'test@example.com');
-  await userEvent.click(screen.getByText('Submit'));
+  await userEvent.type(screen.getByLabelText("Email"), "test@example.com");
+  await userEvent.click(screen.getByText("Submit"));
   await waitFor(() => {
-    expect(screen.getByText('Success')).toBeInTheDocument();
+    expect(screen.getByText("Success")).toBeInTheDocument();
   });
 });
 
 // E2E: Complete flow
-it('completes signup flow', async ({ page }) => {
-  await page.goto('/signup');
-  await page.fill('input[name="email"]', 'test@example.com');
+it("completes signup flow", async ({ page }) => {
+  await page.goto("/signup");
+  await page.fill('input[name="email"]', "test@example.com");
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL('/dashboard');
+  await expect(page).toHaveURL("/dashboard");
 });
 ```
 
@@ -1168,11 +1300,11 @@ npx playwright test --ui
 # Good ✅
 def calculate_user_score(user_id: int, mission_count: int) -> float:
     """Calculate DCI score for a user.
-    
+
     Args:
         user_id: The user's database ID
         mission_count: Number of completed missions
-        
+
     Returns:
         Daily Consistency Index score (0-100)
     """
@@ -1230,15 +1362,15 @@ interface MissionCardProps {
   isActive?: boolean;
 }
 
-export const MissionCard: React.FC<MissionCardProps> = ({ 
-  mission, 
+export const MissionCard: React.FC<MissionCardProps> = ({
+  mission,
   onComplete,
-  isActive = false 
+  isActive = false,
 }) => {
   const handleClick = useCallback(() => {
     onComplete(mission.id);
   }, [mission.id, onComplete]);
-  
+
   return (
     <div className="mission-card">
       <h3>{mission.title}</h3>
@@ -1248,11 +1380,16 @@ export const MissionCard: React.FC<MissionCardProps> = ({
 };
 
 // Bad ❌
-export const MissionCard = (props: any) => {  // No interface, any type
-  return <div onClick={() => props.onComplete(props.mission.id)}>  // Inline function
-    <h3>{props.mission.title}</h3>
-  </div>
-}
+export const MissionCard = (props: any) => {
+  // No interface, any type
+  return (
+    <div onClick={() => props.onComplete(props.mission.id)}>
+      {" "}
+      // Inline function
+      <h3>{props.mission.title}</h3>
+    </div>
+  );
+};
 ```
 
 #### **Hooks Best Practices**
@@ -1262,10 +1399,10 @@ export const MissionCard = (props: any) => {  // No interface, any type
 const MissionList: React.FC = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     let cancelled = false;
-    
+
     const fetchMissions = async () => {
       try {
         const data = await api.getMissions();
@@ -1273,32 +1410,32 @@ const MissionList: React.FC = () => {
           setMissions(data);
         }
       } catch (error) {
-        console.error('Failed to fetch missions:', error);
+        console.error("Failed to fetch missions:", error);
       } finally {
         if (!cancelled) {
           setLoading(false);
         }
       }
     };
-    
+
     fetchMissions();
-    
+
     return () => {
-      cancelled = true;  // Cleanup
+      cancelled = true; // Cleanup
     };
-  }, []);  // Dependencies listed
-  
+  }, []); // Dependencies listed
+
   // ... render
 };
 
 // Bad ❌
 const MissionList = () => {
-  const [missions, setMissions] = useState([]);  // No type
-  
+  const [missions, setMissions] = useState([]); // No type
+
   useEffect(() => {
-    api.getMissions().then(setMissions);  // No error handling, no cleanup
-  });  // Missing dependencies array!
-  
+    api.getMissions().then(setMissions); // No error handling, no cleanup
+  }); // Missing dependencies array!
+
   // ... render
 };
 ```
@@ -1350,22 +1487,22 @@ npm run type-check  # Configured in package.json
 # Backend: Docstrings for all public functions/classes
 def calculate_dci(user_id: int, date: datetime) -> float:
     """Calculate Daily Consistency Index for a user on a specific date.
-    
+
     The DCI is calculated based on:
     1. Missions completed (weighted by duration)
     2. Streak bonus (capped at 2.0x multiplier)
     3. Value category balance (bonus for well-rounded progress)
-    
+
     Args:
         user_id: The user's database ID
         date: The date to calculate DCI for
-        
+
     Returns:
         DCI score between 0 and 100
-        
+
     Raises:
         ValueError: If date is in the future
-        
+
     Example:
         >>> calculate_dci(user_id=123, date=datetime(2025, 11, 10))
         85.3
@@ -1373,18 +1510,18 @@ def calculate_dci(user_id: int, date: datetime) -> float:
     pass
 ```
 
-```typescript
+````typescript
 // Frontend: JSDoc for complex functions
 /**
  * Fetches and caches mission data with exponential backoff retry.
- * 
+ *
  * @param userId - The user's unique identifier
  * @param options - Optional fetch configuration
  * @param options.useCache - Whether to use cached data (default: true)
  * @param options.maxRetries - Maximum retry attempts (default: 3)
  * @returns Promise resolving to mission array
  * @throws {ApiError} If all retries fail
- * 
+ *
  * @example
  * ```typescript
  * const missions = await fetchMissions('user_123', { useCache: false });
@@ -1396,13 +1533,14 @@ async function fetchMissions(
 ): Promise<Mission[]> {
   // ...
 }
-```
+````
 
 #### **Story Documentation**
 
 Always create for completed stories:
 
 **1. Story Summary** (`docs/stories/story-[X.Y]-summary.md`)
+
 - What was built
 - Files created/modified
 - Testing results
@@ -1410,6 +1548,7 @@ Always create for completed stories:
 - Lessons learned
 
 **2. Testing Report** (`docs/stories/story-[X.Y]-testing.md`)
+
 - Manual test results
 - Automated test results
 - Coverage metrics
@@ -1420,17 +1559,20 @@ Always create for completed stories:
 Update when relevant:
 
 **1. README.md**
+
 - New setup steps
 - New dependencies
 - New environment variables
 - New commands
 
 **2. API Documentation**
+
 - New endpoints (method, path, params, response)
 - Authentication requirements
 - Example requests/responses
 
 **3. Change Log** (`.cursor-changes`)
+
 - High-level summary of changes
 - Version impact
 - Metrics (files, tests, time)
@@ -1448,9 +1590,9 @@ Update when relevant:
 cd packages/backend && poetry install
 cd packages/frontend && npm install
 
-# Solution 2: Reset database
-docker-compose down -v
-docker-compose up -d
+# Solution 2: Check database connection
+echo $DATABASE_URL  # Verify Supabase connection string
+cd packages/backend
 poetry run alembic upgrade head
 
 # Solution 3: Clear caches
@@ -1489,17 +1631,19 @@ poetry run uvicorn app.main:app --reload --port 8001
 #### **Issue: Can't Connect to Database**
 
 ```bash
-# Check Docker containers
-docker-compose ps
+# Check Supabase connection string
+echo $DATABASE_URL  # Should be: postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
 
-# View logs
-docker-compose logs postgres
+# Test connection manually
+cd packages/backend
+poetry run python -c "from sqlalchemy import create_engine; import os; engine = create_engine(os.getenv('DATABASE_URL')); conn = engine.connect(); print('Connected!'); conn.close()"
 
-# Restart services
-docker-compose restart postgres
+# Verify in Supabase Dashboard
+# Go to: https://app.supabase.com/project/_/settings/database
+# Check: Connection pooling status, database size
 
-# Check connection string in .env
-echo $DATABASE_URL
+# Re-run migrations
+poetry run alembic upgrade head
 ```
 
 ---
@@ -1507,24 +1651,31 @@ echo $DATABASE_URL
 ## 📖 **Resources**
 
 ### **Project Documentation**
-- Architecture: `docs/ARCHITECTURE.md`
+
+- Architecture: `docs/architecture.md`
 - Epic Breakdown: `docs/epics.md`
 - Sprint Status: `docs/sprint-status.yaml`
 - Tech Specs: `docs/tech-spec-epic-[N].md`
+- Product Brief: `docs/product-brief-Delight-YYYY-MM-DD.md`
 
 ### **BMAD Documentation**
+
 - BMAD Index: `bmad/README.md`
 - Developer Agent: `.cursor/rules/bmad/bmm/agents/dev.mdc`
 - Workflows: `bmad/bmm/workflows/`
 
 ### **External Resources**
+
 - FastAPI Docs: https://fastapi.tiangolo.com
 - Next.js Docs: https://nextjs.org/docs
+- Supabase Docs: https://supabase.com/docs
 - Clerk Docs: https://clerk.com/docs
 - LangChain Docs: https://python.langchain.com
+- OpenAI API Docs: https://platform.openai.com/docs
 - Playwright Docs: https://playwright.dev
 
 ### **Testing Resources**
+
 - pytest: https://docs.pytest.org
 - Jest: https://jestjs.io/docs
 - React Testing Library: https://testing-library.com/react
@@ -1535,6 +1686,7 @@ echo $DATABASE_URL
 ## 🎓 **Developer Growth Path**
 
 ### **Level 1: Apprentice Developer**
+
 - ✅ Follow workflow completely
 - ✅ Write basic tests
 - ✅ Complete stories with guidance
@@ -1543,6 +1695,7 @@ echo $DATABASE_URL
 **Goal:** Build confidence, establish habits
 
 ### **Level 2: Competent Developer**
+
 - ✅ Follow workflow independently
 - ✅ Write comprehensive tests
 - ✅ Complete stories without guidance
@@ -1551,6 +1704,7 @@ echo $DATABASE_URL
 **Goal:** Consistency, quality, speed
 
 ### **Level 3: Proficient Developer**
+
 - ✅ Adapt workflow to story needs
 - ✅ Design test strategies
 - ✅ Complete complex stories
@@ -1559,6 +1713,7 @@ echo $DATABASE_URL
 **Goal:** Judgment, leadership, mentorship
 
 ### **Level 4: Expert Developer**
+
 - ✅ Improve workflow processes
 - ✅ Set testing standards
 - ✅ Architect features
@@ -1575,6 +1730,7 @@ echo $DATABASE_URL
 **This guide is your roadmap to becoming a better developer.**
 
 The workflow is systematic because:
+
 - ✅ **Systems beat willpower** - Habits compound over time
 - ✅ **Quality beats speed** - Doing it right saves time later
 - ✅ **Testing beats hope** - Confidence comes from verification
@@ -1592,4 +1748,3 @@ Every story you complete is a step forward. Every test you write is an investmen
 **Last Updated:** 2025-11-10  
 **Maintained By:** Delight Team  
 **License:** Internal Use Only
-

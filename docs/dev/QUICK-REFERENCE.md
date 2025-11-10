@@ -24,12 +24,13 @@ SELECT → PREPARE → DEVELOP → TEST → REVIEW → COMPLETE
 
 - [ ] Optional: Run `@bmad/bmm/workflows/story-context`
 - [ ] Update `sprint-status.yaml` to "in-progress"
+- [ ] Verify Supabase connection (DATABASE_URL in .env)
 - [ ] Create branch: `git checkout -b story/X-Y-short-name`
 
 ### **3. DEVELOP**
 
 - [ ] Create implementation checklist
-- [ ] Start services: `docker-compose up -d`
+- [ ] Start backend & frontend servers
 - [ ] Implement features
 - [ ] Test manually as you go
 - [ ] Run linters before testing
@@ -63,8 +64,7 @@ SELECT → PREPARE → DEVELOP → TEST → REVIEW → COMPLETE
 ### **Start Development**
 
 ```bash
-# Start services
-docker-compose up -d
+# No Docker needed for database! Just Supabase connection string.
 
 # Backend (Terminal 1)
 cd packages/backend
@@ -73,6 +73,10 @@ poetry run uvicorn app.main:app --reload
 # Frontend (Terminal 2)
 cd packages/frontend
 npm run dev
+
+# Optional: Redis (Terminal 3) - only if using local Redis
+docker run -d -p 6379:6379 redis:7
+# OR use Upstash (serverless, free tier)
 ```
 
 ### **Testing**
@@ -197,9 +201,15 @@ lsof -i :8000
 ### **Database Issues**
 
 ```bash
-docker-compose down -v
-docker-compose up -d
+# Supabase: Check connection
+echo $DATABASE_URL
+
+# Re-run migrations
+cd packages/backend
 poetry run alembic upgrade head
+
+# If using local Redis:
+docker restart redis
 ```
 
 ### **Git Conflicts**
