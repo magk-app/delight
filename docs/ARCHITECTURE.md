@@ -52,21 +52,22 @@ This establishes:
 
 ## Decision Summary
 
-| Category               | Decision              | Version           | Affects Epics                     | Rationale                                  |
-| ---------------------- | --------------------- | ----------------- | --------------------------------- | ------------------------------------------ |
-| **Frontend Framework** | Next.js               | 15.x              | All frontend epics                | React ecosystem, streaming support, SEO    |
-| **UI Library**         | React                 | 19.x              | All frontend epics                | Latest React features, Server Components   |
-| **Component Library**  | shadcn/ui + Radix UI  | Latest            | UI components                     | Copy-paste components, theme customization |
-| **Styling**            | Tailwind CSS          | Latest            | All frontend epics                | Utility-first, theme system support        |
-| **Animation**          | Framer Motion         | Latest            | Character animations, transitions | Declarative, performant, React-native      |
-| **Backend Framework**  | FastAPI               | Latest            | All backend epics                 | Async-first, AI ecosystem integration      |
-| **AI Orchestration**   | LangGraph + LangChain | Latest            | Companion, Narrative Engine       | Stateful agents, multi-character support   |
-| **Vector Storage**     | PostgreSQL pgvector   | PG 15+, pgvector 0.5+ | Memory, Companion             | Unified storage, production-ready          |
-| **Database**           | PostgreSQL            | 15+               | All data persistence              | Production-ready, async support, pgvector  |
-| **ORM**                | SQLAlchemy (async)    | 2.0+              | Data models                       | Async support, mature ecosystem            |
-| **Background Jobs**    | ARQ                   | Latest            | Quest generation, nudges          | Async-native, Redis-based                  |
-| **Real-Time**          | SSE + HTTP (Hybrid)   | Native            | AI streaming, world updates       | Simple, perfect for one-way streaming      |
-| **File Storage**       | S3-compatible         | -                 | Evidence uploads                  | Scalable, cost-effective                   |
+| Category               | Decision              | Version               | Affects Epics                     | Rationale                                  |
+| ---------------------- | --------------------- | --------------------- | --------------------------------- | ------------------------------------------ |
+| **Frontend Framework** | Next.js               | 15.x                  | All frontend epics                | React ecosystem, streaming support, SEO    |
+| **UI Library**         | React                 | 19.x                  | All frontend epics                | Latest React features, Server Components   |
+| **Component Library**  | shadcn/ui + Radix UI  | Latest                | UI components                     | Copy-paste components, theme customization |
+| **Styling**            | Tailwind CSS          | Latest                | All frontend epics                | Utility-first, theme system support        |
+| **Animation**          | Framer Motion         | Latest                | Character animations, transitions | Declarative, performant, React-native      |
+| **Backend Framework**  | FastAPI               | Latest                | All backend epics                 | Async-first, AI ecosystem integration      |
+| **AI Orchestration**   | LangGraph + LangChain | Latest                | Companion, Narrative Engine       | Stateful agents, multi-character support   |
+| **Vector Storage**     | PostgreSQL pgvector   | PG 15+, pgvector 0.5+ | Memory, Companion                 | Unified storage, production-ready          |
+| **Database**           | PostgreSQL            | 15+                   | All data persistence              | Production-ready, async support, pgvector  |
+| **ORM**                | SQLAlchemy (async)    | 2.0+                  | Data models                       | Async support, mature ecosystem            |
+| **Background Jobs**    | ARQ                   | Latest                | Quest generation, nudges          | Async-native, Redis-based                  |
+| **Real-Time**          | SSE + WebSocket       | Native                | AI streaming, world updates       | SSE for AI, WebSocket for world state      |
+| **File Storage**       | S3-compatible         | -                     | Evidence uploads                  | Scalable, cost-effective                   |
+| **Observability**      | Sentry                | Latest                | Error tracking, performance       | Session replay, performance monitoring     |
 
 ---
 
@@ -202,7 +203,7 @@ delight/
 
 - **LangGraph** - Stateful agent orchestration
 - **LangChain** - LLM integration, memory abstractions
-- **Chroma** - Vector database (embedded mode)
+- **PostgreSQL pgvector** - Vector storage extension (unified with main DB)
 - **OpenAI/Anthropic** - LLM providers (configurable)
 
 **Background Jobs:**
@@ -232,10 +233,10 @@ delight/
    - Character agents: `backend/app/agents/character_agents.py`
    - Narrative agent: `backend/app/agents/narrative_agent.py`
 
-3. **Backend ↔ Memory:** Chroma for vector search, PostgreSQL for structured
+3. **Backend ↔ Memory:** PostgreSQL pgvector for vector search, unified with structured data
 
    - Memory service: `backend/app/services/memory_service.py`
-   - Chroma collections: personal, project, task memories
+   - Vector collections: personal, project, task memories (stored in PostgreSQL tables with vector columns)
 
 4. **Backend ↔ Background Jobs:** ARQ workers for async processing
    - Quest generation: `backend/app/workers/quest_generator.py`
@@ -281,7 +282,7 @@ delight/
 
 - **Service:** `backend/app/services/narrative_service.py`
 - **Agent:** `backend/app/agents/narrative_agent.py` (LangGraph state machine)
-- **Database:** `narrative_states` table (user_id, chapter, hidden_quests JSONB)
+- **Database:** `narrative_states` table (user_id, chapter, hidden_quests JSON)
 - **Workers:** `backend/app/workers/quest_generator.py` (pre-generates 3-5 hidden quests at story start)
 
 **Data Flow:**
@@ -312,6 +313,7 @@ CREATE INDEX idx_scenario_theme ON scenario_templates(theme);
 ```
 
 **Template Structure Example:**
+
 ```json
 {
   "narrative_arc": {
@@ -340,6 +342,7 @@ CREATE INDEX idx_scenario_theme ON scenario_templates(theme);
 ```
 
 This approach allows:
+
 - Easy addition of new scenarios without code changes
 - User-specific narrative customization
 - Version control for narrative content
@@ -385,8 +388,8 @@ This approach allows:
 
 - **Agents:** `backend/app/agents/eliza_agent.py`, `backend/app/agents/character_agents.py`
 - **Service:** `backend/app/services/character_service.py`
-- **Database:** `characters` table (personality JSONB, relationship_level INT)
-- **Memory:** Separate Chroma collections per character for conversation history
+- **Database:** `characters` table (personality JSON, relationship_level INT)
+- **Memory:** Separate PostgreSQL vector tables per character for conversation history
 - **Scheduler:** `backend/app/workers/character_initiator.py` (proactive character interactions)
 
 **Character-Initiated Flow:**
@@ -436,9 +439,9 @@ This approach allows:
 **Implementation:**
 
 - **Service:** `backend/app/services/world_service.py`
-- **Database:** `user_preferences` table (timezone, custom_hours JSONB)
+- **Database:** `user_preferences` table (timezone, custom_hours JSON)
 - **Cache:** Redis for world state (TTL: 15 minutes)
-- **Frontend:** Polls `/api/v1/world/state` every 15 minutes
+- **Frontend:** WebSocket connection for real-time world state updates + fallback polling
 
 ---
 
@@ -473,6 +476,7 @@ These patterns ensure consistent implementation across all AI agents:
 - **Tables:** `snake_case`, plural (e.g., `missions`, `character_relationships`)
 - **Columns:** `snake_case` (e.g., `user_id`, `created_at`)
 - **Foreign Keys:** `{table}_id` (e.g., `mission_id`, `character_id`)
+- **JSON columns:** Use `JSON` type (not `JSONB`) for flexible data structures
 
 ### Code Organization
 
@@ -530,7 +534,28 @@ src/
 **Frontend:**
 
 - **Console:** Development only
-- **Production:** Send errors to error tracking service (e.g., Sentry)
+- **Production:** Sentry for error tracking, performance monitoring, and user session replay
+
+### Background Job Reliability
+
+**Retry Strategy:**
+
+- Quest generation: 3 retries with exponential backoff (2s, 4s, 8s)
+- Nudge scheduling: 2 retries with 5s delay
+- Character initiation: 3 retries with exponential backoff
+- Memory consolidation: 5 retries (can run delayed without user impact)
+
+**Dead Letter Queue:**
+
+- Failed jobs after max retries go to Redis dead letter queue
+- Admin dashboard shows failed jobs with retry button
+- Critical failures (quest generation) trigger Sentry alert
+
+**Job Monitoring:**
+
+- Track job completion rate, average duration per job type
+- Alert on queue depth > 1000 or job age > 5 minutes
+- Dashboard for job status by type
 
 ---
 
@@ -556,7 +581,7 @@ src/
 
 **Narrative State:**
 
-- `id`, `user_id`, `scenario`, `current_chapter`, `hidden_quests` (JSONB), `story_progress` (JSONB)
+- `id`, `user_id`, `scenario`, `current_chapter`, `hidden_quests` (JSON), `story_progress` (JSON)
 
 **Progress:**
 
@@ -570,14 +595,14 @@ src/
 - User → Progress (1:N, daily records)
 - Mission → Evidence (1:N, optional photos/notes)
 
-### Vector Storage (Chroma)
+### Vector Storage (PostgreSQL pgvector)
 
-**Collections:**
+**Tables with Vector Columns:**
 
-- `user_{user_id}_personal_memory` - Personal context, emotional state
-- `user_{user_id}_project_memory` - Goal-related memories
-- `user_{user_id}_task_memory` - Mission-specific context
-- `character_{character_id}_conversations` - Per-character chat history
+- `personal_memories` - Personal context, emotional state (user_id, content, embedding vector(1536))
+- `project_memories` - Goal-related memories (user_id, content, embedding vector(1536))
+- `task_memories` - Mission-specific context (user_id, mission_id, content, embedding vector(1536))
+- `character_conversations` - Per-character chat history (user_id, character_id, message, embedding vector(1536))
 
 ---
 
@@ -693,12 +718,13 @@ data: {"type": "complete", "message_id": "abc123"}
 - AI calls: Rate limiting, token caching where possible
 - Background jobs: ARQ workers scale horizontally
 
-**Cost Optimization (Production):**
+**Cost Management (Target: $0.50/user/day):**
 
-- LLM calls: Batch where possible, use cheaper models for simple tasks
-- Vector storage: Chroma embedded (no separate service cost)
-- Database: Connection pooling to reduce connections
-- Caching: Aggressive caching of narrative templates, character prompts
+- LLM calls: Premium models for primary interactions, monitor token usage per user
+- Vector storage: PostgreSQL pgvector (unified database, no separate service)
+- Database: Connection pooling, efficient indexing on vector columns
+- Caching: Redis for narrative templates, character prompts, world state
+- Monitoring: Track LLM costs per user in real-time, implement soft limits
 
 ---
 
@@ -708,7 +734,7 @@ data: {"type": "complete", "message_id": "abc123"}
 
 - **Frontend:** Vercel (Next.js optimized)
 - **Backend:** Railway or Fly.io (Docker containers)
-- **Database:** Railway PostgreSQL or Supabase
+- **Database:** Railway PostgreSQL with pgvector or Supabase (has pgvector support)
 - **Redis:** Upstash (serverless Redis)
 - **File Storage:** S3-compatible (AWS S3 or MinIO)
 
@@ -716,10 +742,10 @@ data: {"type": "complete", "message_id": "abc123"}
 
 - **Frontend:** Vercel (edge network)
 - **Backend:** AWS ECS/Fargate or Fly.io (auto-scaling)
-- **Database:** AWS RDS PostgreSQL (managed)
+- **Database:** AWS RDS PostgreSQL with pgvector extension (managed)
 - **Redis:** AWS ElastiCache or Upstash
 - **File Storage:** AWS S3
-- **Monitoring:** Sentry (errors), Datadog/New Relic (APM)
+- **Monitoring:** Sentry (errors, performance, session replay), CloudWatch for infrastructure
 
 ---
 
@@ -730,6 +756,7 @@ data: {"type": "complete", "message_id": "abc123"}
 Delight uses **Mintlify** for developer and user documentation:
 
 **Structure:**
+
 ```
 docs/
 ├── mint.json              # Mintlify configuration
@@ -741,12 +768,14 @@ docs/
 ```
 
 **Setup:**
+
 ```bash
 npm install -g mintlify
 mintlify dev  # Run docs locally at localhost:3000
 ```
 
 **Benefits:**
+
 - Interactive API documentation
 - Beautiful, searchable interface
 - Versioned documentation
@@ -869,52 +898,104 @@ cp packages/backend/.env.example packages/backend/.env
 
 ---
 
-### ADR-004: Chroma for Vector Storage
+### ADR-004: PostgreSQL pgvector for Vector Storage
 
-**Decision:** Use Chroma (embedded) for vector storage.
+**Decision:** Use PostgreSQL with pgvector extension for vector storage.
 
 **Rationale:**
 
-- Simple setup, no separate service needed
-- Good LangChain integration
-- Free, open source
-- Can migrate to Qdrant/PostgreSQL pgvector later if needed
+- Unified storage: vectors + structured data in single database
+- Production-ready from day one, no migration needed
+- Excellent LangChain integration (langchain-postgres)
+- Reduces operational complexity (one database instead of two)
+- ACID guarantees for vector operations
 
 **Alternatives Considered:**
 
-- PostgreSQL pgvector (single database, less optimized for vectors)
-- Qdrant (best performance, separate service)
+- Chroma (simpler initially, but requires separate service or embedded mode)
+- Qdrant (best vector performance, adds operational overhead)
 
 **Consequences:**
 
-- Embedded mode = data lives in Python process (fine for MVP)
-- Can upgrade to Qdrant for production if needed
+- Need PostgreSQL 15+ with pgvector extension installed
+- Slightly more complex initial setup than embedded Chroma
+- Better scalability and production-readiness long-term
 
 ---
 
-### ADR-005: Hybrid SSE + HTTP for Real-Time
+### ADR-005: Hybrid SSE + WebSocket + HTTP for Real-Time
 
-**Decision:** Use Server-Sent Events (SSE) for AI streaming, HTTP for user actions.
+**Decision:** Use Server-Sent Events (SSE) for AI streaming, WebSocket for world state updates, HTTP for user actions.
 
 **Rationale:**
 
-- SSE perfect for one-way token streaming
-- Simpler than WebSocket (no connection management)
-- Works through firewalls/proxies easily
+- SSE perfect for one-way token streaming from AI
+- WebSocket for bidirectional world state (zone availability, character presence)
+- Eliminates polling delay (previously 15min), provides instant updates
 - HTTP for user actions is standard and simple
+- Graceful degradation: WebSocket failures fall back to polling
 
 **Alternatives Considered:**
 
-- WebSocket (full-duplex, more complex)
-- Polling (simpler, less efficient)
+- Pure WebSocket (full-duplex everywhere, more complex state management)
+- Pure polling (simpler, 15min latency for world changes)
+- SSE only (no bidirectional communication)
 
 **Consequences:**
 
-- Not true bidirectional real-time (fine for AI chat)
-- Can add WebSocket later for multiplayer features
+- Need to manage WebSocket connections and reconnection logic
+- Better UX with real-time world state changes
+- Fallback to polling ensures reliability
+
+---
+
+### ADR-006: JSON vs JSONB for Flexible Schemas
+
+**Decision:** Use `JSON` type (not `JSONB`) for flexible data structures in PostgreSQL.
+
+**Rationale:**
+
+- Simpler storage model for complex nested structures
+- Preserves exact JSON formatting and key order
+- Adequate performance for our use case (personality configs, quest data)
+
+**Alternatives Considered:**
+
+- JSONB (better performance, indexable, but binary format)
+- Fully normalized tables (rigid, hard to evolve for AI-generated content)
+
+**Consequences:**
+
+- Slightly slower queries on JSON fields (acceptable trade-off)
+- Cannot create GIN indexes on JSON columns (only JSONB supports this)
+- Simpler mental model for developers
+- Note: Can migrate to JSONB later if performance becomes an issue
+
+---
+
+## Revision History
+
+### 2025-11-10: Architecture Validation Updates
+
+**Changes made based on validation feedback:**
+
+1. **Cost Model Updated:** Changed from $0.10/user/day to $0.50/user/day operational target, with $1/day subscription pricing + pay-as-you-go model
+2. **Vector Storage Migration:** Switched from Chroma (embedded) to PostgreSQL pgvector for unified storage and production-readiness
+3. **Observability Solidified:** Confirmed Sentry for error tracking, performance monitoring, and session replay
+4. **Background Job Reliability:** Added retry strategies, dead letter queue, and monitoring dashboard specifications
+5. **Real-Time Architecture Enhanced:** Added WebSocket for world state updates (alongside SSE for AI streaming) to eliminate polling delays
+6. **Data Type Standardization:** Standardized on JSON type (not JSONB) for flexible schema columns with documented trade-offs
+
+**Impact:**
+
+- Eliminates future migration from Chroma → production vector DB
+- Clearer cost expectations and monitoring requirements
+- Better real-time user experience for world state changes
+- Production-ready from day one
 
 ---
 
 _Generated by BMAD Decision Architecture Workflow v1.3.2_  
 _Date: 2025-11-09_  
+_Updated: 2025-11-10_  
 _For: Jack_
