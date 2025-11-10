@@ -49,6 +49,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# Test results (pytest output)
+test-results/
+junit.xml
+
 # Translations
 *.mo
 *.pot
