@@ -1,0 +1,52 @@
+"""
+Delight Backend API
+FastAPI application with health check endpoint and Swagger UI documentation.
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1 import health
+
+app = FastAPI(
+    title="Delight API",
+    version="0.1.0",
+    description="AI-powered self-improvement companion API with emotionally intelligent coaching, "
+                "structured progress systems, and narrative world-building.",
+    docs_url="/docs",  # Swagger UI endpoint
+    redoc_url="/redoc",  # ReDoc alternative documentation
+    openapi_url="/openapi.json"  # OpenAPI JSON schema
+)
+
+# CORS configuration for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",  # Frontend dev server
+        "http://127.0.0.1:3000",  # Alternative localhost
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+# Register API routers
+app.include_router(
+    health.router,
+    prefix="/api/v1",
+    tags=["Health"]
+)
+
+@app.get("/", tags=["Root"])
+async def root():
+    """
+    Root endpoint with API information.
+    
+    Returns basic API metadata and links to documentation.
+    """
+    return {
+        "name": "Delight API",
+        "version": "0.1.0",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "health": "/api/v1/health"
+    }
+

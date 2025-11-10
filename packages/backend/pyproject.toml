@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "delight-backend"
+version = "0.1.0"
+description = "Delight AI companion backend API"
+authors = ["Jack <your-email@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = ">=0.109.0"
+uvicorn = {extras = ["standard"], version = ">=0.27.0"}
+sqlalchemy = {extras = ["asyncio"], version = ">=2.0.25"}
+asyncpg = ">=0.29.0"
+alembic = ">=1.13.0"
+pydantic = ">=2.5.0"
+pydantic-settings = ">=2.1.0"
+clerk-backend-sdk = ">=0.3.0"
+redis = ">=5.0.1"
+arq = ">=0.26.0"
+sentry-sdk = {extras = ["fastapi"], version = ">=1.40.0"}
+langchain = ">=0.1.0"
+langgraph = ">=0.0.20"
+langchain-postgres = ">=0.0.3"
+pgvector = ">=0.2.4"
+transformers = ">=4.36.0"
+torch = ">=2.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.4.0"
+pytest-asyncio = ">=0.23.0"
+httpx = ">=0.26.0"
+ruff = ">=0.1.11"
+black = ">=23.12.0"
+mypy = ">=1.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
