@@ -5,46 +5,46 @@
     <title>Initialize Monorepo Structure and Core Dependencies</title>
     <status>drafted</status>
     <generatedAt>2025-11-10</generatedAt>
-    <generator>BMAD Story Context Workflow</generator>
+    <generator>BMAD Story Context Workflow (v2 - Dual Mode + Version Pinning)</generator>
     <sourceStoryPath>docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md</sourceStoryPath>
   </metadata>
 
   <story>
     <asA>developer</asA>
-    <iWant>a properly structured monorepo with backend, frontend, and shared packages with all core dependencies installed</iWant>
-    <soThat>the team can work efficiently with proper tooling, dependency management, and can start both development servers successfully</soThat>
+    <iWant>a properly structured monorepo with backend, frontend, and shared packages with all core dependencies installed and support for both cloud-managed and local development modes</iWant>
+    <soThat>the team can work efficiently with proper tooling, dependency management, can start development servers successfully, and can work offline when needed</soThat>
     <tasks>
-      - Task 1: Initialize Monorepo Root (AC: #1)
-      - Task 2: Initialize Frontend Package (AC: #1, #2)
-      - Task 3: Initialize Backend Package (AC: #1, #2)
+      - Task 1: Initialize Monorepo Root (AC: #1) - includes Makefile with mode targets
+      - Task 2: Initialize Frontend Package (AC: #1, #2) - with version minimums
+      - Task 3: Initialize Backend Package (AC: #1, #2) - with version minimums and Swagger UI
       - Task 4: Initialize Shared Package (AC: #1)
-      - Task 5: Set Up Infrastructure (AC: #1, #3)
-      - Task 6: Configure Development Environment (AC: #4)
-      - Task 7: Implement Health Check Endpoint (AC: #3)
-      - Task 8: Testing (All ACs)
+      - Task 5: Set Up Infrastructure - Dual Mode Support (AC: #1, #3) - Docker Compose + Supabase docs
+      - Task 6: Configure Development Environment (AC: #4) - security hygiene, both modes
+      - Task 7: Implement Health Check Endpoint with Swagger UI (AC: #3)
+      - Task 8: Testing (All ACs) - cloud-dev and local mode testing
     </tasks>
   </story>
 
   <acceptanceCriteria>
     <criterion id="AC1">
       <title>Monorepo Structure Created</title>
-      <description>Given I am setting up a new development environment, when I run the initialization commands, then the monorepo structure is created with: packages/frontend/ (Next.js 15 + TypeScript + Tailwind), packages/backend/ (FastAPI + Poetry + async SQLAlchemy), packages/shared/ (TypeScript types), Docker Compose for local Redis, root package.json with pnpm workspace configuration</description>
+      <description>Given I am setting up a new development environment, when I run the initialization commands, then the monorepo structure is created with: packages/frontend/ (Next.js 15 + TypeScript + Tailwind), packages/backend/ (FastAPI + Poetry + async SQLAlchemy), packages/shared/ (TypeScript types), Docker Compose for local PostgreSQL 16 + Redis 7, root package.json with pnpm workspace configuration, Makefile with 'make local' and 'make cloud-dev' targets</description>
       <source>docs/epics/epic-1-user-onboarding-foundation.md#Story-1.1, docs/tech-spec-epic-1.md#AC1</source>
     </criterion>
     <criterion id="AC2">
-      <title>Core Dependencies Installed</title>
-      <description>All core dependencies are present: Frontend (Next.js 15, React 19, TypeScript, Tailwind, shadcn/ui, @clerk/nextjs, framer-motion), Backend (FastAPI, SQLAlchemy 2.0 async, asyncpg, Pydantic, Alembic, clerk-backend-sdk, redis, arq, sentry-sdk), AI/ML (LangChain, LangGraph, langchain-postgres, pgvector, transformers, torch)</description>
+      <title>Core Dependencies Installed With Version Minimums</title>
+      <description>All core dependencies present with version constraints (>= minimums): Frontend (next >=15.0.0, react >=19.0.0, typescript >=5.3.0, tailwindcss >=3.4.0, @clerk/nextjs >=5.0.0, framer-motion >=11.0.0, etc.), Backend Core (fastapi >=0.109.0, uvicorn[standard] >=0.27.0, sqlalchemy[asyncio] >=2.0.25, asyncpg >=0.29.0, alembic >=1.13.0, pydantic >=2.5.0, clerk-backend-sdk >=0.3.0, redis >=5.0.1, arq >=0.26.0, sentry-sdk[fastapi] >=1.40.0), AI/ML CRITICAL (langchain >=0.1.0, langgraph >=0.0.20, langchain-postgres >=0.0.3, pgvector >=0.2.4, transformers >=4.36.0, torch >=2.1.0), Dev dependencies (pytest >=7.4.0, ruff >=0.1.11, black >=23.12.0, mypy >=1.8.0, eslint >=8.56.0, prettier >=3.2.0)</description>
       <source>docs/tech-spec-epic-1.md#AC2, docs/tech-spec-epic-1.md#Dependencies</source>
     </criterion>
     <criterion id="AC3">
-      <title>Development Servers Start Successfully</title>
-      <description>Frontend starts successfully: pnpm dev (http://localhost:3000), Backend starts successfully: poetry run uvicorn main:app --reload (http://localhost:8000), Supabase PostgreSQL is accessible, Redis is accessible (Upstash or Docker), Health check endpoint responds: GET http://localhost:8000/api/v1/health</description>
+      <title>Development Servers Start Successfully in Both Modes</title>
+      <description>Cloud-Dev Mode (managed services): Frontend at localhost:3000, Backend at localhost:8000, Supabase PostgreSQL accessible, Upstash/Docker Redis accessible, Health check at /api/v1/health returns 200 OK, SWAGGER UI at /docs available. Local Mode (Docker services): docker-compose up starts PostgreSQL (5432) + Redis (6379), Frontend/Backend start successfully, Local PostgreSQL with pgvector accessible, Health check returns 200 OK, SWAGGER UI at /docs available. Both modes must pass all criteria.</description>
       <source>docs/tech-spec-epic-1.md#AC1, docs/tech-spec-epic-1.md#AC6</source>
     </criterion>
     <criterion id="AC4">
-      <title>Environment Configuration Complete</title>
-      <description>.env.example files exist for both frontend and backend with required environment variables documented: DATABASE_URL (Supabase), REDIS_URL, CLERK_PUBLISHABLE_KEY (frontend), CLERK_SECRET_KEY (backend), OPENAI_API_KEY, SENTRY_DSN. .env files are in .gitignore, README.md contains setup instructions</description>
-      <source>docs/tech-spec-epic-1.md#AC6, docs/architecture/project-structure.md</source>
+      <title>Environment Configuration Complete With Security Hygiene</title>
+      <description>.env.example files exist for frontend (PUBLIC keys: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, NEXT_PUBLIC_API_URL, NEVER include CLERK_SECRET_KEY) and backend (PRIVATE keys: INFRA_MODE, DATABASE_URL, REDIS_URL, CLERK_SECRET_KEY backend only, OPENAI_API_KEY, SENTRY_DSN, ENVIRONMENT). .env files in .gitignore. README.md contains setup instructions for BOTH modes (cloud-dev path and local path). Security note: CLERK_SECRET_KEY ONLY in backend environment, never frontend.</description>
+      <source>docs/tech-spec-epic-1.md#AC6, docs/architecture/project-structure.md, docs/tech-spec-epic-1.md#Security</source>
     </criterion>
   </acceptanceCriteria>
 
@@ -53,50 +53,50 @@
       <doc>
         <path>docs/tech-spec-epic-1.md</path>
         <title>Epic 1 Technical Specification: User Onboarding & Foundation</title>
-        <section>Overview, Technology Stack Decisions, Dependencies</section>
-        <snippet>Comprehensive technical specification for Epic 1 covering monorepo setup, technology stack (Next.js 15, FastAPI, Supabase PostgreSQL, Clerk auth), all dependencies, and infrastructure constraints (cost target &lt;$0.50 per user per day).</snippet>
+        <section>Overview, Technology Stack Decisions, Dependencies with Version Constraints</section>
+        <snippet>Comprehensive technical specification for Epic 1 covering monorepo setup, technology stack (Next.js 15, FastAPI, Supabase PostgreSQL OR Docker PostgreSQL, Clerk auth), all dependencies WITH VERSION MINIMUMS, and infrastructure constraints (cost target &lt;$0.50 per user per day, dual-mode support).</snippet>
       </doc>
       <doc>
         <path>docs/epics/epic-1-user-onboarding-foundation.md</path>
         <title>Epic 1: User Onboarding & Foundation</title>
         <section>Story 1.1: Initialize Monorepo Structure and Core Dependencies</section>
-        <snippet>Story requirements with acceptance criteria for monorepo initialization, core dependencies installation (Next.js 15, FastAPI, Clerk, AI/ML stack), development server startup, and environment configuration.</snippet>
+        <snippet>Story requirements with acceptance criteria for monorepo initialization, core dependencies installation with version constraints (Next.js 15, FastAPI, Clerk, AI/ML stack with minimums), development server startup in both cloud-dev and local modes, and environment configuration with security hygiene.</snippet>
       </doc>
       <doc>
         <path>docs/architecture/project-structure.md</path>
         <title>Project Structure</title>
         <section>Complete monorepo directory structure</section>
-        <snippet>Canonical directory structure for frontend (App Router with route groups: (auth)/, (world)/, companion/, missions/, progress/), backend (api/v1/, core/, models/, schemas/, services/, agents/, workers/, db/), and shared packages (TypeScript types).</snippet>
+        <snippet>Canonical directory structure for frontend (App Router with route groups: (auth)/, (world)/, companion/, missions/, progress/), backend (api/v1/ including health.py with Swagger docs, core/, models/, schemas/, services/, agents/, workers/, db/), and shared packages (TypeScript types). Supports both cloud-dev and local development modes.</snippet>
       </doc>
       <doc>
         <path>docs/architecture/technology-stack-details.md</path>
         <title>Technology Stack Details</title>
-        <section>Frontend, Backend, Database, Authentication</section>
-        <snippet>Detailed technology choices: Frontend (Next.js 15 App Router, React 19, TypeScript, Tailwind, shadcn/ui), Backend (FastAPI, async SQLAlchemy 2.0, asyncpg), Database (Supabase managed PostgreSQL with pgvector), Authentication (Clerk managed service), Infrastructure (ARQ + Redis for job queue, Sentry for observability).</snippet>
+        <section>Frontend, Backend, Database, Authentication, Dual-Mode Infrastructure</section>
+        <snippet>Detailed technology choices: Frontend (Next.js 15 App Router, React 19, TypeScript, Tailwind, shadcn/ui), Backend (FastAPI with Swagger UI at /docs, async SQLAlchemy 2.0, asyncpg), Database (Supabase managed PostgreSQL with pgvector OR Docker PostgreSQL 16 + pgvector for local mode), Authentication (Clerk managed service with security separation: publishable key frontend, secret key backend only), Infrastructure (ARQ + Redis for job queue, Sentry for observability, dual-mode support).</snippet>
       </doc>
       <doc>
         <path>docs/architecture/development-environment.md</path>
         <title>Development Environment</title>
-        <section>Prerequisites, Setup Commands</section>
-        <snippet>Prerequisites: Node.js 20+, Python 3.11+, Poetry, Supabase account, optional Docker for Redis. Setup includes pnpm workspace initialization, Poetry backend setup, Supabase configuration, and environment variable management.</snippet>
+        <section>Prerequisites, Setup Commands, Cloud-Dev vs Local Mode</section>
+        <snippet>Prerequisites: Node.js 20+, Python 3.11+, Poetry, Docker (optional for local mode). Setup includes pnpm workspace initialization, Poetry backend setup with version constraints, Supabase configuration (cloud-dev) OR Docker PostgreSQL setup (local mode), Upstash Redis (cloud-dev) OR Docker Redis (local mode), and environment variable management with security hygiene. Makefile targets: make local (Docker services) and make cloud-dev (managed services).</snippet>
       </doc>
       <doc>
         <path>docs/architecture/api-contracts.md</path>
         <title>API Contracts</title>
-        <section>Health Check Endpoints</section>
-        <snippet>Health check endpoint specification: GET /api/v1/health returns JSON with status (healthy/degraded/unhealthy), database connection status, redis connection status, and timestamp. No authentication required.</snippet>
+        <section>Health Check Endpoints, Swagger UI</section>
+        <snippet>Health check endpoint specification: GET /api/v1/health returns JSON with status (healthy/degraded/unhealthy), database connection status, redis connection status, and timestamp. No authentication required. Swagger UI REQUIRED at GET /docs for interactive API documentation (FastAPI built-in). ReDoc alternative at /redoc. OpenAPI JSON spec at /openapi.json for machine-readable documentation.</snippet>
       </doc>
       <doc>
         <path>docs/architecture/implementation-patterns.md</path>
         <title>Implementation Patterns</title>
-        <section>Monorepo Organization, Dependency Management</section>
-        <snippet>Patterns for pnpm workspaces, Poetry dependency isolation, shared type definitions, environment configuration (.env.example templates), and development workflow (parallel frontend/backend development with health checks).</snippet>
+        <section>Monorepo Organization, Dependency Management, Dual-Mode Infrastructure</section>
+        <snippet>Patterns for pnpm workspaces, Poetry dependency isolation with version constraints, shared type definitions, environment configuration (.env.example templates with security hygiene), dual-mode infrastructure support (cloud-dev for speed, local for offline work), Makefile targets for mode switching, and development workflow (parallel frontend/backend development with health checks and Swagger UI for API testing).</snippet>
       </doc>
       <doc>
         <path>docs/product-brief-Delight-2025-11-09.md</path>
         <title>Product Brief: Delight</title>
         <section>Vision, Core Features</section>
-        <snippet>Delight is a self-improvement companion platform pairing emotionally intelligent AI coaching with structured progress systems. Vision: software that feels seamlessly supportive and ruthlessly effective. Foundation epic establishes technical infrastructure for companion chat, mission management, and narrative systems.</snippet>
+        <snippet>Delight is a self-improvement companion platform pairing emotionally intelligent AI coaching with structured progress systems. Vision: software that feels seamlessly supportive and ruthlessly effective. Foundation epic establishes technical infrastructure for companion chat, mission management, and narrative systems. Supports both rapid development (cloud-managed services) and contributor flexibility (local offline development).</snippet>
       </doc>
     </docs>
     <code>
@@ -104,69 +104,78 @@
         <path>docker-compose.yml</path>
         <kind>infrastructure</kind>
         <symbol>docker-compose</symbol>
-        <lines>1-10</lines>
-        <reason>Existing Docker Compose configuration - needs updating to include only Redis (Supabase replaces PostgreSQL). Provides infrastructure service definitions for local development.</reason>
+        <lines>1-30</lines>
+        <reason>Docker Compose configuration for LOCAL MODE - needs creation with PostgreSQL 16 (with pgvector support via shared_preload_libraries) and Redis 7. Provides full offline development capability for contributors who prefer local parity or work in air-gapped environments.</reason>
+      </artifact>
+      <artifact>
+        <path>Makefile</path>
+        <kind>infrastructure</kind>
+        <symbol>Makefile</symbol>
+        <lines>new</lines>
+        <reason>Makefile with infrastructure mode targets needs creation: 'make local' (start Docker services), 'make cloud-dev' (use managed services), 'make stop' (stop Docker), 'make install' (install dependencies), 'make dev' (start dev servers), 'make lint' (run linters), 'make test' (run tests). Simplifies mode switching and common development tasks.</reason>
       </artifact>
       <artifact>
         <path>README.md</path>
         <kind>documentation</kind>
         <symbol>README</symbol>
         <lines>1-555</lines>
-        <reason>Existing project README - needs updating with monorepo setup instructions, Supabase configuration, Clerk setup, and development server startup commands. Will serve as primary developer onboarding document.</reason>
+        <reason>Existing project README - needs updating with TWO CLEAR SETUP PATHS: Path 1 (Cloud-Dev Mode: Supabase + Upstash, recommended for speed), Path 2 (Local Mode: Docker PostgreSQL + Redis, for offline work). Include Makefile commands, security hygiene notes (CLERK_SECRET_KEY backend only), Swagger UI documentation, and version requirement explanations.</reason>
       </artifact>
       <artifact>
         <path>package.json</path>
         <kind>config</kind>
         <symbol>package.json</symbol>
         <lines>empty</lines>
-        <reason>Root package.json needs to be created with pnpm workspace configuration pointing to packages/* for monorepo management. Will coordinate frontend and shared package dependencies.</reason>
+        <reason>Root package.json needs creation with pnpm workspace configuration pointing to packages/*, npm scripts for dev/lint/test that work with pnpm workspaces, and concurrently for parallel frontend/backend dev servers.</reason>
       </artifact>
     </code>
     <dependencies>
       <frontend>
-        <package name="next" version="^15.0.0" />
-        <package name="react" version="^19.0.0" />
-        <package name="react-dom" version="^19.0.0" />
-        <package name="@clerk/nextjs" version="^5.0.0" />
-        <package name="typescript" version="^5.3.0" />
-        <package name="tailwindcss" version="^3.4.0" />
-        <package name="framer-motion" version="^11.0.0" />
-        <package name="@radix-ui/react-*" version="latest" />
-        <package name="class-variance-authority" version="^0.7.0" />
-        <package name="clsx" version="^2.1.0" />
-        <package name="tailwind-merge" version="^2.2.0" />
-        <package name="eslint" version="^8.56.0" />
-        <package name="prettier" version="^3.2.0" />
+        <package name="next" version=">=15.0.0" critical="true" />
+        <package name="react" version=">=19.0.0" critical="true" />
+        <package name="react-dom" version=">=19.0.0" critical="true" />
+        <package name="@clerk/nextjs" version=">=5.0.0" critical="true" note="Frontend auth - publishable key only" />
+        <package name="typescript" version=">=5.3.0" critical="true" />
+        <package name="tailwindcss" version=">=3.4.0" critical="true" />
+        <package name="framer-motion" version=">=11.0.0" />
+        <package name="@radix-ui/react-*" version="latest" note="shadcn/ui primitives" />
+        <package name="class-variance-authority" version=">=0.7.0" />
+        <package name="clsx" version=">=2.1.0" />
+        <package name="tailwind-merge" version=">=2.2.0" />
+        <package name="eslint" version=">=8.56.0" group="dev" />
+        <package name="prettier" version=">=3.2.0" group="dev" />
       </frontend>
       <backend>
-        <package name="fastapi" version="^0.109.0" />
-        <package name="uvicorn[standard]" version="^0.27.0" />
-        <package name="sqlalchemy[asyncio]" version="^2.0.25" />
-        <package name="asyncpg" version="^0.29.0" />
-        <package name="alembic" version="^1.13.0" />
-        <package name="pydantic" version="^2.5.0" />
-        <package name="pydantic-settings" version="^2.1.0" />
-        <package name="clerk-backend-sdk" version="^0.3.0" />
-        <package name="redis" version="^5.0.1" />
-        <package name="arq" version="^0.26.0" />
-        <package name="sentry-sdk[fastapi]" version="^1.40.0" />
-        <package name="langchain" version="^0.1.0" />
-        <package name="langgraph" version="^0.0.20" />
-        <package name="langchain-postgres" version="^0.0.3" />
-        <package name="pgvector" version="^0.2.4" />
-        <package name="transformers" version="^4.36.0" />
-        <package name="torch" version="^2.1.0" />
-        <package name="pytest" version="^7.4.0" group="dev" />
-        <package name="pytest-asyncio" version="^0.23.0" group="dev" />
-        <package name="httpx" version="^0.26.0" group="dev" />
-        <package name="ruff" version="^0.1.11" group="dev" />
-        <package name="black" version="^23.12.0" group="dev" />
-        <package name="mypy" version="^1.8.0" group="dev" />
+        <package name="fastapi" version=">=0.109.0" critical="true" note="Includes Swagger UI at /docs" />
+        <package name="uvicorn[standard]" version=">=0.27.0" critical="true" />
+        <package name="sqlalchemy[asyncio]" version=">=2.0.25" critical="true" note="Async ORM" />
+        <package name="asyncpg" version=">=0.29.0" critical="true" note="PostgreSQL async driver" />
+        <package name="alembic" version=">=1.13.0" critical="true" note="Database migrations" />
+        <package name="pydantic" version=">=2.5.0" critical="true" />
+        <package name="pydantic-settings" version=">=2.1.0" critical="true" />
+        <package name="clerk-backend-sdk" version=">=0.3.0" critical="true" note="Backend auth - SECRET key only" />
+        <package name="redis" version=">=5.0.1" critical="true" />
+        <package name="arq" version=">=0.26.0" critical="true" note="Async job queue" />
+        <package name="sentry-sdk[fastapi]" version=">=1.40.0" />
+        <package name="langchain" version=">=0.1.0" critical="true" note="AI: Agent framework, breaking changes likely" />
+        <package name="langgraph" version=">=0.0.20" critical="true" note="AI: Stateful graphs, pre-1.0" />
+        <package name="langchain-postgres" version=">=0.0.3" critical="true" note="AI: Memory store, pre-1.0" />
+        <package name="pgvector" version=">=0.2.4" critical="true" note="AI: Vector extension" />
+        <package name="transformers" version=">=4.36.0" critical="true" note="AI: Emotion detection model" />
+        <package name="torch" version=">=2.1.0" critical="true" note="AI: ML backend for transformers" />
+        <package name="pytest" version=">=7.4.0" group="dev" />
+        <package name="pytest-asyncio" version=">=0.23.0" group="dev" />
+        <package name="httpx" version=">=0.26.0" group="dev" />
+        <package name="ruff" version=">=0.1.11" group="dev" critical="true" note="Python linter" />
+        <package name="black" version=">=23.12.0" group="dev" critical="true" note="Python formatter" />
+        <package name="mypy" version=">=1.8.0" group="dev" note="Python type checker" />
       </backend>
       <infrastructure>
-        <service name="Supabase" purpose="Managed PostgreSQL 16+ with pgvector" tier="free (500MB)" />
-        <service name="Upstash" purpose="Managed Redis (optional, alternative to Docker)" tier="free" />
-        <service name="Clerk" purpose="Authentication service with OAuth providers" tier="free (10,000 MAU)" />
+        <service name="Supabase" purpose="Managed PostgreSQL 16+ with pgvector (cloud-dev mode)" tier="free (500MB)" mode="cloud-dev" />
+        <service name="Docker PostgreSQL 16" purpose="Local PostgreSQL with pgvector (local mode)" tier="local" mode="local" />
+        <service name="Upstash" purpose="Managed Redis (cloud-dev mode, optional)" tier="free (10K cmds/day)" mode="cloud-dev" />
+        <service name="Docker Redis 7" purpose="Local Redis (local mode or hybrid)" tier="local" mode="local" />
+        <service name="Clerk" purpose="Authentication service with OAuth providers" tier="free (10,000 MAU)" note="Publishable key frontend, secret key backend" />
         <service name="Sentry" purpose="Error tracking and monitoring" tier="free (5,000 errors/month)" />
       </infrastructure>
     </dependencies>
@@ -174,43 +183,59 @@
 
   <constraints>
     <constraint type="architecture">
-      <rule>Use Supabase (managed PostgreSQL) instead of local Docker PostgreSQL - pgvector extension pre-installed, free tier 500MB, production-ready from day one</rule>
+      <rule>Dual-mode infrastructure support REQUIRED: Cloud-dev mode (Supabase + Upstash, default for speed) AND Local mode (Docker PostgreSQL 16 + Redis 7, for offline work). Both modes must pass all acceptance criteria. Use Makefile targets: 'make local' or 'make cloud-dev' to switch modes.</rule>
+      <source>Gap analysis, contributor feedback, Story 1.1 enhancement</source>
+    </constraint>
+    <constraint type="architecture">
+      <rule>Cloud-dev mode: Use Supabase (managed PostgreSQL with pgvector pre-installed, free tier 500MB) + Upstash (managed Redis, free tier) OR Docker Redis. Recommended for day-to-day development and CI/CD.</rule>
       <source>docs/tech-spec-epic-1.md#Technology-Stack-Decisions</source>
     </constraint>
     <constraint type="architecture">
-      <rule>Monorepo structure: pnpm workspaces for frontend/shared (Node.js), Poetry for backend (Python) - do NOT mix package managers</rule>
+      <rule>Local mode: Use Docker Compose with PostgreSQL 16 (pgvector via shared_preload_libraries + Alembic migration) + Redis 7. Required for offline development, air-gapped environments, and contributors who prefer full local control.</rule>
+      <source>Gap analysis - contributor needs for local parity</source>
+    </constraint>
+    <constraint type="architecture">
+      <rule>Monorepo structure: pnpm workspaces for frontend/shared (Node.js), Poetry for backend (Python) - do NOT mix package managers. Root package.json with workspace scripts.</rule>
       <source>docs/tech-spec-epic-1.md#Infrastructure-Constraints, docs/architecture/project-structure.md</source>
     </constraint>
     <constraint type="architecture">
-      <rule>Frontend: Next.js 15 App Router with React Server Components, organized by route groups: (auth)/, (world)/, companion/, missions/, progress/</rule>
+      <rule>Frontend: Next.js 15 App Router with React Server Components, organized by route groups: (auth)/, (world)/, companion/, missions/, progress/. Import alias @/* for clean imports.</rule>
       <source>docs/architecture/project-structure.md</source>
     </constraint>
     <constraint type="architecture">
-      <rule>Backend: FastAPI with async SQLAlchemy 2.0, organized by layers: api/v1/ (routes), core/ (config), models/ (database), services/ (business logic), agents/ (LangGraph), workers/ (ARQ jobs)</rule>
-      <source>docs/architecture/project-structure.md</source>
+      <rule>Backend: FastAPI with async SQLAlchemy 2.0, organized by layers: api/v1/ (routes including health.py with Swagger docs), core/ (config), models/ (database), services/ (business logic), agents/ (LangGraph), workers/ (ARQ jobs). Swagger UI REQUIRED at /docs endpoint.</rule>
+      <source>docs/architecture/project-structure.md, Gap analysis - Swagger UI requirement</source>
+    </constraint>
+    <constraint type="dependency">
+      <rule>Version minimums REQUIRED for critical packages to ensure compatibility: langchain >=0.1.0, langgraph >=0.0.20, langchain-postgres >=0.0.3, pgvector >=0.2.4, transformers >=4.36.0, torch >=2.1.0 (AI/ML stack), fastapi >=0.109.0, sqlalchemy >=2.0.25, pydantic >=2.5.0 (backend core). Use >= minimums, lock with poetry.lock and pnpm-lock.yaml for reproducibility.</rule>
+      <source>Gap analysis - version pinning, docs/tech-spec-epic-1.md#Dependencies</source>
     </constraint>
     <constraint type="security">
-      <rule>NEVER commit .env files - use .env.example templates only. Add .env to .gitignore. Document all required environment variables with examples.</rule>
+      <rule>CRITICAL: CLERK_SECRET_KEY ONLY in backend environment, NEVER in frontend. Frontend uses NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (safe to expose). Backend uses CLERK_SECRET_KEY (private). Document this separation in .env.example files with clear comments.</rule>
+      <source>Gap analysis - security hygiene, Clerk documentation, docs/tech-spec-epic-1.md#Security</source>
+    </constraint>
+    <constraint type="security">
+      <rule>NEVER commit .env files - use .env.example templates only. Add .env to .gitignore. Document all required environment variables with examples and security notes.</rule>
       <source>docs/tech-spec-epic-1.md#Security</source>
     </constraint>
-    <constraint type="security">
-      <rule>Authentication handled by Clerk - install dependencies now (@clerk/nextjs, clerk-backend-sdk) but full integration deferred to Story 1.3</rule>
-      <source>docs/tech-spec-epic-1.md#Story-1.3</source>
+    <constraint type="api">
+      <rule>Swagger UI REQUIRED: FastAPI must serve interactive API documentation at GET /docs (Swagger UI) and GET /redoc (ReDoc alternative). OpenAPI JSON spec at /openapi.json. Verify in acceptance testing: curl http://localhost:8000/docs returns HTML.</rule>
+      <source>Gap analysis - Swagger requirement removed, FastAPI best practices</source>
     </constraint>
     <constraint type="performance">
-      <rule>Cost target: &lt;$0.50 per active user per day - guides choice of managed services (Supabase free tier, Clerk free tier, Upstash free tier)</rule>
+      <rule>Cost target: &lt;$0.50 per active user per day - guides choice of managed services (Supabase free tier, Clerk free tier, Upstash free tier). Local mode has no service costs.</rule>
       <source>docs/tech-spec-epic-1.md#Infrastructure-Constraints</source>
     </constraint>
     <constraint type="performance">
-      <rule>API Response Time target (p95): &lt;500ms - use async SQLAlchemy, connection pooling, efficient queries</rule>
+      <rule>API Response Time target (p95): &lt;500ms - use async SQLAlchemy, connection pooling, efficient queries. Both modes must meet performance targets.</rule>
       <source>docs/tech-spec-epic-1.md#Performance</source>
     </constraint>
     <constraint type="testing">
-      <rule>Testing strategy for Story 1.1: Focus on integration testing (services start successfully), verify health check endpoint, verify linters run without errors, verify builds complete</rule>
+      <rule>Testing strategy for Story 1.1: Integration testing focus (services start successfully in BOTH modes), verify health check endpoint, verify Swagger UI at /docs, verify linters run without errors, verify builds complete, test mode switching (cloud-dev ↔ local).</rule>
       <source>docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md#Testing-Strategy</source>
     </constraint>
     <constraint type="dependency">
-      <rule>AI/ML dependencies installed in Story 1.1 for future use: LangChain/LangGraph (Epic 2: companion agent), transformers/torch (Story 2.6: emotion detection), langchain-postgres/pgvector (Epic 2: memory system)</rule>
+      <rule>AI/ML dependencies installed in Story 1.1 for future use: LangChain/LangGraph (Epic 2: companion agent), transformers/torch (Story 2.6: emotion detection), langchain-postgres/pgvector (Epic 2: memory system). Version minimums ensure compatibility.</rule>
       <source>docs/tech-spec-epic-1.md#AI/LLM-Infrastructure</source>
     </constraint>
   </constraints>
@@ -221,75 +246,95 @@
       <kind>REST endpoint</kind>
       <signature>GET /api/v1/health → { status: "healthy" | "degraded" | "unhealthy", database: "connected" | "disconnected", redis: "connected" | "disconnected", timestamp: ISO8601 }</signature>
       <path>packages/backend/app/api/v1/health.py</path>
-      <description>Public endpoint (no auth required) for monitoring system health. Checks database and Redis connectivity. Returns 200 OK with status details.</description>
+      <description>Public endpoint (no auth required) for monitoring system health. Checks database and Redis connectivity in both cloud-dev and local modes. Returns 200 OK with status details. Must work in both infrastructure modes.</description>
+    </interface>
+    <interface>
+      <name>Swagger UI (OpenAPI Documentation)</name>
+      <kind>API documentation</kind>
+      <signature>GET /docs → HTML (Swagger UI), GET /redoc → HTML (ReDoc), GET /openapi.json → JSON (OpenAPI spec)</signature>
+      <path>packages/backend/main.py (FastAPI app configuration)</path>
+      <description>Interactive API documentation provided by FastAPI. Swagger UI at /docs for testing endpoints, ReDoc at /redoc for alternative view, OpenAPI JSON at /openapi.json for machine-readable spec. REQUIRED for developer productivity and external API integration. Verify: curl http://localhost:8000/docs returns HTML.</description>
     </interface>
     <interface>
       <name>Shared TypeScript Types</name>
       <kind>TypeScript barrel export</kind>
       <signature>export type User = { id: string; clerk_user_id: string; email: string; timezone: string; created_at: string; updated_at: string; }</signature>
       <path>packages/shared/index.ts</path>
-      <description>Shared type definitions re-exported through barrel file for clean imports in frontend. Initial types: User, UserPreferences (Story 1.2 will add more).</description>
+      <description>Shared type definitions re-exported through barrel file for clean imports in frontend. Initial types: User, UserPreferences (Story 1.2 will add more). Ensures type safety across frontend and shared packages.</description>
     </interface>
     <interface>
       <name>FastAPI Application Entry</name>
       <kind>Application initialization</kind>
-      <signature>from fastapi import FastAPI; app = FastAPI(title="Delight API", version="0.1.0"); app.include_router(health_router, prefix="/api/v1")</signature>
+      <signature>from fastapi import FastAPI; app = FastAPI(title="Delight API", version="0.1.0", docs_url="/docs", redoc_url="/redoc"); app.include_router(health_router, prefix="/api/v1")</signature>
       <path>packages/backend/main.py</path>
-      <description>Main FastAPI application with CORS middleware, health check route registration, and future route inclusions (auth, missions, companion, etc.)</description>
+      <description>Main FastAPI application with CORS middleware, Swagger UI configuration (docs_url="/docs"), health check route registration, and future route inclusions (auth, missions, companion, etc.). Configured for both development modes.</description>
+    </interface>
+    <interface>
+      <name>Makefile Infrastructure Targets</name>
+      <kind>Build automation</kind>
+      <signature>make local (start Docker services), make cloud-dev (use managed services), make stop (stop Docker), make install (install deps), make dev (start servers), make lint (run linters), make test (run tests)</signature>
+      <path>Makefile</path>
+      <description>Infrastructure mode management and common development tasks. 'make local' starts Docker Compose (PostgreSQL + Redis), 'make cloud-dev' documents managed service requirements, 'make stop' stops Docker, plus convenience targets for install/dev/lint/test. Simplifies mode switching and developer workflow.</description>
     </interface>
   </interfaces>
 
   <tests>
     <standards>
-      Testing for Story 1.1 focuses on integration and smoke testing to verify infrastructure setup. Frontend: ESLint for linting, future Jest + React Testing Library for unit tests, future Playwright for E2E. Backend: Ruff + Black for linting, pytest for unit/integration tests (70%+ coverage target for core logic). Health check endpoint must return 200 OK with correct JSON structure. All services (frontend, backend, Supabase, Redis) must start without errors. Build commands (pnpm build, poetry install) must complete successfully.
+      Testing for Story 1.1 focuses on integration and smoke testing to verify infrastructure setup IN BOTH MODES (cloud-dev and local). Frontend: ESLint for linting, future Jest + React Testing Library for unit tests, future Playwright for E2E. Backend: Ruff + Black for linting, pytest for unit/integration tests (70%+ coverage target for core logic). Health check endpoint must return 200 OK with correct JSON structure IN BOTH MODES. Swagger UI must be accessible at /docs IN BOTH MODES. All services (frontend, backend, database, redis) must start without errors IN BOTH MODES. Build commands (pnpm build, poetry install) must complete successfully. Mode switching (cloud-dev ↔ local) must work cleanly without conflicts. Security: Verify CLERK_SECRET_KEY only in backend environment, never frontend.
     </standards>
     <locations>
       - packages/frontend/__tests__/ (Jest unit tests - future)
       - packages/frontend/e2e/ (Playwright E2E tests - future)
       - packages/backend/tests/ (pytest tests)
-      - packages/backend/tests/integration/ (integration tests - future)
+      - packages/backend/tests/integration/ (integration tests - future, both modes)
+      - Makefile (infrastructure mode testing)
     </locations>
     <ideas>
-      <idea ac="AC1">
-        Test: Run pnpm install in root, verify packages/frontend/, packages/backend/, packages/shared/ directories exist with correct structure
+      <idea ac="AC1" mode="both">
+        Test: Run pnpm install in root, verify packages/frontend/, packages/backend/, packages/shared/ directories exist with correct structure. Verify Makefile exists with local/cloud-dev/stop/install/dev/lint/test targets.
       </idea>
-      <idea ac="AC2">
-        Test: Run poetry show in backend, verify all required packages (fastapi, sqlalchemy, clerk-backend-sdk, langchain, transformers) are installed with correct versions
+      <idea ac="AC1" mode="local">
+        Test: Run 'make local', verify docker-compose up starts PostgreSQL (5432) and Redis (6379). Verify containers running: docker ps shows postgres:16-alpine and redis:7-alpine.
       </idea>
-      <idea ac="AC2">
-        Test: Run pnpm list in frontend, verify all required packages (next, react, @clerk/nextjs, tailwindcss) are installed
+      <idea ac="AC2" mode="both">
+        Test: Run poetry show in backend, verify all required packages installed with MINIMUM VERSIONS: fastapi >=0.109.0, sqlalchemy >=2.0.25, langchain >=0.1.0, langgraph >=0.0.20, transformers >=4.36.0, torch >=2.1.0, clerk-backend-sdk >=0.3.0.
       </idea>
-      <idea ac="AC3">
-        Test: Start frontend dev server (pnpm dev), verify server responds at http://localhost:3000 with Next.js default page
+      <idea ac="AC2" mode="both">
+        Test: Run pnpm list in frontend, verify all required packages installed with MINIMUM VERSIONS: next >=15.0.0, react >=19.0.0, @clerk/nextjs >=5.0.0, tailwindcss >=3.4.0, typescript >=5.3.0.
       </idea>
-      <idea ac="AC3">
-        Test: Start backend dev server (poetry run uvicorn main:app --reload), verify server responds at http://localhost:8000
+      <idea ac="AC3" mode="cloud-dev">
+        Test Cloud-Dev Mode: Start frontend (pnpm dev), verify localhost:3000 responds. Start backend (poetry run uvicorn main:app --reload), verify localhost:8000 responds. Verify Supabase DATABASE_URL connection works. Verify Upstash/Docker REDIS_URL connection works.
       </idea>
-      <idea ac="AC3">
-        Test: Curl health check endpoint: curl http://localhost:8000/api/v1/health, verify 200 OK response with JSON structure { status, database, redis, timestamp }
+      <idea ac="AC3" mode="local">
+        Test Local Mode: Run 'make local' to start Docker. Start frontend (pnpm dev), verify localhost:3000 responds. Start backend (poetry run uvicorn main:app --reload), verify localhost:8000 responds. Verify local DATABASE_URL (postgresql+asyncpg://postgres:postgres@localhost:5432/delight) connection works. Verify local REDIS_URL (redis://localhost:6379) connection works.
       </idea>
-      <idea ac="AC3">
-        Test: Verify Supabase DATABASE_URL connection string works - backend can connect to Supabase PostgreSQL successfully
+      <idea ac="AC3" mode="both">
+        Test Health Check (Both Modes): Curl health endpoint in cloud-dev mode: curl http://localhost:8000/api/v1/health, verify 200 OK with JSON { status, database, redis, timestamp }. Repeat test in local mode after 'make local'. Both must return "connected" status.
       </idea>
-      <idea ac="AC3">
-        Test: Verify Redis connection (Upstash or Docker) - backend can connect to Redis successfully
+      <idea ac="AC3" mode="both" critical="true">
+        Test Swagger UI (Both Modes): Curl Swagger UI in cloud-dev mode: curl http://localhost:8000/docs, verify HTML response with Swagger interface. Curl OpenAPI JSON: curl http://localhost:8000/openapi.json, verify JSON schema. Repeat in local mode. Swagger MUST be accessible in both modes.
       </idea>
-      <idea ac="AC4">
-        Test: Verify .env.example files exist in packages/frontend/ and packages/backend/ with all required variables documented
+      <idea ac="AC3" mode="local">
+        Test Local PostgreSQL pgvector: Connect to local PostgreSQL (psql -h localhost -U postgres -d delight), run 'SELECT * FROM pg_available_extensions WHERE name = 'vector';', verify pgvector available (will be enabled in Story 1.2 via Alembic).
       </idea>
-      <idea ac="AC4">
-        Test: Verify .env is in .gitignore - run git check-ignore .env, should return exit code 0
+      <idea ac="AC4" mode="both">
+        Test Environment Files: Verify packages/frontend/.env.example exists with NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and NEXT_PUBLIC_API_URL. Verify comment: "NEVER include CLERK_SECRET_KEY here". Verify packages/backend/.env.example exists with INFRA_MODE, DATABASE_URL, REDIS_URL, CLERK_SECRET_KEY, OPENAI_API_KEY, SENTRY_DSN, ENVIRONMENT.
       </idea>
-      <idea ac="AC4">
-        Test: Verify README.md contains setup instructions with Supabase configuration, Clerk setup, and development server commands
+      <idea ac="AC4" mode="both">
+        Test Security Hygiene: Grep for CLERK_SECRET_KEY in packages/frontend/ directory, verify NOT FOUND (must be backend only). Verify .env in .gitignore: run 'git check-ignore .env', should return exit code 0.
       </idea>
-      <idea ac="ALL">
-        Test: Run linters - frontend: pnpm lint (ESLint), backend: poetry run ruff check . and poetry run black --check . - all should pass
+      <idea ac="AC4" mode="both">
+        Test README Documentation: Verify README.md contains TWO CLEAR SETUP PATHS: "Cloud-Dev Mode (Recommended)" section with Supabase + Upstash setup, and "Local Mode (Full Offline)" section with Docker setup. Verify Makefile commands documented.
       </idea>
-      <idea ac="ALL">
-        Test: Run build commands - frontend: pnpm build, backend: poetry install - both should complete without errors
+      <idea ac="ALL" mode="both">
+        Test Linters (Both Modes): Run linters - frontend: pnpm lint (ESLint), backend: poetry run ruff check . && poetry run black --check . - all must pass in both infrastructure modes.
+      </idea>
+      <idea ac="ALL" mode="both">
+        Test Build Commands (Both Modes): Run build - frontend: pnpm build (Next.js production build), backend: poetry install (verify lock file) - both must complete without errors in both modes.
+      </idea>
+      <idea ac="ALL" mode="switching">
+        Test Mode Switching: Start in cloud-dev mode (verify services work), switch to local mode ('make local', update .env to local URLs), restart services, verify works. Switch back to cloud-dev, verify clean transition without conflicts or leftover state.
       </idea>
     </ideas>
   </tests>
 </story-context>
-
