@@ -234,74 +234,280 @@ Running Delight locally requires some technical setup. If you're interested in t
 
 **For Developers:**
 
-- Python 3.11 or newer
-- Node.js 18 or newer with pnpm package manager
-- PostgreSQL 14+ (database for storing your data)
-- Redis 7+ (for temporary data and job queuing)
-- OpenAI API key (for AI capabilities)
+Delight supports **two infrastructure modes** to balance speed and flexibility:
 
-### Installation Steps
+**Required for both modes:**
+
+- **Node.js 20+** with pnpm package manager (`npm install -g pnpm`)
+- **Python 3.11+** with Poetry (`pip install poetry`)
+- **Clerk account** (free tier) for authentication → [clerk.com](https://clerk.com)
+- **OpenAI API key** for AI capabilities → [platform.openai.com](https://platform.openai.com)
+
+**Additional for Local Mode only:**
+
+- **Docker Desktop** for local PostgreSQL + Redis
+
+---
+
+### 🌥️ Setup Path 1: Cloud-Dev Mode (Recommended)
+
+**Best for:** Fast setup, production parity, no Docker required  
+**Free tier services:** Supabase (500MB DB), Upstash (10K Redis commands/day), Clerk (10K MAU)
+
+#### Step 1: Clone and Install
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/yourusername/delight.git
 cd delight
 
-# 2. Backend setup (Python server)
-cd packages/backend
-poetry install  # Install Python dependencies
-cp .env.example .env  # Create configuration file
-# Edit .env file with your database credentials and API keys
-
-# 3. Frontend setup (Web interface)
-cd ../frontend
-pnpm install  # Install JavaScript dependencies
-cp .env.example .env.local  # Create local configuration
-# Edit .env.local to point to your backend server
-
-# 4. Start the backend server (in one terminal)
-cd packages/backend
-poetry run uvicorn main:app --reload
-
-# 5. Start the frontend (in another terminal)
-cd packages/frontend
-pnpm dev
+# Install all dependencies (root + frontend + backend)
+make install
+# Or manually: pnpm install && cd packages/backend && poetry install
 ```
 
-Visit `http://localhost:3000` in your browser to see Delight running locally.
+#### Step 2: Set Up Cloud Services
 
-### Environment Configuration
+**Supabase (PostgreSQL Database):**
 
-The backend `.env` file needs these key settings:
+1. Create account at [supabase.com](https://supabase.com)
+2. Create new project
+3. Go to **Project Settings → Database → Connection String**
+4. Copy the URI format (starts with `postgresql://`)
+5. Convert to async format: Replace `postgresql://` with `postgresql+asyncpg://`
+
+**Upstash (Redis) - Optional:**
+
+1. Create account at [upstash.com](https://upstash.com)
+2. Create new Redis database
+3. Copy the connection URL from dashboard
+
+**Alternative:** Use Docker Redis even in cloud-dev mode:
 
 ```bash
-# Database connection
-POSTGRES_URL=postgresql+psycopg://delight:delight@localhost:5432/delight
-
-# Redis for job queuing
-REDIS_URL=redis://localhost:6379/0
-
-# Vector database for memory (Chroma)
-VECTOR_DB_URL=http://localhost:6333
-
-# AI provider credentials
-OPENAI_API_KEY=sk-your-key-here
-
-# Security
-ALLOWED_ORIGINS=http://localhost:3000
+docker run -d -p 6379:6379 redis:7-alpine
+# Then use REDIS_URL=redis://localhost:6379
 ```
 
-The frontend `.env.local` needs:
+**Clerk (Authentication):**
+
+1. Create account at [clerk.com](https://clerk.com)
+2. Create new application
+3. Copy **Publishable Key** (starts with `pk_test_`)
+4. Copy **Secret Key** (starts with `sk_test_`)
+
+#### Step 3: Configure Environment Variables
+
+**Frontend** (`packages/frontend/.env.local`):
 
 ```bash
-# Point to your local backend server
-NEXT_PUBLIC_API_BASE=http://localhost:8000
+# Clerk Authentication (PUBLIC KEY - safe in browser)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 
-# Application name
-NEXT_PUBLIC_APP_NAME=Delight
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# SECURITY: NEVER include CLERK_SECRET_KEY here!
+# Secret keys belong ONLY in backend environment
 ```
 
-_(Detailed setup instructions coming in `docs/setup.md` as the stack stabilizes)_
+**Backend** (`packages/backend/.env`):
+
+```bash
+# Infrastructure Mode
+INFRA_MODE=cloud-dev
+
+# Supabase Database (from Step 2)
+DATABASE_URL=postgresql+asyncpg://postgres:[password]@[host]:5432/postgres
+
+# Redis (Upstash or Docker)
+REDIS_URL=redis://localhost:6379  # or your Upstash URL
+
+# Clerk Authentication (SECRET KEY - backend only!)
+CLERK_SECRET_KEY=sk_test_...
+
+# AI/LLM
+OPENAI_API_KEY=sk-...
+
+# Optional: Error Tracking
+SENTRY_DSN=https://...
+
+# Environment
+ENVIRONMENT=development
+```
+
+#### Step 4: Start Development
+
+```bash
+# Start both frontend + backend servers
+make dev
+
+# Or start separately:
+# Terminal 1: make dev:frontend
+# Terminal 2: make dev:backend
+```
+
+**Access your app:**
+
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **Swagger UI:** http://localhost:8000/docs (interactive API docs)
+
+---
+
+### 🐳 Setup Path 2: Local Mode (Full Offline)
+
+**Best for:** Offline development, air-gapped environments, contributor preference for local control
+
+#### Step 1: Clone and Install
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/delight.git
+cd delight
+
+# Install all dependencies
+make install
+```
+
+#### Step 2: Start Local Infrastructure
+
+```bash
+# Start Docker PostgreSQL + Redis
+make local
+```
+
+This starts:
+
+- **PostgreSQL 16** with pgvector support on port 5432
+- **Redis 7** on port 6379
+
+Verify services running:
+
+```bash
+docker ps  # Should show postgres:16-alpine and redis:7-alpine
+```
+
+#### Step 3: Set Up Clerk (Still Required)
+
+Clerk authentication runs as a managed service even in local mode (no self-hosted auth):
+
+1. Create account at [clerk.com](https://clerk.com)
+2. Create new application
+3. Copy **Publishable Key** and **Secret Key**
+
+#### Step 4: Configure Environment Variables
+
+**Frontend** (`packages/frontend/.env.local`):
+
+```bash
+# Clerk Authentication (PUBLIC KEY)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+**Backend** (`packages/backend/.env`):
+
+```bash
+# Infrastructure Mode
+INFRA_MODE=local
+
+# Local Docker PostgreSQL
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/delight
+
+# Local Docker Redis
+REDIS_URL=redis://localhost:6379
+
+# Clerk Authentication (SECRET KEY - backend only!)
+CLERK_SECRET_KEY=sk_test_...
+
+# AI/LLM
+OPENAI_API_KEY=sk-...
+
+# Environment
+ENVIRONMENT=development
+```
+
+#### Step 5: Start Development
+
+```bash
+# Start both frontend + backend servers
+make dev
+```
+
+**Access your app:**
+
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **Swagger UI:** http://localhost:8000/docs
+
+**To stop local services:**
+
+```bash
+make stop
+```
+
+---
+
+### 🔄 Switching Between Modes
+
+You can easily switch between cloud-dev and local modes:
+
+```bash
+# Switch to local mode
+make local
+# Update backend/.env: INFRA_MODE=local, DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/delight
+
+# Switch to cloud-dev mode
+make stop  # Stop Docker services
+# Update backend/.env: INFRA_MODE=cloud-dev, DATABASE_URL=<supabase-url>
+```
+
+---
+
+### 🧪 Verify Your Setup
+
+```bash
+# Run linters (both modes)
+make lint
+
+# Run tests (both modes)
+make test
+
+# Check health endpoint
+curl http://localhost:8000/api/v1/health
+# Should return: {"status": "healthy", "database": "connected", "redis": "connected", ...}
+
+# Check Swagger UI
+curl http://localhost:8000/docs
+# Should return HTML with interactive API documentation
+```
+
+---
+
+### 🔐 Security Notes
+
+**CRITICAL:** Clerk has TWO keys with different security boundaries:
+
+- **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** → Frontend only, safe to expose in browser
+- **`CLERK_SECRET_KEY`** → Backend only, NEVER in frontend environment
+
+**Why?** The publishable key is designed for client-side use. The secret key grants full administrative access and must remain server-side only.
+
+**Both `.env.example` files include comments to prevent mistakes.**
+
+---
+
+### 📚 Additional Resources
+
+- **Makefile commands:** Run `make help` to see all available commands
+- **Architecture details:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Workflow status:** [docs/bmm-workflow-status.yaml](docs/bmm-workflow-status.yaml)
+- **Epic 1 Technical Spec:** [docs/tech-spec-epic-1.md](docs/tech-spec-epic-1.md)
+
+_(Full API documentation available at `/docs` endpoint after starting the backend)_
 
 ---
 
