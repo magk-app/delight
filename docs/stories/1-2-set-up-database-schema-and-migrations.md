@@ -1,6 +1,6 @@
 # Story 1.2: Set Up Database Schema and Migrations
 
-Status: drafted
+Status: ready-for-dev
 
 ## Story
 
@@ -909,7 +909,7 @@ packages/backend/
 
 ### Context Reference
 
-<!-- Path(s) to story context XML will be added here by context workflow -->
+- `docs/stories/1-2-set-up-database-schema-and-migrations.context.xml` - Technical context with documentation artifacts, dependencies, constraints, interfaces, and testing standards
 
 ### Agent Model Used
 

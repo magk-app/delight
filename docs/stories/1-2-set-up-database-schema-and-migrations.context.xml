@@ -1,0 +1,351 @@
+<story-context id="story-1-2-database-schema" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.2</storyId>
+    <title>Set Up Database Schema and Migrations</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-10</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-2-set-up-database-schema-and-migrations.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a versioned database schema with migration tooling and core user tables</iWant>
+    <soThat>schema changes are tracked, can be applied consistently across environments, and the application has a solid data foundation for user management</soThat>
+    <tasks>
+      <task id="1" ac="1">Configure Alembic for Async SQLAlchemy - Initialize Alembic migrations, configure env.py for async, create session management</task>
+      <task id="2" ac="2,3">Create Initial Database Migration - Generate migration for users and user_preferences tables, verify pgvector</task>
+      <task id="3" ac="4">Implement SQLAlchemy Models - Create User and UserPreferences models with proper relationships</task>
+      <task id="4" ac="6">Configure Database Connection - Set up async engine, connection pooling, FastAPI dependencies</task>
+      <task id="5" ac="2,3,5">Apply Migrations and Verify Schema - Run migrations, verify tables in Supabase, test reversibility</task>
+      <task id="6" ac="6">Create Database Testing Utilities - Build test script for CRUD operations and connection verification</task>
+      <task id="7" ac="6">Update Backend Main App - Add database lifespan management to FastAPI app</task>
+      <task id="8" ac="*">Documentation and Testing - Document setup process, test complete workflow, verify all ACs</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>Alembic Migration System Configured</title>
+      <given>the monorepo structure is initialized (Story 1.1 complete)</given>
+      <when>I set up the Alembic migration system</when>
+      <then>
+        - Alembic is configured in packages/backend/app/db/migrations/
+        - alembic.ini file exists with correct database connection settings
+        - env.py is configured to use async SQLAlchemy with the application's Base model
+        - Migration directory structure is initialized (versions/, script.py.mako)
+        - alembic upgrade head runs without errors (even with no migrations)
+        - alembic revision -m "test" generates a new migration file successfully
+      </then>
+      <source>docs/epics/epic-1-user-onboarding-foundation.md#Story-1.2, docs/tech-spec-epic-1.md#AC2</source>
+    </criterion>
+    <criterion id="AC2">
+      <title>Core User Schema Tables Created</title>
+      <given>Alembic is configured</given>
+      <when>I apply the initial database migrations</when>
+      <then>
+        Users table with columns: id (UUID PK), clerk_user_id (VARCHAR 255 UNIQUE), email, timezone, created_at, updated_at
+        User_preferences table with columns: id (UUID PK), user_id (UUID FK), custom_hours (JSONB), theme, communication_preferences (JSONB), onboarding_completed (BOOLEAN), timestamps
+        Foreign key relationship: user_preferences.user_id → users.id with CASCADE delete
+        Index on users.clerk_user_id for fast lookups
+        Unique constraint on user_preferences.user_id (one-to-one relationship)
+      </then>
+      <source>docs/tech-spec-epic-1.md#Data-Models-and-Contracts, docs/tech-spec-epic-1.md#AC2</source>
+    </criterion>
+    <criterion id="AC3">
+      <title>pgvector Extension Enabled</title>
+      <given>Supabase PostgreSQL is connected</given>
+      <when>I run the database setup</when>
+      <then>
+        - pgvector extension is verified as enabled in the database
+        - SQL query SELECT * FROM pg_extension WHERE extname = 'vector'; returns a result
+        - Note: pgvector comes pre-installed in Supabase, so this AC verifies it's available rather than installing it
+      </then>
+      <source>docs/tech-spec-epic-1.md#AC2, docs/architecture.md#ADR-010</source>
+    </criterion>
+    <criterion id="AC4">
+      <title>SQLAlchemy Models Implemented</title>
+      <given>the database schema is defined</given>
+      <when>I review the backend codebase</when>
+      <then>
+        - packages/backend/app/models/base.py exists with declarative Base class
+        - packages/backend/app/models/user.py exists with User and UserPreferences models
+        - Relationship defined: User.preferences (one-to-one)
+        - All columns properly typed with SQLAlchemy 2.0 syntax
+        - Models use UUID(as_uuid=True), DateTime(timezone=True), JSONB types
+        - Relationships use relationship() with back_populates
+      </then>
+      <source>docs/tech-spec-epic-1.md#SQLAlchemy-Models, docs/tech-spec-epic-1.md#AC2</source>
+    </criterion>
+    <criterion id="AC5">
+      <title>Migrations Are Reversible</title>
+      <given>database migrations are applied</given>
+      <when>I test migration reversibility</when>
+      <then>
+        - alembic upgrade head applies all migrations successfully
+        - Database contains expected tables: users, user_preferences, alembic_version
+        - alembic downgrade -1 rolls back the last migration without errors
+        - Tables created by the last migration are removed
+        - alembic upgrade head re-applies the migration successfully
+        - Database state is consistent after downgrade → upgrade cycle
+      </then>
+      <source>docs/epics/epic-1-user-onboarding-foundation.md#Story-1.2, docs/tech-spec-epic-1.md#AC2</source>
+    </criterion>
+    <criterion id="AC6">
+      <title>Database Connection and Query Testing</title>
+      <given>all migrations are applied</given>
+      <when>I test database connectivity from the backend</when>
+      <then>
+        - FastAPI app can establish async database connection on startup
+        - Test script can create a test user record successfully
+        - Test script can query user by clerk_user_id successfully
+        - Test script can create user preferences linked to user
+        - Test script can retrieve user with related preferences (joined query)
+        - All database operations use async SQLAlchemy (no synchronous queries)
+      </then>
+      <source>docs/tech-spec-epic-1.md#AC2, docs/tech-spec-epic-1.md#AC6</source>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: User Onboarding & Foundation</title>
+        <section>Data Models and Contracts</section>
+        <snippet>Defines core user schema with users and user_preferences tables, including field types, relationships, and SQLAlchemy model examples. Specifies UUID primary keys, JSONB for flexible data, and Clerk integration via clerk_user_id field.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: User Onboarding & Foundation</title>
+        <section>Acceptance Criteria (Authoritative) - AC2</section>
+        <snippet>Authoritative schema requirements for database setup: Supabase PostgreSQL connection, Alembic migrations, users/user_preferences tables, pgvector extension verification, migration reversibility testing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: User Onboarding & Foundation</title>
+        <section>Technology Stack Decisions</section>
+        <snippet>Database: Supabase (managed PostgreSQL 16+ with pgvector extension pre-installed). ORM: SQLAlchemy 2.0 with async support. Migrations: Alembic. Connection pooling configuration for Supabase free tier (60 concurrent connections).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture: Delight</title>
+        <section>ADR-010: Supabase for Managed PostgreSQL</section>
+        <snippet>Decision to use Supabase as primary managed PostgreSQL database for MVP. pgvector pre-installed, free tier sufficient (500MB + 2GB bandwidth/month), built-in connection pooling via PgBouncer, automatic backups. Standard PostgreSQL connection enables migration to self-hosted later.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture: Delight</title>
+        <section>ADR-004: PostgreSQL pgvector for Vector Storage</section>
+        <snippet>Decision to use PostgreSQL with pgvector extension for unified vector + structured storage. Production-ready, ACID guarantees, excellent LangChain integration via langchain-postgres. Reduces operational complexity vs separate vector database.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-1-user-onboarding-foundation.md</path>
+        <title>Epic 1: User Onboarding & Foundation</title>
+        <section>Story 1.2: Set Up Database Schema and Migrations</section>
+        <snippet>Story requirements: versioned database schema with Alembic, core user tables (users, user_preferences), pgvector extension enabled, SQLAlchemy 2.0 async models, migration reversibility, connection testing. Prerequisites: Story 1.1 complete.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md</path>
+        <title>Story 1.1: Initialize Monorepo Structure and Core Dependencies</title>
+        <section>Learnings from Previous Story</section>
+        <snippet>Key accomplishments: SQLAlchemy 2.0 (>=2.0.25), asyncpg (>=0.29.0), and Alembic (>=1.13.0) already installed. Backend structure created with app/models/, app/db/, app/core/ directories. Environment configuration with DATABASE_URL documented. Dual infrastructure mode support (Supabase + Docker).</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md</path>
+        <title>Story 1.1: Initialize Monorepo Structure and Core Dependencies</title>
+        <section>Technical Debt Notes</section>
+        <snippet>Health check endpoint currently returns mock database status - Story 1.2 should implement real database connectivity check. No database session management in place yet - this story will add it.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>packages/backend/app/models</path>
+        <kind>directory</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Empty directory from Story 1.1 - will contain User and UserPreferences models after this story</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/db</path>
+        <kind>directory</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Empty directory from Story 1.1 - will contain migrations/, base.py, session.py after this story</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/core</path>
+        <kind>directory</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Existing directory from Story 1.1 - will add config.py and dependencies.py for database configuration</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/api/v1/health.py</path>
+        <kind>endpoint</kind>
+        <symbol>health_check</symbol>
+        <lines>N/A</lines>
+        <reason>Existing health check endpoint - should be enhanced to perform real database connectivity check instead of mock status</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/main.py</path>
+        <kind>application_entry</kind>
+        <symbol>app</symbol>
+        <lines>N/A</lines>
+        <reason>Existing FastAPI app - needs lifespan context manager for database connection initialization and cleanup</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/.env.example</path>
+        <kind>configuration</kind>
+        <symbol>DATABASE_URL</symbol>
+        <lines>N/A</lines>
+        <reason>Environment variable template already documents DATABASE_URL - verify Supabase format is documented</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="python-backend">
+        <package name="sqlalchemy" version=">=2.0.25" extras="asyncio">SQLAlchemy ORM with async support - already installed in Story 1.1</package>
+        <package name="asyncpg" version=">=0.29.0">Async PostgreSQL driver for SQLAlchemy - already installed in Story 1.1</package>
+        <package name="alembic" version=">=1.13.0">Database migration tool - already installed in Story 1.1</package>
+        <package name="pydantic-settings" version=">=2.1.0">Settings management from environment variables - already installed in Story 1.1</package>
+        <package name="pydantic" version=">=2.5.0">Data validation and settings - already installed in Story 1.1</package>
+        <package name="pgvector" version=">=0.2.4">Python client for pgvector extension - already installed in Story 1.1</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <category>architecture</category>
+      <rule>Use async SQLAlchemy 2.0 patterns exclusively - no synchronous database operations allowed</rule>
+      <source>docs/tech-spec-epic-1.md#Technology-Stack-Decisions</source>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Alembic env.py must be configured for async engine using asyncio.run() wrapper pattern - standard tutorials don't cover this</rule>
+      <source>docs/stories/1-2-set-up-database-schema-and-migrations.md#Alembic-Configuration-for-Async-SQLAlchemy</source>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Import all model files in app/models/__init__.py before Alembic autogenerate will work - ensures metadata is populated</rule>
+      <source>docs/stories/1-2-set-up-database-schema-and-migrations.md#Alembic-Configuration-for-Async-SQLAlchemy</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>Use UUID primary keys with PostgreSQL gen_random_uuid() for server-side generation - provides distributed system scalability</rule>
+      <source>docs/tech-spec-epic-1.md#Data-Models-and-Contracts</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>clerk_user_id is the authoritative user identifier (not internal UUID) - store as VARCHAR(255), indexed for fast lookups during authentication</rule>
+      <source>docs/tech-spec-epic-1.md#Data-Models-and-Contracts</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>All timestamps must use TIMESTAMP WITH TIME ZONE for proper timezone handling - use server_default=func.now() for automatic timestamps</rule>
+      <source>docs/tech-spec-epic-1.md#Data-Models-and-Contracts</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>Connection pool configuration: pool_size=10, max_overflow=20 (30 max total) - Supabase free tier supports 60 concurrent connections</rule>
+      <source>docs/stories/1-2-set-up-database-schema-and-migrations.md#Database-Connection-Pool-Configuration</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>Enable pool_pre_ping=True to detect stale connections - important for Supabase which may close idle connections</rule>
+      <source>docs/stories/1-2-set-up-database-schema-and-migrations.md#Database-Connection-Pool-Configuration</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>pgvector is pre-installed in Supabase - verify availability, do not attempt to install</rule>
+      <source>docs/architecture.md#ADR-010, docs/stories/1-2-set-up-database-schema-and-migrations.md#pgvector-Extension</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>DATABASE_URL contains sensitive credentials - never commit .env file (already in .gitignore from Story 1.1)</rule>
+      <source>docs/stories/1-2-set-up-database-schema-and-migrations.md#Security-Considerations</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>Do not store passwords - Clerk handles authentication, only store clerk_user_id reference</rule>
+      <source>docs/tech-spec-epic-1.md#Security</source>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>Migration reversibility must be tested: alembic upgrade head → downgrade -1 → upgrade head cycle must succeed</rule>
+      <source>docs/tech-spec-epic-1.md#AC2</source>
+    </constraint>
+    <constraint>
+      <category>code_organization</category>
+      <rule>Store migrations in app/db/migrations/, models in app/models/, database session management in app/db/session.py</rule>
+      <source>docs/architecture.md#Code-Organization</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>get_db</name>
+      <kind>fastapi_dependency</kind>
+      <signature>async def get_db() -> AsyncSession: async with AsyncSessionLocal() as session: yield session</signature>
+      <path>packages/backend/app/db/session.py</path>
+      <usage>FastAPI dependency for database session injection - use with Depends(get_db) in route handlers</usage>
+    </interface>
+    <interface>
+      <name>AsyncSessionLocal</name>
+      <kind>session_factory</kind>
+      <signature>AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)</signature>
+      <path>packages/backend/app/db/session.py</path>
+      <usage>Factory for creating async database sessions - use in workers and utilities outside FastAPI routes</usage>
+    </interface>
+    <interface>
+      <name>Base</name>
+      <kind>sqlalchemy_base</kind>
+      <signature>Base = declarative_base()</signature>
+      <path>packages/backend/app/models/base.py</path>
+      <usage>SQLAlchemy declarative base - all models must inherit from this class</usage>
+    </interface>
+    <interface>
+      <name>User</name>
+      <kind>sqlalchemy_model</kind>
+      <signature>class User(Base): __tablename__ = 'users'</signature>
+      <path>packages/backend/app/models/user.py</path>
+      <usage>User model mapping to users table - contains clerk_user_id, email, timezone, timestamps, relationship to preferences</usage>
+    </interface>
+    <interface>
+      <name>UserPreferences</name>
+      <kind>sqlalchemy_model</kind>
+      <signature>class UserPreferences(Base): __tablename__ = 'user_preferences'</signature>
+      <path>packages/backend/app/models/user.py</path>
+      <usage>User preferences model - one-to-one relationship with User, stores theme, custom_hours (JSONB), communication_preferences (JSONB)</usage>
+    </interface>
+    <interface>
+      <name>Settings</name>
+      <kind>pydantic_settings</kind>
+      <signature>class Settings(BaseSettings): DATABASE_URL: str; CLERK_SECRET_KEY: str</signature>
+      <path>packages/backend/app/core/config.py</path>
+      <usage>Application settings loaded from environment variables - use settings.DATABASE_URL for database connection</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing uses pytest with pytest-asyncio for async test support. Database tests use transactional fixtures with rollback for isolation. Manual testing includes: (1) Running Alembic commands to verify migration system, (2) Verifying tables in Supabase dashboard, (3) Running test_db_connection.py script for CRUD operations, (4) Testing backend startup with database initialization. Integration tests will be added in Story 1.3. Code coverage target: 70%+ for core logic.
+    </standards>
+    <locations>
+      <location>packages/backend/tests/</location>
+      <location>packages/backend/scripts/test_db_connection.py</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test Alembic commands: alembic check, alembic revision -m "test", verify configuration doesn't error</idea>
+      <idea ac="AC2">Test migration application: alembic upgrade head, verify users and user_preferences tables exist with correct columns via SQL query</idea>
+      <idea ac="AC3">Test pgvector availability: SELECT * FROM pg_extension WHERE extname = 'vector'; returns result</idea>
+      <idea ac="AC4">Test SQLAlchemy models: Import User and UserPreferences, verify __tablename__, columns, relationships are defined correctly</idea>
+      <idea ac="AC5">Test migration reversibility: alembic downgrade -1, verify tables removed, alembic upgrade head, verify tables recreated</idea>
+      <idea ac="AC6">Test database operations: Create test user with UUID, create linked user_preferences, query by clerk_user_id, verify cascade delete works</idea>
+      <idea ac="AC6">Test async session management: Verify no connection leaks, test FastAPI get_db dependency, test session commit/rollback behavior</idea>
+      <idea ac="all">Test health check enhancement: Verify /api/v1/health performs real database connectivity check and returns accurate status</idea>
+    </ideas>
+  </tests>
+</story-context>
+
