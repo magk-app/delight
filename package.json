@@ -15,7 +15,9 @@
     "lint:fix": "pnpm --filter frontend lint --fix && cd packages/backend && poetry run ruff check --fix . && poetry run black .",
     "test": "pnpm --filter frontend test && cd packages/backend && poetry run pytest",
     "test:frontend": "pnpm --filter frontend test",
-    "test:backend": "cd packages/backend && poetry run pytest"
+    "test:backend": "cd packages/backend && poetry run pytest",
+    "test:e2e": "pnpm --filter frontend test:e2e",
+    "test:e2e:ui": "pnpm --filter frontend test:e2e:ui"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
