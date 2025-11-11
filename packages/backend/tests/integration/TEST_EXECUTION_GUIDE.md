@@ -119,32 +119,77 @@ This guide explains how to run the comprehensive test suite for Story 1.3: Clerk
 
 ### Frontend Tests
 
-1. **Node environment**
+1. **Node environment setup**
 
    ```bash
    cd packages/frontend
    pnpm install
-   npx playwright install  # Install browsers
+   pnpm exec playwright install --with-deps  # Install Playwright browsers
    ```
 
-2. **Test credentials**
+2. **Environment configuration**
+
+   **Option 1: Use environment variables** (recommended for quick testing)
 
    ```bash
-   # Create test user in Clerk dashboard first
+   # Windows PowerShell
+   $env:CLERK_TEST_USER_EMAIL="test@delight.dev"
+   $env:CLERK_TEST_USER_PASSWORD="YourTestPassword123!"
+   $env:NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+   $env:CLERK_SECRET_KEY="sk_test_..."
+
+   # Linux/Mac
    export CLERK_TEST_USER_EMAIL="test@delight.dev"
    export CLERK_TEST_USER_PASSWORD="YourTestPassword123!"
+   export NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+   export CLERK_SECRET_KEY="sk_test_..."
    ```
 
-3. **Backend running**
+   **Option 2: Use `.env.local` file** (recommended for persistent setup)
+
+   Create `packages/frontend/.env.local`:
+
+   ```bash
+   # Clerk Authentication
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
+
+   # Test User Credentials (create this user in Clerk Dashboard first)
+   CLERK_TEST_USER_EMAIL=test@delight.dev
+   CLERK_TEST_USER_PASSWORD=YourTestPassword123!
+
+   # API Endpoints
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+   ```
+
+   **Important:**
+
+   - Create the test user in your Clerk Dashboard before running tests
+   - The test user email/password must match what's in Clerk
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is required for the frontend to work
+
+3. **Start services** (required before running tests)
+
+   **Option A: Manual startup** (recommended for debugging)
 
    ```bash
    # Terminal 1: Backend
    cd packages/backend
    poetry run uvicorn main:app --reload
 
-   # Terminal 2: Frontend
+   # Terminal 2: Frontend (in a new terminal)
    cd packages/frontend
    pnpm dev
+   ```
+
+   **Option B: Automatic startup** (Playwright will start frontend automatically)
+
+   ```bash
+   # Only start backend manually
+   cd packages/backend
+   poetry run uvicorn main:app --reload
+
+   # Playwright will start frontend automatically when you run tests
    ```
 
 ---
@@ -222,55 +267,129 @@ poetry run pytest tests/integration/test_auth.py::TestGetCurrentUser::test_get_c
 
 ## Running Frontend Tests
 
+### Prerequisites Check
+
+Before running tests, ensure:
+
+1. ✅ Backend is running on `http://localhost:8000`
+2. ✅ Test user exists in Clerk Dashboard
+3. ✅ Environment variables are set (see Prerequisites section above)
+
 ### Run All E2E Tests
 
 ```bash
 cd packages/frontend
-npm run test:e2e tests/e2e/auth.spec.ts
+
+# Run all tests (headless)
+pnpm test:e2e
+
+# Or using Playwright directly
+pnpm exec playwright test
 ```
 
-### Run with UI (Interactive)
+### Run Specific Test File
 
 ```bash
-# Opens Playwright UI for debugging
-npm run test:e2e:ui tests/e2e/auth.spec.ts
+cd packages/frontend
+
+# Run auth tests only
+pnpm exec playwright test tests/e2e/auth.spec.ts
+
+# Or using npm script
+pnpm test:e2e tests/e2e/auth.spec.ts
 ```
 
-### Run Specific Test
+### Run Specific Test by Name
 
 ```bash
-# Run single test by name
-npx playwright test auth.spec.ts -g "should complete sign-in with valid credentials"
+cd packages/frontend
+
+# Run single test matching pattern
+pnpm exec playwright test tests/e2e/auth.spec.ts -g "should complete sign-in with valid credentials"
+
+# Run all tests matching pattern across files
+pnpm exec playwright test -g "sign-in"
+```
+
+### Run with UI (Interactive Mode)
+
+```bash
+cd packages/frontend
+
+# Opens Playwright UI for debugging and test selection
+pnpm test:e2e:ui
+
+# Or
+pnpm exec playwright test --ui
+```
+
+### Run in Headed Mode (See Browser)
+
+```bash
+cd packages/frontend
+
+# Run with browser visible
+pnpm test:e2e:headed
+
+# Or
+pnpm exec playwright test --headed
+```
+
+### Debug Mode (Step Through Tests)
+
+```bash
+cd packages/frontend
+
+# Debug mode - pauses on failure, allows step-through
+pnpm test:e2e:debug
+
+# Or
+pnpm exec playwright test --debug
 ```
 
 ### Run with Different Browsers
 
 ```bash
+cd packages/frontend
+
 # Chrome only
-npx playwright test auth.spec.ts --project=chromium
+pnpm exec playwright test --project=chromium
 
 # Firefox only
-npx playwright test auth.spec.ts --project=firefox
+pnpm exec playwright test --project=firefox
 
-# All browsers
-npx playwright test auth.spec.ts
-```
+# Safari/WebKit only
+pnpm exec playwright test --project=webkit
 
-### Debug Mode
-
-```bash
-# Run with browser visible (headed mode)
-npx playwright test auth.spec.ts --headed
-
-# Debug mode (pauses on failure)
-npx playwright test auth.spec.ts --debug
+# All browsers (default)
+pnpm exec playwright test
 ```
 
 ### View Test Report
 
 ```bash
-# Generate and open HTML report
-npx playwright show-report
+cd packages/frontend
+
+# Open HTML report (after test run)
+pnpm test:report
+
+# Or
+pnpm exec playwright show-report test-results/html
+```
+
+### Run Tests with Specific Configuration
+
+```bash
+cd packages/frontend
+
+# Run with retries (useful for flaky tests)
+pnpm exec playwright test --retries=2
+
+# Run in serial (one test at a time)
+pnpm exec playwright test --workers=1
+
+# Run with longer timeout
+pnpm exec playwright test --timeout=120000
 ```
 
 ---

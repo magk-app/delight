@@ -31,6 +31,10 @@ from app.core.config import settings
 from app.db.base import Base
 from main import app as fastapi_app
 
+# Import all models so they're registered with Base.metadata
+# This is required for create_all() to work
+from app.models.user import User, UserPreferences  # noqa: F401
+
 
 # ---------------------------------------------------------------------------
 # Dialect fallbacks so PostgreSQL types compile on SQLite during local tests.
@@ -63,19 +67,62 @@ def test_database_url() -> str:
     return os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 
-@pytest.fixture(scope="session")
-def async_engine(test_database_url: str):
+@pytest_asyncio.fixture(scope="session")
+async def async_engine(test_database_url: str):
     """
     Create async database engine for tests
 
-    Uses NullPool to prevent connection sharing across async tasks
+    Uses NullPool to prevent connection sharing across async tasks.
+    For SQLite in-memory, we need to use a file-based DB to share tables across connections.
     """
-    engine = create_async_engine(
-        test_database_url,
-        poolclass=NullPool,  # Disable connection pooling for tests
-        echo=False,  # Set to True for SQL debugging
-    )
-    return engine
+    # For SQLite in-memory, we need to ensure all connections share the same database
+    # Using a file-based SQLite DB for tests is more reliable
+    temp_db_file = None
+    if test_database_url.startswith("sqlite"):
+        # Use a file-based SQLite DB instead of :memory: for better connection handling
+        # This ensures all connections see the same tables
+        if ":memory:" in test_database_url:
+            import tempfile
+            # Create a temporary file-based SQLite database
+            temp_db = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
+            temp_db.close()
+            temp_db_file = temp_db.name
+            test_database_url = f"sqlite+aiosqlite:///{temp_db_file}"
+        
+        engine = create_async_engine(
+            test_database_url,
+            poolclass=NullPool,
+            connect_args={"check_same_thread": False} if "aiosqlite" in test_database_url else {},
+            echo=False,  # Set to True for SQL debugging
+        )
+    else:
+        engine = create_async_engine(
+            test_database_url,
+            poolclass=NullPool,
+            echo=False,
+        )
+    
+    # Create all tables once at session start
+    # Import models to ensure they're registered
+    from app.models.user import User, UserPreferences  # noqa: F401
+    
+    # Create tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    yield engine
+    
+    # Cleanup: drop tables and dispose engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
+    
+    # Clean up temp file if it exists
+    if temp_db_file and os.path.exists(temp_db_file):
+        try:
+            os.unlink(temp_db_file)
+        except Exception:
+            pass  # Ignore cleanup errors
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -85,6 +132,9 @@ async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
 
     Pattern: Each test runs in a transaction that is rolled back after test completes.
     This ensures test isolation without manual cleanup.
+    
+    Tables are created once at session scope, and each test uses a transaction
+    that gets rolled back, so tests don't interfere with each other.
 
     Usage:
         async def test_create_user(db_session):
@@ -93,11 +143,7 @@ async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
             await db_session.commit()
             # Transaction automatically rolled back after test
     """
-    # Create all tables
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    # Create session with transaction
+    # Create session factory
     async_session_maker = async_sessionmaker(
         async_engine,
         class_=AsyncSession,
@@ -106,13 +152,17 @@ async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
         autocommit=False,
     )
 
+    # Create session and run test in a transaction
     async with async_session_maker() as session:
-        yield session
-        await session.rollback()
-
-    # Drop all tables after test
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # Start a savepoint transaction for this test
+        trans = await session.begin()
+        try:
+            yield session
+        finally:
+            # Rollback transaction to clean up test data
+            # This ensures each test starts with a clean state
+            await trans.rollback()
+            await session.close()
 
 
 # ============================================================================

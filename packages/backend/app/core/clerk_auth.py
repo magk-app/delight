@@ -102,6 +102,9 @@ async def get_current_user(
         # For now, we'll trust the token if it has the right structure
         # This should be enhanced with proper signature verification using Clerk's JWKS
 
+    except HTTPException:
+        # Re-raise HTTPExceptions (like "Invalid token format")
+        raise
     except jwt.DecodeError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
