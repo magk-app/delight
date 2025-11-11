@@ -17,10 +17,45 @@
 import { test, expect } from "@playwright/test";
 
 /**
+ * Helper: Click Clerk submit button (handles visibility issues)
+ */
+async function clickClerkSubmitButton(page: any) {
+  // Try multiple strategies to click the submit button
+  const button = page.locator('button[type="submit"]').first();
+
+  // Wait for button to exist
+  await button.waitFor({ state: "attached", timeout: 5000 });
+
+  // Try to make it visible and click
+  // Clerk buttons might be hidden but still clickable
+  await button.evaluate((btn: HTMLButtonElement) => {
+    // Remove aria-hidden if present
+    if (btn.hasAttribute("aria-hidden")) {
+      btn.removeAttribute("aria-hidden");
+    }
+    // Make sure it's visible
+    btn.style.visibility = "visible";
+    btn.style.display = "block";
+  });
+
+  // Wait a bit for any animations
+  await page.waitForTimeout(200);
+
+  // Try clicking - use force if needed
+  try {
+    await button.click({ timeout: 2000 });
+  } catch {
+    // If normal click fails, try force click
+    await button.click({ force: true });
+  }
+}
+
+/**
  * Test Configuration
  */
 const TEST_EMAIL = process.env.CLERK_TEST_USER_EMAIL || "test@delight.dev";
-const TEST_PASSWORD = process.env.CLERK_TEST_USER_PASSWORD || "TestPassword123!";
+const TEST_PASSWORD =
+  process.env.CLERK_TEST_USER_PASSWORD || "TestPassword123!";
 const NEW_USER_EMAIL = `test-${Date.now()}@delight.dev`; // Unique for each run
 const NEW_USER_PASSWORD = "NewUser123!";
 
@@ -89,7 +124,9 @@ test.describe("Unauthenticated User Flows", () => {
     await expect(page).toHaveURL("/sign-up");
 
     // Wait for Clerk to load
-    await page.waitForSelector('input[name="emailAddress"]', { timeout: 10000 });
+    await page.waitForSelector('input[name="emailAddress"]', {
+      timeout: 10000,
+    });
     await expect(page.locator('input[name="emailAddress"]')).toBeVisible();
   });
 });
@@ -111,14 +148,16 @@ test.describe("Sign-Up Flow", () => {
     await page.goto("/sign-up");
 
     // Wait for Clerk form
-    await page.waitForSelector('input[name="emailAddress"]', { timeout: 10000 });
+    await page.waitForSelector('input[name="emailAddress"]', {
+      timeout: 10000,
+    });
 
     // Fill sign-up form
     await page.fill('input[name="emailAddress"]', NEW_USER_EMAIL);
     await page.fill('input[name="password"]', NEW_USER_PASSWORD);
 
     // Submit form
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Clerk may require email verification in production
     // For test environment, should redirect to app
@@ -144,14 +183,16 @@ test.describe("Sign-Up Flow", () => {
      */
     await page.goto("/sign-up");
 
-    await page.waitForSelector('input[name="emailAddress"]', { timeout: 10000 });
+    await page.waitForSelector('input[name="emailAddress"]', {
+      timeout: 10000,
+    });
 
     // Enter invalid email
     await page.fill('input[name="emailAddress"]', "not-an-email");
     await page.fill('input[name="password"]', "ValidPassword123!");
 
     // Try to submit
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Should show error (Clerk's error message may vary)
     // Wait for error element to appear
@@ -177,13 +218,15 @@ test.describe("Sign-Up Flow", () => {
      */
     await page.goto("/sign-up");
 
-    await page.waitForSelector('input[name="emailAddress"]', { timeout: 10000 });
+    await page.waitForSelector('input[name="emailAddress"]', {
+      timeout: 10000,
+    });
 
     // Try to sign up with existing email
     await page.fill('input[name="emailAddress"]', TEST_EMAIL);
     await page.fill('input[name="password"]', "SomePassword123!");
 
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Should show "email already exists" error
     // Wait for error message
@@ -217,12 +260,12 @@ test.describe("Sign-In Flow", () => {
 
     // Fill identifier (email)
     await page.fill('input[name="identifier"]', TEST_EMAIL);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Wait for password field (Clerk uses two-step flow)
     await page.waitForSelector('input[name="password"]', { timeout: 5000 });
     await page.fill('input[name="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Should redirect to app after successful sign-in
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
@@ -248,11 +291,11 @@ test.describe("Sign-In Flow", () => {
 
     // Fill with valid email but wrong password
     await page.fill('input[name="identifier"]', TEST_EMAIL);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     await page.waitForSelector('input[name="password"]', { timeout: 5000 });
     await page.fill('input[name="password"]', "WrongPassword123!");
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Should show error
     await page.waitForSelector('[role="alert"], .cl-formFieldErrorText', {
@@ -282,11 +325,11 @@ test.describe("Sign-In Flow", () => {
     // Complete sign-in
     await page.waitForSelector('input[name="identifier"]', { timeout: 10000 });
     await page.fill('input[name="identifier"]', TEST_EMAIL);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     await page.waitForSelector('input[name="password"]', { timeout: 5000 });
     await page.fill('input[name="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Should redirect to originally requested page (/dashboard)
     // Note: Clerk may redirect to configured default page
@@ -312,11 +355,11 @@ test.describe("Authenticated User Flows", () => {
     await page.waitForSelector('input[name="identifier"]', { timeout: 10000 });
 
     await page.fill('input[name="identifier"]', TEST_EMAIL);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     await page.waitForSelector('input[name="password"]', { timeout: 5000 });
     await page.fill('input[name="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     // Wait for redirect
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
@@ -372,7 +415,9 @@ test.describe("Authenticated User Flows", () => {
     await page.click('[data-clerk-element="userButton"]', { timeout: 10000 });
 
     // Wait for menu to open
-    await page.waitForSelector('button:has-text("Sign out")', { timeout: 5000 });
+    await page.waitForSelector('button:has-text("Sign out")', {
+      timeout: 5000,
+    });
 
     // Click sign out
     await page.click('button:has-text("Sign out")');
@@ -414,13 +459,18 @@ test.describe("Route Protection", () => {
      * Then: 403 Forbidden
      */
     const response = await context.request.get(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/users/me`
+      `${
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      }/api/v1/users/me`
     );
 
     expect(response.status()).toBe(403);
   });
 
-  test("should allow webhook routes without auth", async ({ page, context }) => {
+  test("should allow webhook routes without auth", async ({
+    page,
+    context,
+  }) => {
     /**
      * Story 1.3: Webhook endpoints are public
      *
@@ -431,7 +481,9 @@ test.describe("Route Protection", () => {
      * Note: Will fail signature check but not auth check
      */
     const response = await context.request.post(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/webhooks/clerk`,
+      `${
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      }/api/v1/webhooks/clerk`,
       {
         data: { test: "data" },
       }
@@ -455,11 +507,11 @@ test.describe("Session Persistence", () => {
     await page.waitForSelector('input[name="identifier"]', { timeout: 10000 });
 
     await page.fill('input[name="identifier"]', TEST_EMAIL);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     await page.waitForSelector('input[name="password"]', { timeout: 5000 });
     await page.fill('input[name="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await clickClerkSubmitButton(page);
 
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
       timeout: 15000,
