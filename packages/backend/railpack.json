@@ -7,10 +7,11 @@
       "pip install --upgrade pip",
       "pip install poetry",
       "poetry export -f requirements.txt --output requirements.txt --without-hashes",
-      "pip install --no-cache-dir -r requirements.txt"
+      "pip install --no-cache-dir -r requirements.txt",
+      "chmod +x start.sh"
     ]
   },
   "deploy": {
-    "startCommand": "(python -m alembic upgrade head || true) && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+    "startCommand": "./start.sh"
   }
 }
