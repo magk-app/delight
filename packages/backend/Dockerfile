@@ -11,13 +11,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y build-essential curl && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry to export lock to requirements
-RUN pip install --upgrade pip setuptools wheel poetry
+RUN pip install --upgrade pip setuptools wheel poetry poetry-plugin-export
 
 # Copy dependency manifests first for layer caching
 COPY pyproject.toml poetry.lock* /app/
 
 # Export and install runtime deps
-RUN poetry export -f requirements.txt -o requirements.txt --without-hashes --without dev && \
+RUN poetry config virtualenvs.create false && \
+    poetry export -f requirements.txt -o requirements.txt --without-hashes --without dev && \
     pip install -r requirements.txt
 
 # Now copy the app

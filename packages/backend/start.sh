@@ -9,10 +9,10 @@ if [ ! -d ".venv" ]; then
     python -m venv .venv
     .venv/bin/python -m pip install --upgrade pip setuptools wheel
     .venv/bin/python -m pip install poetry
-    .venv/bin/poetry export -f requirements.txt --output requirements.txt --without-hashes || {
+    .venv/bin/poetry export -f requirements.txt --output requirements.txt --without-hashes --without dev || {
         echo "⚠️  Poetry export failed, installing directly from pyproject.toml..."
         .venv/bin/poetry config virtualenvs.create false
-        .venv/bin/poetry install --no-dev --no-interaction --no-ansi
+        .venv/bin/poetry install --without dev --no-interaction --no-ansi
     }
     if [ -f requirements.txt ]; then
         echo "📥 Installing from requirements.txt..."
@@ -31,7 +31,7 @@ echo "✅ Verifying packages..."
     else
         .venv/bin/python -m pip install poetry
         .venv/bin/poetry config virtualenvs.create false
-        .venv/bin/poetry install --no-dev --no-interaction --no-ansi
+        .venv/bin/poetry install --without dev --no-interaction --no-ansi
     fi
 }
 
