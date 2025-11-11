@@ -1,16 +1,21 @@
 {
   "$schema": "https://schema.railpack.com",
   "language": "python",
-  "build": {
-    "commands": [
-      "pip install poetry",
-      "poetry config virtualenvs.create false",
-      "poetry install --no-dev --no-interaction --no-ansi",
-      "poetry run alembic upgrade head"
-    ]
+  "steps": {
+    "setup": {
+      "commands": ["pip install poetry", "poetry --version"]
+    },
+    "install": {
+      "commands": [
+        "poetry config virtualenvs.create false",
+        "poetry install --no-dev --no-interaction --no-ansi"
+      ]
+    },
+    "build": {
+      "commands": ["poetry run alembic upgrade head"]
+    }
   },
   "deploy": {
     "startCommand": "poetry run uvicorn main:app --host 0.0.0.0 --port $PORT"
   }
 }
-
