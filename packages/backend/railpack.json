@@ -11,6 +11,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "alembic upgrade head && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+    "startCommand": "(python -m alembic upgrade head || true) && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
   }
 }
