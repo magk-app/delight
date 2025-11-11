@@ -1154,12 +1154,13 @@ The test setup in `packages/backend/tests/conftest.py` includes:
 
 ## Change Log
 
-| Date       | Author           | Change Description                                                                                                                                                                                                                                                                                                                                            |
-| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2025-11-11 | Auto             | Fixed test database separation: Removed fragile environment variable manipulation, implemented proper FastAPI dependency override system. Tests now use `TEST_DATABASE_URL` with explicit dependency override to ensure production database is never accessed. Added comprehensive documentation in conftest.py explaining the three-layer protection system. |
-| 2025-11-11 | Auto             | Fixed middleware to use correct Clerk v5 API: `(await auth()).protect()` instead of `await auth.protect()`. Created dashboard page for E2E tests. Added `clickClerkSubmitButton()` helper to handle Clerk button visibility issues in tests.                                                                                                                  |
-| 2025-11-10 | Claude (via BMM) | Story regenerated with improved clarity and structure                                                                                                                                                                                                                                                                                                         |
-| 2025-11-10 | SM               | Initial draft with comprehensive requirements                                                                                                                                                                                                                                                                                                                 |
+| Date       | Author             | Change Description                                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-01-27 | Auto (AI Reviewer) | Senior Developer Review notes appended. Outcome: Changes Requested. Critical security issue identified: JWT signature verification not implemented in `get_current_user()`. Review found 5 of 7 ACs fully implemented, 2 partial. Comprehensive test coverage (55 tests) verified. Action items: Implement JWT verification, verify .env.example files, remove unused code. |
+| 2025-11-11 | Auto               | Fixed test database separation: Removed fragile environment variable manipulation, implemented proper FastAPI dependency override system. Tests now use `TEST_DATABASE_URL` with explicit dependency override to ensure production database is never accessed. Added comprehensive documentation in conftest.py explaining the three-layer protection system.               |
+| 2025-11-11 | Auto               | Fixed middleware to use correct Clerk v5 API: `(await auth()).protect()` instead of `await auth.protect()`. Created dashboard page for E2E tests. Added `clickClerkSubmitButton()` helper to handle Clerk button visibility issues in tests.                                                                                                                                |
+| 2025-11-10 | Claude (via BMM)   | Story regenerated with improved clarity and structure                                                                                                                                                                                                                                                                                                                       |
+| 2025-11-10 | SM                 | Initial draft with comprehensive requirements                                                                                                                                                                                                                                                                                                                               |
 
 ## Completion Checklist
 
@@ -1175,3 +1176,261 @@ The test setup in `packages/backend/tests/conftest.py` includes:
 - [ ] Documentation updated (README, SETUP, API docs)
 - [ ] Code reviewed and approved
 - [ ] Story marked as "done" in sprint-status.yaml
+
+---
+
+## Senior Developer Review (AI) (OVERRIDE: THIS IS A JUNIOR DEVELOPER WE NEED A SENIOR DEVELOPER LIKE SONNET 4.5)
+
+**Reviewer:** Auto (AI Code Reviewer)  
+**Date:** 2025-11-11
+**Outcome:** 🔴 **CHANGES REQUESTED** - Critical security issue must be resolved before approval
+
+### Summary
+
+Story 1.3 implements Clerk authentication integration with comprehensive test coverage and solid architectural patterns. The implementation covers all major acceptance criteria with well-structured code, excellent test suites (37 backend + 18 frontend tests), and proper separation of concerns. However, **a critical security vulnerability exists**: JWT token signature verification is not implemented, leaving the authentication system vulnerable to token forgery. This must be fixed before production deployment.
+
+**Key Strengths:**
+
+- Comprehensive test coverage (55 total tests)
+- Well-structured code with clear separation of concerns
+- Proper error handling and logging
+- Excellent webhook security (Svix signature verification)
+- Good documentation and code comments
+
+**Critical Issues:**
+
+- JWT signature verification missing (HIGH severity)
+- Missing `.env.example` files (documentation issue)
+
+### Outcome: Changes Requested
+
+**Justification:** While the implementation is functionally complete and well-tested, the missing JWT signature verification in `get_current_user()` creates a critical security vulnerability. The current implementation decodes tokens without verifying signatures, allowing attackers to forge authentication tokens. This must be fixed before the story can be approved.
+
+### Key Findings
+
+#### 🔴 HIGH Severity
+
+1. **JWT Signature Verification Not Implemented** [file: `packages/backend/app/core/clerk_auth.py:86-103`]
+
+   - **Issue:** Token verification only decodes JWT without signature validation
+   - **Evidence:** Lines 88-103 show `jwt.decode(token, options={"verify_signature": False})` with TODO comment
+   - **Risk:** Attackers can forge authentication tokens by creating JWTs with arbitrary `sub` claims
+   - **Impact:** Complete authentication bypass possible
+   - **AC Violation:** AC2 requires "Token validation uses official `pyclerk` SDK with proper error handling"
+   - **Fix Required:** Implement proper JWT signature verification using Clerk's JWKS or secret key
+
+2. **Missing Environment Variable Documentation** [file: `.env.example` files]
+   - **Issue:** `.env.example` files are filtered by `.cursorignore` and cannot be verified
+   - **Evidence:** File read attempts returned "filtered out by .cursorignore"
+   - **AC Violation:** AC6 requires ".env.example files document all required variables"
+   - **Fix Required:** Ensure `.env.example` files exist and are committed to repository
+
+#### 🟡 MEDIUM Severity
+
+3. **Unused Code in `clerk_auth.py`** [file: `packages/backend/app/core/clerk_auth.py:19-40`]
+
+   - **Issue:** `get_clerk_jwks()` function is defined but never used
+   - **Evidence:** Function exists but returns `None` and is not called
+   - **Impact:** Code clutter, suggests incomplete implementation
+   - **Fix Required:** Either implement JWKS fetching or remove unused function
+
+4. **Missing Error Context in Webhook Handler** [file: `packages/backend/app/api/v1/webhooks.py:95-97`]
+   - **Issue:** Generic error message doesn't provide debugging context
+   - **Evidence:** Line 96 logs error but raises generic "Internal server error"
+   - **Impact:** Difficult to debug production issues
+   - **Fix Required:** Add structured error logging with request context
+
+#### 🟢 LOW Severity
+
+5. **Hardcoded Default Timezone** [file: `packages/backend/app/services/clerk_service.py:62`]
+
+   - **Issue:** Timezone defaults to "UTC" without configuration option
+   - **Evidence:** Line 62: `timezone="UTC"`
+   - **Impact:** Minor - may need to be configurable in future
+   - **Note:** Acceptable for MVP, consider making configurable later
+
+6. **Missing Type Hints in Some Functions** [file: `packages/backend/app/api/v1/webhooks.py:25`]
+   - **Issue:** Return type not explicitly annotated
+   - **Evidence:** Function signature missing `-> dict` return type
+   - **Impact:** Minor - reduces type checking benefits
+   - **Fix Required:** Add return type annotation
+
+### Acceptance Criteria Coverage
+
+| AC# | Description                                | Status             | Evidence                                                                                                                                                                                                                   | Notes                                                                                                                                                                                                                  |
+| --- | ------------------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC1 | Frontend Clerk Integration Complete        | ✅ **IMPLEMENTED** | `packages/frontend/src/middleware.ts:1-27`, `packages/frontend/src/app/layout.tsx:27-54`, `packages/frontend/src/app/sign-in/[[...sign-in]]/page.tsx:1-9`, `packages/frontend/src/app/sign-up/[[...sign-up]]/page.tsx:1-9` | All requirements met: middleware, ClerkProvider, sign-in/sign-up pages, route protection                                                                                                                               |
+| AC2 | Backend Session Verification Working       | ⚠️ **PARTIAL**     | `packages/backend/app/core/clerk_auth.py:42-131`                                                                                                                                                                           | **CRITICAL:** Token decoding works but signature verification missing (lines 88-103). AC2 requires "Token validation uses official `pyclerk` SDK" - current implementation uses manual JWT decode without verification |
+| AC3 | User Sync via Webhook Functional           | ✅ **IMPLEMENTED** | `packages/backend/app/api/v1/webhooks.py:21-99`, `packages/backend/app/services/clerk_service.py:16-68`                                                                                                                    | All requirements met: webhook endpoint, Svix verification, user.created/updated events, idempotency, logging                                                                                                           |
+| AC4 | Protected API Endpoints Secured            | ✅ **IMPLEMENTED** | `packages/backend/app/api/v1/users.py:16-33`, `packages/backend/app/core/clerk_auth.py:42-131`                                                                                                                             | Endpoint implemented with proper dependency injection pattern                                                                                                                                                          |
+| AC5 | Authentication State Managed in Frontend   | ✅ **IMPLEMENTED** | `packages/frontend/src/app/layout.tsx:31-47`                                                                                                                                                                               | Clerk SDK hooks available, UserButton component, sign-in/sign-out flows                                                                                                                                                |
+| AC6 | Environment Variables Configured Correctly | ⚠️ **PARTIAL**     | `packages/backend/app/core/config.py:17-19`                                                                                                                                                                                | Config file has Clerk settings, but `.env.example` files cannot be verified (filtered by `.cursorignore`)                                                                                                              |
+| AC7 | Complete Documentation and Testing         | ✅ **IMPLEMENTED** | `packages/backend/tests/integration/test_auth.py` (11 tests), `packages/backend/tests/integration/test_webhooks.py` (26 tests), `packages/frontend/tests/e2e/auth.spec.ts` (18 tests)                                      | Comprehensive test coverage: 55 total tests covering all major flows                                                                                                                                                   |
+
+**Summary:** 5 of 7 acceptance criteria fully implemented, 2 partial (AC2 - security issue, AC6 - documentation verification blocked)
+
+### Task Completion Validation
+
+| Task                              | Marked As | Verified As    | Evidence                                                                                                   | Notes                                            |
+| --------------------------------- | --------- | -------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Task 1: Setup Clerk Account       | [ ]       | N/A            | N/A                                                                                                        | Manual setup task, cannot verify via code        |
+| Task 2: Frontend Integration      | [ ]       | ✅ **DONE**    | `packages/frontend/src/middleware.ts`, `packages/frontend/src/app/layout.tsx`, sign-in/sign-up pages exist | All subtasks completed                           |
+| Task 3: Backend Auth Dependencies | [ ]       | ⚠️ **PARTIAL** | `packages/backend/app/core/clerk_auth.py` exists but missing signature verification                        | Core functionality works but security incomplete |
+| Task 4: Webhook Handler           | [ ]       | ✅ **DONE**    | `packages/backend/app/api/v1/webhooks.py`, `packages/backend/app/services/clerk_service.py`                | Fully implemented with proper security           |
+| Task 5: Integration Tests         | [ ]       | ✅ **DONE**    | `packages/backend/tests/integration/test_auth.py`, `packages/backend/tests/integration/test_webhooks.py`   | 37 comprehensive backend tests                   |
+| Task 6: Documentation             | [ ]       | ⚠️ **PARTIAL** | Code is well-documented, but `.env.example` files cannot be verified                                       | Documentation in code is excellent               |
+
+**Summary:** All code-related tasks are implemented. Manual setup tasks (Task 1) cannot be verified via code review. Task 3 has security gap that needs addressing.
+
+### Test Coverage and Gaps
+
+**Backend Tests (37 tests):**
+
+- ✅ `test_auth.py`: 11 tests covering authentication dependency, token validation, protected endpoints
+- ✅ `test_webhooks.py`: 26 tests covering signature validation, user creation/updates, idempotency, error handling
+- ✅ Test helpers: `tests/helpers/auth.py` provides JWT token generation and user creation utilities
+- ✅ Test isolation: Proper database transaction rollback, dependency overrides
+
+**Frontend Tests (18 tests):**
+
+- ✅ `auth.spec.ts`: Comprehensive E2E tests covering sign-up, sign-in, route protection, session persistence
+- ✅ Clerk UI interaction helpers: `clickClerkSubmitButton()` handles visibility issues
+- ✅ Test data management: Unique emails per run, reusable test credentials
+
+**Test Quality:**
+
+- ✅ Well-structured with clear docstrings
+- ✅ Good edge case coverage (missing email, special characters, duplicate events)
+- ✅ Security-focused (signature validation, token format validation)
+- ✅ Proper fixtures and helpers
+
+**Gaps:**
+
+- ⚠️ No tests verify JWT signature verification (because it's not implemented)
+- ⚠️ No performance/load tests (marked as optional/skipped)
+
+### Architectural Alignment
+
+**Tech Spec Compliance:**
+
+- ✅ Uses FastAPI dependency injection pattern as specified
+- ✅ Webhook endpoint matches spec: `/api/v1/webhooks/clerk`
+- ✅ User endpoint matches spec: `/api/v1/users/me`
+- ⚠️ **Deviation:** Tech spec (line 240) suggests using `clerk.sessions.verify_session()`, but implementation uses manual JWT decode
+
+**Architecture Patterns:**
+
+- ✅ Proper service layer separation (`ClerkService`)
+- ✅ Schema validation with Pydantic
+- ✅ Async/await patterns throughout
+- ✅ Proper error handling with HTTPException
+- ✅ Structured logging
+
+**Code Organization:**
+
+- ✅ Clear module structure
+- ✅ Proper imports and dependencies
+- ✅ Type hints used consistently (with minor gaps)
+
+### Security Notes
+
+**Strengths:**
+
+1. ✅ **Webhook Security:** Proper Svix signature verification prevents unauthorized webhook requests
+2. ✅ **Error Messages:** Generic error messages prevent information leakage (user enumeration protection)
+3. ✅ **Input Validation:** Pydantic schemas validate all webhook payloads
+4. ✅ **Database Security:** Uses parameterized queries (SQLAlchemy ORM) preventing SQL injection
+5. ✅ **CORS Configuration:** Properly configured for development environment
+
+**Critical Vulnerabilities:**
+
+1. 🔴 **JWT Signature Verification Missing:** [file: `packages/backend/app/core/clerk_auth.py:86-103`]
+
+   - Current code: `jwt.decode(token, options={"verify_signature": False})`
+   - Risk: Attackers can forge tokens with arbitrary user IDs
+   - Required Fix: Implement proper signature verification using Clerk's JWKS endpoint or secret key
+   - Reference: [Clerk JWT Verification Docs](https://clerk.com/docs/backend-requests/handling/manual-jwt)
+
+2. ⚠️ **Token Expiration Not Checked:** Even if signature verification is added, expiration claims should be validated
+   - Current code extracts `sub` but doesn't check `exp` claim
+   - Risk: Expired tokens could be used indefinitely
+
+**Recommendations:**
+
+- Implement JWKS-based verification for production (supports key rotation)
+- Add token expiration validation
+- Consider rate limiting for authentication endpoints
+- Add request ID tracking for audit trails
+
+### Best Practices and References
+
+**Code Quality:**
+
+- ✅ Follows PEP 8 (Python) and ESLint (TypeScript) standards
+- ✅ Proper async/await usage
+- ✅ Type hints used consistently
+- ✅ Clear function and variable names
+- ✅ Comprehensive docstrings
+
+**Testing Best Practices:**
+
+- ✅ Test isolation with database transactions
+- ✅ Proper fixtures and helpers
+- ✅ Edge case coverage
+- ✅ Security-focused test cases
+
+**References:**
+
+- [Clerk Next.js 15 App Router Guide](https://clerk.com/docs/quickstarts/nextjs)
+- [Clerk Webhooks Documentation](https://clerk.com/docs/integrations/webhooks/overview)
+- [Svix Webhook Verification](https://docs.svix.com/receiving/verifying-payloads/how)
+- [Clerk JWT Verification](https://clerk.com/docs/backend-requests/handling/manual-jwt)
+- [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)
+
+### Action Items
+
+#### Code Changes Required
+
+- [ ] [HIGH] Implement JWT signature verification in `get_current_user()` (AC #2) [file: `packages/backend/app/core/clerk_auth.py:86-103`]
+
+  - Use Clerk's JWKS endpoint for production: `https://[your-clerk-domain]/.well-known/jwks.json`
+  - Or use `pyclerk` SDK's `authenticate_request()` method as specified in tech spec
+  - Verify token signature, expiration, issuer, and audience claims
+  - Remove `options={"verify_signature": False}` and implement proper verification
+  - Reference: [Clerk JWT Verification Guide](https://clerk.com/docs/backend-requests/handling/manual-jwt)
+
+- [ ] [HIGH] Verify and commit `.env.example` files (AC #6) [file: `packages/backend/.env.example`, `packages/frontend/.env.example`]
+
+  - Ensure files exist and document all Clerk environment variables
+  - Include security notes about secret key handling
+  - Remove from `.cursorignore` if intentionally excluded, or ensure files are committed
+
+- [ ] [MEDIUM] Remove or implement `get_clerk_jwks()` function [file: `packages/backend/app/core/clerk_auth.py:19-40`]
+
+  - Either implement JWKS fetching for JWT verification, or remove unused function
+  - If implementing, cache JWKS with appropriate TTL
+
+- [ ] [MEDIUM] Add return type annotation to webhook handler [file: `packages/backend/app/api/v1/webhooks.py:25`]
+
+  - Change: `async def clerk_webhook_handler(...)` → `async def clerk_webhook_handler(...) -> dict:`
+
+- [ ] [MEDIUM] Improve error logging in webhook handler [file: `packages/backend/app/api/v1/webhooks.py:95-97`]
+
+  - Add structured logging with request context (webhook ID, event type, user ID)
+  - Include exception details in logs (not in response) for debugging
+
+- [ ] [LOW] Add token expiration validation [file: `packages/backend/app/core/clerk_auth.py:88-103`]
+  - After implementing signature verification, also validate `exp` claim
+  - Return 401 if token is expired
+
+#### Advisory Notes
+
+- Note: Consider making default timezone configurable in future stories (currently hardcoded to "UTC")
+- Note: Performance tests are marked as skipped - consider running manually before production deployment
+- Note: Consider adding rate limiting for authentication endpoints in production
+- Note: Webhook handler returns 200 for unhandled event types - this is correct behavior to prevent failures on new Clerk event types
+
+---
+
+**Review Status:** Changes Requested  
+**Next Steps:** Address HIGH severity items (JWT verification, .env.example files) and re-submit for review
