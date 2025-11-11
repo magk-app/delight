@@ -1,21 +1,27 @@
 """
 Test Configuration and Fixtures
 Root conftest.py providing shared fixtures for all tests
+
+IMPORTANT: Test/Production Separation
+=====================================
+Tests NEVER use the production database. Separation is enforced through:
+
+1. **Separate Test Database**: Tests use a completely isolated database
+   - Default: In-memory SQLite (sqlite+aiosqlite:///:memory:)
+   - Can override with TEST_DATABASE_URL environment variable
+   - Production uses DATABASE_URL (never touched by tests)
+
+2. **Dependency Override**: FastAPI's dependency override system ensures
+   the test client uses the test database session factory, not production.
+
+3. **No Environment Pollution**: Tests don't modify production environment
+   variables. The test database URL is only used to create the test engine.
+
+This ensures tests can never accidentally access production data.
 """
 
-import importlib
 import os
 from typing import AsyncGenerator
-
-# Ensure tests default to an isolated database (can override with TEST_DATABASE_URL).
-_test_db_url = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
-os.environ["TEST_DATABASE_URL"] = _test_db_url
-os.environ["DATABASE_URL"] = _test_db_url
-
-# Reload database session module so engine picks up the test database URL.
-import app.db.session as _db_session_module
-
-importlib.reload(_db_session_module)
 
 import pytest
 import pytest_asyncio
@@ -59,12 +65,36 @@ def compile_jsonb_sqlite(element, compiler, **kw):
 @pytest.fixture(scope="session")
 def test_database_url() -> str:
     """
-    Test database URL - isolated from development database.
+    Test database URL - completely isolated from production/development.
 
-    Set TEST_DATABASE_URL to point at a dedicated PostgreSQL test database.
-    Defaults to in-memory SQLite with PostgreSQL type fallbacks for local runs.
+    This fixture provides the database URL for tests. It NEVER uses the
+    production DATABASE_URL environment variable.
+
+    Configuration:
+    - Default: In-memory SQLite (sqlite+aiosqlite:///:memory:)
+    - Override: Set TEST_DATABASE_URL environment variable for a dedicated
+      PostgreSQL test database (e.g., in CI/CD)
+
+    Safety:
+    - Tests use this URL to create a separate test engine
+    - Production code uses DATABASE_URL (never accessed by tests)
+    - FastAPI dependency override ensures test client uses test database
     """
-    return os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+    # IMPORTANT: We explicitly check TEST_DATABASE_URL, NOT DATABASE_URL
+    # This ensures tests never accidentally use production database
+    test_url = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+    
+    # Safety check: Warn if someone accidentally sets DATABASE_URL in tests
+    prod_url = os.getenv("DATABASE_URL")
+    if prod_url and test_url == prod_url:
+        import warnings
+        warnings.warn(
+            "WARNING: TEST_DATABASE_URL matches DATABASE_URL! "
+            "Tests should use a separate database. Using test database anyway.",
+            UserWarning
+        )
+    
+    return test_url
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -125,6 +155,21 @@ async def async_engine(test_database_url: str):
             pass  # Ignore cleanup errors
 
 
+@pytest_asyncio.fixture(scope="session")
+async def test_session_factory(async_engine):
+    """
+    Create a session factory from the test engine.
+    This is used to override the get_db dependency in FastAPI.
+    """
+    return async_sessionmaker(
+        async_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False,
+    )
+
+
 @pytest_asyncio.fixture(scope="function")
 async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
     """
@@ -177,19 +222,60 @@ def app() -> FastAPI:
 
 
 @pytest_asyncio.fixture
-async def client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
+async def client(app: FastAPI, test_session_factory) -> AsyncGenerator[AsyncClient, None]:
     """
-    Async HTTP client for API testing
+    Async HTTP client for API testing with test database override.
+
+    CRITICAL: This fixture ensures tests NEVER use the production database.
+    
+    How it works:
+    1. Creates a test session factory from the test database engine
+    2. Overrides FastAPI's get_db() dependency to use test sessions
+    3. All API calls through this client use the test database
+    4. Cleans up override after test completes
+
+    Safety guarantees:
+    - Production get_db() is never called during tests
+    - Test database is completely isolated
+    - Override is cleared after each test (no cross-test pollution)
 
     Usage:
         async def test_health_check(client):
             response = await client.get("/api/v1/health")
             assert response.status_code == 200
     """
+    from app.db.session import get_db
     from httpx import ASGITransport
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
+    # CRITICAL: Override get_db to use test database session factory
+    # This ensures production database is NEVER accessed during tests
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        """
+        Test database session provider.
+        
+        This replaces the production get_db() dependency, ensuring all
+        database operations in tests use the test database.
+        """
+        async with test_session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
+
+    # Override the production dependency
+    app.dependency_overrides[get_db] = override_get_db
+
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            yield ac
+    finally:
+        # CRITICAL: Always clean up dependency override
+        # This prevents test pollution and ensures production code isn't affected
+        app.dependency_overrides.clear()
 
 
 # ============================================================================
