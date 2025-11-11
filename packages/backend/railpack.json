@@ -4,14 +4,14 @@
   "build": {
     "commands": [
       "python -V",
-      "pip install --upgrade pip",
-      "pip install poetry",
-      "poetry export -f requirements.txt --output requirements.txt --without-hashes",
-      "pip install --no-cache-dir -r requirements.txt",
-      "chmod +x start.sh"
+      "python -m venv .venv",
+      ".venv/bin/python -m pip install --upgrade pip setuptools wheel",
+      ".venv/bin/python -m pip install poetry",
+      ".venv/bin/poetry export -f requirements.txt --output requirements.txt --without-hashes",
+      ".venv/bin/python -m pip install --no-cache-dir -r requirements.txt"
     ]
   },
   "deploy": {
-    "startCommand": "./start.sh"
+    "startCommand": ".venv/bin/python -m alembic upgrade head || true && .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
   }
 }
