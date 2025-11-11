@@ -3,7 +3,8 @@ Clerk webhook endpoints for user lifecycle events.
 """
 
 import logging
-from typing import Annotated
+import uuid
+from typing import Annotated, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 async def clerk_webhook_handler(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+) -> Dict[str, str]:
     """
     Handle Clerk user lifecycle webhooks.
     Validates webhook signature and syncs user data to database.

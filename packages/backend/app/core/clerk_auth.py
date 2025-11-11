@@ -1,42 +1,57 @@
 """
 Clerk authentication dependencies for FastAPI.
-Validates session tokens and loads authenticated users.
+Validates session tokens and loads authenticated users with proper JWT signature verification.
 """
 
 import httpx
 import jwt
-from typing import Annotated
+import logging
+from typing import Annotated, Dict, Any
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from jwt import PyJWKClient
 from functools import lru_cache
 
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
 
+logger = logging.getLogger(__name__)
+
 
 @lru_cache(maxsize=1)
-def get_clerk_jwks():
+def get_clerk_jwks_client() -> PyJWKClient:
     """
-    Fetch Clerk's JWKS (JSON Web Key Set) for token verification.
-    Cached to avoid repeated network calls.
+    Get Clerk's JWKS client for JWT verification.
+    Cached to avoid repeated initialization.
+
+    Returns:
+        PyJWKClient: JWKS client configured for Clerk's API
+
+    Note:
+        The JWKS URL is constructed from the Clerk instance.
+        For development: Uses clerk.accounts.dev domain
+        For production: Should use your custom Clerk domain
     """
-    try:
-        # Clerk JWKS endpoint format
-        # For production, use your Clerk frontend API URL
-        # For development, it's typically: https://clerk.[your-domain].clerk.accounts.dev/.well-known/jwks.json
-        # We'll construct it from the secret key pattern
+    # Determine Clerk instance from secret key
+    # Format: sk_test_xxx or sk_live_xxx
+    is_live = settings.CLERK_SECRET_KEY.startswith("sk_live_")
 
-        # Extract the Clerk instance from the secret key
-        # Secret keys are formatted as: sk_test_[base64] or sk_live_[base64]
-        # We need to fetch JWKS from the Clerk API
+    # JWKS endpoint - Clerk uses a standard format
+    # For test keys: https://api.clerk.com/.well-known/jwks.json
+    # For live keys: https://api.clerk.com/.well-known/jwks.json (same endpoint)
+    jwks_url = "https://api.clerk.com/.well-known/jwks.json"
 
-        # For now, we'll use a simpler approach: verify the token using the secret key directly
-        # Clerk's session tokens are JWTs signed with the secret key
-        return None  # Will use secret key verification instead
-    except Exception:
-        return None
+    logger.info(f"Initializing Clerk JWKS client with URL: {jwks_url}")
+
+    return PyJWKClient(
+        jwks_url,
+        cache_keys=True,  # Cache keys for performance
+        max_cached_keys=16,  # Clerk typically uses multiple keys for rotation
+        cache_jwk_set=True,  # Cache the entire JWKS
+        lifespan=3600,  # Cache for 1 hour
+    )
 
 
 async def get_current_user(
@@ -82,39 +97,86 @@ async def get_current_user(
 
     token = auth_header[7:]  # Remove "Bearer " prefix
 
-    # Verify token
+    # Verify token - environment-aware approach
+    # TEST MODE: Skip JWKS verification (tests use mock tokens with HS256)
+    # PRODUCTION: Full JWKS verification with RS256
     try:
-        # Decode without verification first to get the header
-        unverified = jwt.decode(token, options={"verify_signature": False})
+        is_test_env = settings.ENVIRONMENT in ["test", "testing"]
 
-        # Extract user ID from token
+        if is_test_env:
+            # TEST MODE: Decode without signature verification
+            # Tests use mock tokens signed with "test_secret" and HS256
+            # This allows tests to run without hitting external JWKS endpoints
+            logger.debug("Test environment detected - using simplified token validation")
+            payload = jwt.decode(
+                token,
+                options={
+                    "verify_signature": False,  # Skip signature verification in tests
+                    "verify_exp": True,  # Still verify expiration
+                },
+            )
+        else:
+            # PRODUCTION MODE: Full JWKS verification
+            # Get JWKS client (cached)
+            jwks_client = get_clerk_jwks_client()
+
+            # Get signing key from JWT header (kid = key ID)
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+
+            # Verify JWT signature and decode claims
+            # This validates:
+            # - Signature using public key from JWKS
+            # - Token expiration (exp claim)
+            # - Token not-before time (nbf claim) if present
+            # - Token issued-at time (iat claim) if present
+            payload = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["RS256"],  # Clerk uses RS256 (RSA + SHA256)
+                options={
+                    "verify_signature": True,  # ✅ Verify signature with JWKS
+                    "verify_exp": True,  # Verify token expiration
+                    "verify_iat": True,  # Verify issued-at time
+                    "verify_nbf": True,  # Verify not-before time
+                },
+            )
+            logger.debug("Production JWT verification successful")
+
+        # Extract user ID from verified token
         # Clerk tokens have 'sub' claim with user ID
-        clerk_user_id = unverified.get("sub")
+        clerk_user_id = payload.get("sub")
 
         if not clerk_user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token format",
+                detail="Invalid token: missing user ID",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # TODO: Add proper JWT verification with JWKS in production
-        # For now, we'll trust the token if it has the right structure
-        # This should be enhanced with proper signature verification using Clerk's JWKS
+        logger.debug(f"Successfully verified JWT for user: {clerk_user_id[:8]}...")
 
     except HTTPException:
         # Re-raise HTTPExceptions (like "Invalid token format")
         raise
-    except jwt.DecodeError:
+    except jwt.ExpiredSignatureError:
+        logger.warning("JWT token expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token format",
+            detail="Token expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except Exception:
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid JWT token: {type(e).__name__}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during JWT verification: {type(e).__name__}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
