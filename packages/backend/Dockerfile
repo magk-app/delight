@@ -17,7 +17,7 @@ RUN pip install --upgrade pip setuptools wheel poetry
 COPY pyproject.toml poetry.lock* /app/
 
 # Export and install runtime deps
-RUN poetry export -f requirements.txt -o requirements.txt --without-hashes && \
+RUN poetry export -f requirements.txt -o requirements.txt --without-hashes --without dev && \
     pip install -r requirements.txt
 
 # Now copy the app
