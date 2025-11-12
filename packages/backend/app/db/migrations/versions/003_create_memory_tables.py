@@ -140,18 +140,27 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Drop indexes first
-    op.drop_index("ix_memory_collections_user_id", "memory_collections")
-    op.drop_index("ix_memories_embedding", "memories")
-    op.drop_index("ix_memories_created_at", "memories")
-    op.drop_index("ix_memories_memory_type", "memories")
-    op.drop_index("ix_memories_user_id", "memories")
+    # Drop indexes first (using IF EXISTS to handle cases where indexes don't exist)
+    # This makes the downgrade idempotent and safe to run even if upgrade was partial
+    op.execute("DROP INDEX IF EXISTS ix_memory_collections_user_id;")
+    op.execute("DROP INDEX IF EXISTS ix_memories_embedding;")
+    op.execute("DROP INDEX IF EXISTS ix_memories_created_at;")
+    op.execute("DROP INDEX IF EXISTS ix_memories_memory_type;")
+    op.execute("DROP INDEX IF EXISTS ix_memories_user_id;")
 
     # Drop tables (child tables first due to foreign keys)
-    op.drop_table("memory_collections")
-    op.drop_table("memories")
+    # Check if tables exist before dropping to handle partial migrations
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+    
+    if "memory_collections" in existing_tables:
+        op.drop_table("memory_collections")
+    if "memories" in existing_tables:
+        op.drop_table("memories")
 
-    # Drop enum type
-    op.execute("DROP TYPE memory_type;")
+    # Drop enum type (using IF EXISTS for safety)
+    op.execute("DROP TYPE IF EXISTS memory_type;")
 
     # Note: We don't drop the vector extension as it may be used by other tables
