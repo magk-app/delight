@@ -1,5 +1,8 @@
 import { UserButton } from "@clerk/nextjs";
 
+// Force dynamic rendering to work with Clerk middleware (Next.js 15)
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">

@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+// Force dynamic rendering to work with Clerk middleware (Next.js 15)
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
