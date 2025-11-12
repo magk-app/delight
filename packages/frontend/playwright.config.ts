@@ -33,8 +33,9 @@ export default defineConfig({
   },
 
   // Test results
+  outputDir: "test-results",
   reporter: [
-    ["html", { outputFolder: "test-results/html" }],
+    ["html", { outputFolder: "playwright-report" }],
     ["junit", { outputFile: "test-results/junit.xml" }],
     ["list"],
   ],
@@ -86,5 +87,8 @@ export default defineConfig({
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes for backend + frontend startup
+    // Suppress Next.js 15 async headers warnings from Clerk (Clerk v5.7.5 + Next.js 15 known issue)
+    // These are warnings only, not errors - tests will still run correctly
+    stderr: "pipe", // Changed from default to reduce noise
   },
 });

@@ -1,0 +1,381 @@
+<story-context id="story-1-3-clerk-authentication" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.3</storyId>
+    <title>Integrate Clerk Authentication System</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-10</generatedAt>
+    <generator>BMAD Story Context Workflow (Claude BMM)</generator>
+    <sourceStoryPath>docs/stories/1-3-integrate-clerk-authentication-system.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Delight user</asA>
+    <iWant>a secure and seamless authentication experience with multiple sign-in options that feels native to the platform</iWant>
+    <soThat>I can safely access my personalized AI companion and progress data without managing passwords myself</soThat>
+    <tasks>
+      <task id="1" ac="6">Setup Clerk Account and Configuration - Create Clerk dev instance, obtain API keys, configure webhook endpoint</task>
+      <task id="2" ac="1,5">Implement Frontend Clerk Integration - Install SDK, configure middleware, create auth pages, add user menu component</task>
+      <task id="3" ac="2,4">Implement Backend Authentication Dependencies - Add get_current_user dependency, create /users/me endpoint, configure settings</task>
+      <task id="4" ac="3">Implement Clerk Webhook Handler - Create webhook endpoint with Svix signature validation, sync user data to database</task>
+      <task id="5" ac="7">Integration and E2E Testing - Test webhook flow, auth endpoints, sign-in/out flows with Playwright</task>
+      <task id="6" ac="7">Documentation and Manual Testing - Update README with setup guide, test all auth surfaces manually</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>Frontend Clerk Integration Complete</title>
+      <given>the Next.js 15 application with App Router</given>
+      <when>a user visits any protected route without authentication</when>
+      <then>
+        - User is redirected to Clerk's sign-in page at /sign-in
+        - After successful authentication, user returns to originally requested destination
+        - Middleware protects routes: /companion, /missions, /world, /progress
+        - Public routes remain accessible: /, /sign-in, /sign-up, /docs
+        - ClerkProvider wraps the application in root layout
+        - Sign-in and sign-up pages render Clerk components correctly
+      </then>
+      <source>docs/epics.md lines 182-184, docs/tech-spec-epic-1.md lines 204-212</source>
+    </criterion>
+    <criterion id="AC2">
+      <title>Backend Session Verification Working</title>
+      <given>authenticated frontend requests to backend API</given>
+      <when>the backend receives a request with Clerk session token in Authorization header</when>
+      <then>
+        - Backend get_current_user() dependency validates Clerk session tokens
+        - Valid tokens extract clerk_user_id from session and load user from database
+        - Invalid/expired tokens return HTTP 401 Unauthorized with clear error message
+        - Missing Authorization header returns HTTP 403 Forbidden
+        - Protected endpoints use Depends(get_current_user) to enforce authentication
+        - Token validation uses official pyclerk SDK with proper error handling
+      </then>
+      <source>docs/tech-spec-epic-1.md lines 222-237</source>
+    </criterion>
+    <criterion id="AC3">
+      <title>User Sync via Webhook Functional</title>
+      <given>a user signs up or updates profile in Clerk</given>
+      <when>Clerk fires webhook events (user.created, user.updated)</when>
+      <then>
+        - Webhook endpoint /api/v1/webhooks/clerk receives and validates events
+        - Svix signature verification prevents unauthorized webhook requests
+        - user.created event creates new user record in users table with clerk_user_id
+        - user.updated event updates email and display_name in existing user record
+        - Webhook operations are idempotent (duplicate events don't cause errors)
+        - All webhook events logged with structured logging for audit trail
+        - User records properly link to existing database schema from Story 1.2
+      </then>
+      <source>docs/epics.md lines 189-192, docs/tech-spec-epic-1.md lines 238-252</source>
+    </criterion>
+    <criterion id="AC4">
+      <title>Protected API Endpoints Secured</title>
+      <given>the FastAPI backend with protected endpoints</given>
+      <when>requests are made to /api/v1/users/me</when>
+      <then>
+        - Endpoint returns HTTP 401 without valid session token
+        - Endpoint returns user data (id, clerk_user_id, email, display_name) with valid token
+        - User data matches clerk_user_id extracted from session token
+        - Different users cannot access each other's data
+        - All database queries use async SQLAlchemy properly
+        - Response follows UserResponse schema from Story 1.2 user models
+      </then>
+      <source>docs/tech-spec-epic-1.md lines 213-221</source>
+    </criterion>
+    <criterion id="AC5">
+      <title>Authentication State Managed in Frontend</title>
+      <given>the Next.js application with Clerk hooks</given>
+      <when>a user signs in, signs out, or session state changes</when>
+      <then>
+        - useUser() hook provides current user state across all components
+        - Signed-in users see user menu with display name and sign-out button
+        - Signed-out users see Sign In and Sign Up buttons
+        - Sign-out button clears session and redirects to home page
+        - Session persists across page refreshes (Clerk manages cookies)
+        - UserButton component provides profile management dropdown
+      </then>
+      <source>docs/tech-spec-epic-1.md lines 204-212</source>
+    </criterion>
+    <criterion id="AC6">
+      <title>Environment Variables Configured Correctly</title>
+      <given>both frontend and backend applications</given>
+      <when>deployed with required Clerk environment variables</when>
+      <then>
+        Frontend .env.local: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (starts with pk_) for client-side, CLERK_SECRET_KEY (starts with sk_) for server-side middleware
+        Backend .env: CLERK_SECRET_KEY (starts with sk_) for session verification, CLERK_WEBHOOK_SECRET (starts with whsec_) for webhook signature validation
+        .env.example files document all required variables with comments
+        No secrets committed to git (.env in .gitignore)
+        Application fails gracefully with clear error if variables missing
+        Startup validation checks key formats (pk_/sk_/whsec_ prefixes)
+      </then>
+      <source>docs/tech-spec-epic-1.md lines 196-203, 253-262</source>
+    </criterion>
+    <criterion id="AC7">
+      <title>Complete Documentation and Testing</title>
+      <given>the implemented authentication system</given>
+      <when>reviewed by another developer</when>
+      <then>
+        - README.md updated with Clerk setup instructions (less than 5 minutes to complete)
+        - API documentation includes authentication examples with sample requests
+        - Integration tests cover webhook flow (user creation/update, signature validation)
+        - E2E tests cover complete sign-in/sign-out user journey
+        - Manual testing checklist completed with evidence
+        - All tests passing in CI pipeline
+      </then>
+      <source>docs/stories/1-1-*.md and docs/stories/1-2-*.md quality standards</source>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: User Onboarding & Foundation</title>
+        <section>Authentication Strategy (Story 1.3)</section>
+        <snippet>Defines Clerk as managed authentication provider with frontend (Next.js middleware, ClerkProvider) and backend (session verification, webhook sync) integration requirements. Includes token validation flow, webhook signature verification, and protected endpoint patterns.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: User Onboarding & Foundation</title>
+        <section>APIs and Interfaces</section>
+        <snippet>Specifies POST /api/v1/webhooks/clerk for Clerk event ingestion (user.created, user.updated) with Svix signature validation. GET /api/v1/users/me protected endpoint returns authenticated user profile. Backend uses get_current_user FastAPI dependency for session token verification.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture: Delight</title>
+        <section>ADR-007: Clerk for Authentication</section>
+        <snippet>Decision to use Clerk as managed authentication service for MVP. Rationale: OAuth/social login out-of-box, reduces 2-3 stories of development, SOC 2 compliant, free tier sufficient (10K MAU), eliminates password storage liability. Clerk handles: email/password, Google, GitHub, magic links, 2FA, breach detection.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-1-user-onboarding-foundation.md</path>
+        <title>Epic 1: User Onboarding & Foundation</title>
+        <section>Story 1.3: Integrate Clerk Authentication System</section>
+        <snippet>Story requirements: Clerk SDK integration in Next.js 15 App Router with middleware protection, backend session verification via pyclerk, webhook handler for user sync (user.created/updated/deleted), protected API endpoints with Depends(get_current_user), environment variable configuration, comprehensive testing including E2E auth flows.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-2-set-up-database-schema-and-migrations.md</path>
+        <title>Story 1.2: Set Up Database Schema and Migrations</title>
+        <section>Database Schema - users table</section>
+        <snippet>users table already created with clerk_user_id VARCHAR(255) UNIQUE NOT NULL indexed column. Story 1.3 webhooks populate this field when users sign up. Also includes email, display_name (both nullable), created_at, updated_at timestamps. No migration needed - reuse existing schema.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-1-initialize-monorepo-structure-and-core-dependencies.md</path>
+        <title>Story 1.1: Initialize Monorepo Structure and Core Dependencies</title>
+        <section>Middleware Configuration</section>
+        <snippet>Next.js middleware.ts already exists for route protection setup. Story 1.3 modifies it to integrate Clerk's clerkMiddleware for authentication enforcement. Existing middleware structure uses Next.js 15 App Router patterns with matcher configuration.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>packages/frontend/src/middleware.ts</path>
+        <kind>middleware</kind>
+        <symbol>clerkMiddleware</symbol>
+        <lines>1-20</lines>
+        <reason>Existing Next.js middleware file - will be modified to add Clerk authentication protection using clerkMiddleware and createRouteMatcher for public/protected route differentiation</reason>
+      </artifact>
+      <artifact>
+        <path>packages/frontend/src/app/layout.tsx</path>
+        <kind>layout_component</kind>
+        <symbol>RootLayout</symbol>
+        <lines>1-30</lines>
+        <reason>Root Next.js layout - will be wrapped with ClerkProvider to enable Clerk hooks (useUser, useAuth) throughout the application</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/models/user.py</path>
+        <kind>model</kind>
+        <symbol>User</symbol>
+        <lines>1-50</lines>
+        <reason>Existing User model from Story 1.2 - contains clerk_user_id field that webhook handler will populate. get_current_user dependency queries this model by clerk_user_id for session validation</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/db/session.py</path>
+        <kind>infrastructure</kind>
+        <symbol>get_db</symbol>
+        <lines>1-40</lines>
+        <reason>Existing database session factory from Story 1.2 - get_current_user and webhook handler use this dependency for database access via Depends(get_db)</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/core/config.py</path>
+        <kind>configuration</kind>
+        <symbol>Settings</symbol>
+        <lines>1-60</lines>
+        <reason>Existing Pydantic settings class - will be extended with CLERK_SECRET_KEY, CLERK_WEBHOOK_SECRET, CLERK_API_URL for Clerk SDK configuration</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/api/v1/__init__.py</path>
+        <kind>router_registry</kind>
+        <symbol>api_router</symbol>
+        <lines>1-20</lines>
+        <reason>Existing API router registry - will register new users.router and webhooks.router for authentication endpoints</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node-frontend">
+        <package name="@clerk/nextjs" version="^6.14.0">Official Clerk Next.js SDK with App Router support - provides ClerkProvider, middleware, useUser hook, SignIn/SignUp components, UserButton</package>
+      </ecosystem>
+      <ecosystem name="python-backend">
+        <package name="pyclerk" version="0.3.0">Official Clerk Python SDK - provides Clerk client for session token verification and API access</package>
+        <package name="svix" version="1.45.0">Webhook signature validation library - Clerk uses Svix standard for webhook security, validates svix-id, svix-timestamp, svix-signature headers</package>
+        <package name="httpx" version=">=0.26.0">Already installed from Story 1.1 - used by pyclerk for Clerk API requests</package>
+        <package name="pydantic" version=">=2.5.0">Already installed from Story 1.1 - used for webhook payload validation schemas</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <category>architecture</category>
+      <rule>Clerk is the sole identity provider (ADR-007) - do not implement custom JWT, password hashing, or OAuth flows</rule>
+      <source>docs/architecture.md#ADR-007-Clerk-for-Authentication</source>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Frontend auth routes must use Clerk catch-all route pattern: /sign-in/[[...sign-in]]/page.tsx for proper OAuth redirect handling</rule>
+      <source>docs/tech-spec-epic-1.md#Frontend-Authentication-Routes</source>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Middleware must use clerkMiddleware from @clerk/nextjs/server (not @clerk/nextjs) - server-only import for App Router</rule>
+      <source>docs/tech-spec-epic-1.md#Authentication-Strategy</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>Webhook signature verification is mandatory - use Svix library to validate svix-id, svix-timestamp, svix-signature headers against CLERK_WEBHOOK_SECRET</rule>
+      <source>docs/tech-spec-epic-1.md#APIs-and-Interfaces</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>Session tokens must never be logged - sanitize error messages to remove bearer tokens, use token[:8] + "..." format for debugging</rule>
+      <source>docs/tech-spec-epic-1.md#Security-Considerations</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>Return 401 for both "invalid token" and "user not found" to prevent user enumeration via timing attacks</rule>
+      <source>docs/tech-spec-epic-1.md#Security-Considerations</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>CLERK_SECRET_KEY used in both frontend (server-side middleware only) and backend - never expose in client-side code</rule>
+      <source>docs/tech-spec-epic-1.md#Environment-Variables</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>Webhook endpoint must be publicly accessible but protected by signature validation - no additional authentication required</rule>
+      <source>docs/tech-spec-epic-1.md#APIs-and-Interfaces</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>Webhook operations must be idempotent - use clerk_user_id as unique identifier for upsert operations to handle duplicate events</rule>
+      <source>docs/tech-spec-epic-1.md#APIs-and-Interfaces</source>
+    </constraint>
+    <constraint>
+      <category>database</category>
+      <rule>User sync must use existing users table from Story 1.2 - no new migrations, populate clerk_user_id, email, display_name fields only</rule>
+      <source>docs/stories/1-2-set-up-database-schema-and-migrations.md</source>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>E2E tests must use Clerk test mode credentials - do not create real users in production Clerk instance during testing</rule>
+      <source>docs/tech-spec-epic-1.md#Testing-Strategy</source>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>Integration tests must mock Clerk SDK calls to avoid external dependencies - use unittest.mock to mock clerk.sessions.verify_token()</rule>
+      <source>docs/tech-spec-epic-1.md#Testing-Strategy</source>
+    </constraint>
+    <constraint>
+      <category>code_organization</category>
+      <rule>Store auth dependencies in app/core/clerk_auth.py, webhook schemas in app/schemas/webhook.py, webhook logic in app/services/clerk_service.py</rule>
+      <source>docs/architecture.md#Code-Organization</source>
+    </constraint>
+    <constraint>
+      <category>code_organization</category>
+      <rule>Frontend auth pages go in src/app/(auth)/ route group, shared auth components in src/components/auth/</rule>
+      <source>docs/architecture.md#Code-Organization</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>get_current_user</name>
+      <kind>fastapi_dependency</kind>
+      <signature>async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: AsyncSession = Depends(get_db)) -> User</signature>
+      <path>packages/backend/app/core/clerk_auth.py</path>
+      <usage>FastAPI dependency for authentication - validates Clerk session token, extracts clerk_user_id, loads User from database. Use with Depends(get_current_user) in protected route handlers. Raises HTTPException 401 for invalid tokens or missing users.</usage>
+    </interface>
+    <interface>
+      <name>POST /api/v1/webhooks/clerk</name>
+      <kind>rest_endpoint</kind>
+      <signature>async def clerk_webhook_handler(request: Request, db: AsyncSession = Depends(get_db)) -> dict</signature>
+      <path>packages/backend/app/api/v1/webhooks.py</path>
+      <usage>Webhook endpoint for Clerk user lifecycle events - validates Svix signature, handles user.created (create user record), user.updated (update email/display_name). Returns {"status": "success"} on 200, 400 for invalid signature, 500 for processing errors.</usage>
+    </interface>
+    <interface>
+      <name>GET /api/v1/users/me</name>
+      <kind>rest_endpoint</kind>
+      <signature>async def get_current_user_profile(current_user: User = Depends(get_current_user)) -> UserResponse</signature>
+      <path>packages/backend/app/api/v1/users.py</path>
+      <usage>Protected endpoint returning authenticated user's profile - demonstrates authentication pattern for other protected endpoints. Returns UserResponse with id, clerk_user_id, email, display_name, timestamps. Requires valid Clerk session token in Authorization header.</usage>
+    </interface>
+    <interface>
+      <name>ClerkService.create_or_update_user</name>
+      <kind>service_method</kind>
+      <signature>async def create_or_update_user(db: AsyncSession, clerk_data: ClerkUserData) -> User</signature>
+      <path>packages/backend/app/services/clerk_service.py</path>
+      <usage>Idempotent user sync service - creates new user if clerk_user_id doesn't exist, updates email/display_name if exists. Extracts email from primary email address, constructs display_name from first_name + last_name. Used by webhook handler.</usage>
+    </interface>
+    <interface>
+      <name>clerkMiddleware</name>
+      <kind>nextjs_middleware</kind>
+      <signature>export default clerkMiddleware(async (auth, request) => { if (!isPublicRoute(request)) await auth.protect() })</signature>
+      <path>packages/frontend/src/middleware.ts</path>
+      <usage>Next.js 15 App Router middleware for authentication enforcement - uses createRouteMatcher to define public routes (/, /sign-in, /sign-up), calls auth.protect() for all other routes to enforce authentication. Automatically redirects unauthenticated users to /sign-in.</usage>
+    </interface>
+    <interface>
+      <name>useUser</name>
+      <kind>react_hook</kind>
+      <signature>const { isSignedIn, user } = useUser()</signature>
+      <path>@clerk/nextjs (imported)</path>
+      <usage>React hook providing current authentication state - returns { isSignedIn: boolean, user: ClerkUser | null }. Use for conditional UI rendering (show/hide user menu, sign-in buttons). Must be used within ClerkProvider tree (client components only).</usage>
+    </interface>
+    <interface>
+      <name>UserButton</name>
+      <kind>react_component</kind>
+      <signature>&lt;UserButton afterSignOutUrl="/" /&gt;</signature>
+      <path>@clerk/nextjs (imported)</path>
+      <usage>Pre-built Clerk component providing user profile dropdown with sign-out - displays user avatar, profile management link, sign-out button. Handles sign-out flow automatically. Use afterSignOutUrl prop to specify redirect after logout.</usage>
+    </interface>
+    <interface>
+      <name>SignIn / SignUp</name>
+      <kind>react_component</kind>
+      <signature>&lt;SignIn /&gt; or &lt;SignUp /&gt;</signature>
+      <path>@clerk/nextjs (imported)</path>
+      <usage>Pre-built Clerk authentication UI components - render complete sign-in/sign-up forms with email/password, social OAuth (Google, GitHub), magic links. Handle all authentication flows automatically. Use in /sign-in/[[...sign-in]]/page.tsx and /sign-up/[[...sign-up]]/page.tsx.</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing uses pytest with pytest-asyncio for async tests. Integration tests mock Clerk SDK calls (clerk.sessions.verify_token) to avoid external dependencies. Webhook tests use Svix library to generate valid signatures for testing. Frontend E2E tests use Playwright with Clerk test mode credentials. Manual testing includes: (1) Complete sign-up/sign-in flow, (2) Webhook sync verification in Supabase, (3) Protected endpoint testing with curl, (4) Session persistence across browser refresh. Code coverage target: 80%+ for new authentication code.
+    </standards>
+    <locations>
+      <location>packages/backend/tests/integration/test_webhooks.py</location>
+      <location>packages/backend/tests/integration/test_auth.py</location>
+      <location>packages/frontend/tests/e2e/auth.spec.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test middleware redirect: Navigate to /companion without auth, verify redirect to /sign-in with redirect_url query param preserved</idea>
+      <idea ac="AC2">Test get_current_user dependency: Mock Clerk SDK to return valid session with clerk_user_id, verify User loaded from database correctly</idea>
+      <idea ac="AC2">Test get_current_user with invalid token: Mock Clerk SDK to raise exception, verify HTTPException 401 returned with generic error message</idea>
+      <idea ac="AC3">Test user.created webhook: Sign valid Svix payload with CLERK_WEBHOOK_SECRET, POST to /webhooks/clerk, verify user created in database with clerk_user_id</idea>
+      <idea ac="AC3">Test user.updated webhook: Create existing user, send signed user.updated webhook, verify email and display_name updated in database</idea>
+      <idea ac="AC3">Test webhook idempotency: Send same user.created webhook twice, verify only one user record created (no duplicate error)</idea>
+      <idea ac="AC3">Test invalid webhook signature: Send webhook with incorrect svix-signature header, verify 400 Bad Request returned</idea>
+      <idea ac="AC4">Test /users/me endpoint: Provide valid Authorization header (mocked), verify 200 response with UserResponse containing clerk_user_id, email, display_name</idea>
+      <idea ac="AC4">Test /users/me without token: Send request without Authorization header, verify 403 Forbidden returned</idea>
+      <idea ac="AC5">E2E test sign-up flow: Visit /sign-up, complete Clerk form with test credentials, verify redirect to home, verify user menu shows display name</idea>
+      <idea ac="AC5">E2E test sign-out flow: Sign in first, click sign-out button, verify redirect to home, verify sign-in button visible again</idea>
+      <idea ac="AC6">Test environment variable validation: Start app with missing CLERK_SECRET_KEY, verify clear error message about required configuration</idea>
+      <idea ac="AC7">Manual test: Sign up in frontend, check backend logs for webhook received, verify Supabase users table has new record with matching clerk_user_id</idea>
+    </ideas>
+  </tests>
+</story-context>

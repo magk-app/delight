@@ -14,8 +14,9 @@ class Settings(BaseSettings):
     # Database Configuration
     DATABASE_URL: str
 
-    # Authentication Configuration
-    CLERK_SECRET_KEY: str = ""  # Will be populated in Story 1.3
+    # Authentication Configuration (Clerk)
+    CLERK_SECRET_KEY: str  # Required: Session token verification
+    CLERK_WEBHOOK_SECRET: str  # Required: Webhook signature validation
 
     # Application Configuration
     ENVIRONMENT: str = "development"
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="allow",  # Allow extra fields from environment for flexibility
     )
 
     @property
