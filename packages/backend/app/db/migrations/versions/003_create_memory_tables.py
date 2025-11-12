@@ -30,95 +30,73 @@ def upgrade() -> None:
     # Verify it's available (idempotent)
     op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
-    # Create memory_type enum for 3-tier memory architecture
+    # Create memory_type enum for 3-tier memory architecture (idempotent)
+    # Check if enum exists before creating to handle re-runs
     op.execute("""
-        CREATE TYPE memory_type AS ENUM ('personal', 'project', 'task');
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'memory_type') THEN
+                CREATE TYPE memory_type AS ENUM ('personal', 'project', 'task');
+            END IF;
+        END $$;
     """)
 
-    # Create memories table with vector embeddings
-    op.create_table(
-        "memories",
-        sa.Column(
-            "id",
-            postgresql.UUID(as_uuid=True),
-            primary_key=True,
-            server_default=sa.text("gen_random_uuid()"),
-        ),
-        sa.Column(
-            "user_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("users.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
-        sa.Column(
-            "memory_type",
-            postgresql.ENUM("personal", "project", "task", name="memory_type"),
-            nullable=False,
-            comment="Memory tier: personal (never pruned), project (goals), task (30-day pruning)",
-        ),
-        sa.Column(
-            "content",
-            sa.Text,
-            nullable=False,
-            comment="Human-readable memory content",
-        ),
-        # Vector column for OpenAI text-embedding-3-small (1536 dimensions)
-        sa.Column(
-            "embedding",
-            postgresql.ARRAY(sa.Float, dimensions=1),  # Will be created as vector(1536) in raw SQL
-            nullable=True,
-            comment="1536-dim vector embedding from OpenAI text-embedding-3-small",
-        ),
-        sa.Column(
-            "metadata",
-            postgresql.JSONB,
-            nullable=True,
-            server_default=sa.text("'{}'::jsonb"),
-            comment="Flexible metadata: stressor info, emotion scores, goal references, etc.",
-        ),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-        sa.Column(
-            "accessed_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-            comment="Updated on memory retrieval for LRU tracking",
-        ),
-    )
+    # Check if tables already exist (in case of partial migration failure)
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
 
-    # Manually fix the embedding column type to use pgvector's vector type
-    # SQLAlchemy doesn't have native Vector type support, so we use ALTER TABLE
-    op.execute("""
-        ALTER TABLE memories
-        ALTER COLUMN embedding TYPE vector(1536) USING embedding::vector(1536);
-    """)
+    # Create memories table with vector embeddings (if not exists)
+    # Using raw SQL to bypass SQLAlchemy's ENUM event handler which tries to
+    # auto-create the enum even with create_type=False
+    # NOTE: Split into separate op.execute() calls because asyncpg doesn't support
+    # multiple statements in a single prepared statement
+    if "memories" not in existing_tables:
+        # Create the table
+        op.execute("""
+            CREATE TABLE memories (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                memory_type memory_type NOT NULL,
+                content TEXT NOT NULL,
+                embedding vector(1536),
+                metadata JSONB DEFAULT '{}'::jsonb,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+                accessed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+            )
+        """)
+        
+        # Add column comments (separate statements for asyncpg compatibility)
+        op.execute("COMMENT ON COLUMN memories.memory_type IS 'Memory tier: personal (never pruned), project (goals), task (30-day pruning)'")
+        op.execute("COMMENT ON COLUMN memories.content IS 'Human-readable memory content'")
+        op.execute("COMMENT ON COLUMN memories.embedding IS '1536-dim vector embedding from OpenAI text-embedding-3-small'")
+        op.execute("COMMENT ON COLUMN memories.metadata IS 'Flexible metadata: stressor info, emotion scores, goal references, etc.'")
+        op.execute("COMMENT ON COLUMN memories.accessed_at IS 'Updated on memory retrieval for LRU tracking'")
 
-    # Create standard indexes for filtering and sorting
-    op.create_index("ix_memories_user_id", "memories", ["user_id"])
-    op.create_index("ix_memories_memory_type", "memories", ["memory_type"])
-    op.create_index("ix_memories_created_at", "memories", ["created_at"])
+        # Create standard indexes for filtering and sorting
+        op.create_index("ix_memories_user_id", "memories", ["user_id"])
+        op.create_index("ix_memories_memory_type", "memories", ["memory_type"])
+        op.create_index("ix_memories_created_at", "memories", ["created_at"])
 
-    # Create HNSW index for fast vector similarity search
-    # Parameters optimized for 1536-dim vectors:
-    #   m = 16: Max connections per layer (balance recall vs speed)
-    #   ef_construction = 64: Build-time search breadth (higher = better recall, slower build)
-    #   vector_cosine_ops: Cosine distance metric (1 - cosine_similarity), range [0, 2]
-    # Expected performance: < 100ms p95 for 10K memories
-    op.execute("""
-        CREATE INDEX ix_memories_embedding ON memories
-        USING hnsw (embedding vector_cosine_ops)
-        WITH (m = 16, ef_construction = 64);
-    """)
+        # Create HNSW index for fast vector similarity search
+        # Parameters optimized for 1536-dim vectors:
+        #   m = 16: Max connections per layer (balance recall vs speed)
+        #   ef_construction = 64: Build-time search breadth (higher = better recall, slower build)
+        #   vector_cosine_ops: Cosine distance metric (1 - cosine_similarity), range [0, 2]
+        # Expected performance: < 100ms p95 for 10K memories
+        op.execute("""
+            CREATE INDEX IF NOT EXISTS ix_memories_embedding ON memories
+            USING hnsw (embedding vector_cosine_ops)
+            WITH (m = 16, ef_construction = 64);
+        """)
+    else:
+        print("Table 'memories' already exists, skipping creation")
 
-    # Create memory_collections table for optional grouping
-    op.create_table(
-        "memory_collections",
-        sa.Column(
+    # Create memory_collections table for optional grouping (if not exists)
+    if "memory_collections" not in existing_tables:
+        op.create_table(
+            "memory_collections",
+            sa.Column(
             "id",
             postgresql.UUID(as_uuid=True),
             primary_key=True,
@@ -153,10 +131,12 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-    )
+        )
 
-    # Create index for memory_collections
-    op.create_index("ix_memory_collections_user_id", "memory_collections", ["user_id"])
+        # Create index for memory_collections
+        op.create_index("ix_memory_collections_user_id", "memory_collections", ["user_id"])
+    else:
+        print("Table 'memory_collections' already exists, skipping creation")
 
 
 def downgrade() -> None:
