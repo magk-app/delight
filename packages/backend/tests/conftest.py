@@ -32,14 +32,37 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.pool import NullPool
 
+
+# ============================================================================
+# Pytest Configuration Hook - Runs BEFORE module imports
+# ============================================================================
+
+
+def pytest_configure(config):
+    """
+    Pytest hook that runs BEFORE any modules are imported.
+
+    This is critical for setting ENVIRONMENT=test before Settings() singleton
+    is created at module import time in app/core/config.py.
+
+    Without this, settings.ENVIRONMENT would be "development" by default,
+    and auth tests would try to hit real Clerk JWKS endpoints.
+    """
+    os.environ["ENVIRONMENT"] = "test"
+
+
+# ============================================================================
+# Import Application Modules (AFTER environment is set)
+# ============================================================================
+
 # Import your FastAPI app and database dependencies
-from app.core.config import settings
-from app.db.base import Base
-from main import app as fastapi_app
+from app.core.config import settings  # noqa: E402
+from app.db.base import Base  # noqa: E402
+from main import app as fastapi_app  # noqa: E402
 
 # Import all models so they're registered with Base.metadata
 # This is required for create_all() to work
-from app.models.user import User, UserPreferences  # noqa: F401
+from app.models.user import User, UserPreferences  # noqa: F401, E402
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +229,10 @@ async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
         finally:
             # Rollback transaction to clean up test data
             # This ensures each test starts with a clean state
-            await trans.rollback()
+            # Guard: Only rollback if transaction is still active
+            # (test failures can auto-close the transaction)
+            if trans.is_active:
+                await trans.rollback()
             await session.close()
 
 

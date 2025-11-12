@@ -107,10 +107,7 @@ class TestGetCurrentUser:
         )
 
         assert response.status_code == 401
-        assert response.json()["detail"] in [
-            "Invalid token format",
-            "Invalid authentication credentials",
-        ]
+        assert response.json()["detail"] == "Invalid token"
 
     async def test_get_current_user_malformed_token(self, client: AsyncClient):
         """
@@ -126,10 +123,7 @@ class TestGetCurrentUser:
         )
 
         assert response.status_code == 401
-        assert response.json()["detail"] in [
-            "Invalid token format",
-            "Invalid authentication credentials",
-        ]
+        assert response.json()["detail"] == "Invalid token"
 
     async def test_get_current_user_token_missing_sub_claim(
         self, client: AsyncClient, db_session: AsyncSession
@@ -153,7 +147,7 @@ class TestGetCurrentUser:
         )
 
         assert response.status_code == 401
-        assert response.json()["detail"] == "Invalid token format"
+        assert response.json()["detail"] == "Invalid token: missing user ID"
 
     async def test_get_current_user_not_in_database(self, client: AsyncClient):
         """

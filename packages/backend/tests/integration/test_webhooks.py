@@ -9,6 +9,7 @@ Tests for Clerk webhook handling:
 - Error handling
 """
 
+import base64
 import hmac
 import json
 import time
@@ -26,8 +27,11 @@ def generate_svix_signature(payload: bytes, secret: str, timestamp: str) -> str:
     """
     Generate valid Svix webhook signature for testing.
 
-    Svix uses HMAC-SHA256 with a specific format:
-    msg_id.timestamp.payload -> base64(hmac-sha256(msg_id,timestamp,payload))
+    Svix uses HMAC-SHA256 with base64 encoding:
+    1. Message format: "{msg_id}.{timestamp}.{payload}"
+    2. HMAC with base64-decoded secret
+    3. Base64-encode the HMAC result
+    4. Format: "v1,{base64_signature}"
 
     Args:
         payload: Raw webhook payload bytes
@@ -35,46 +39,60 @@ def generate_svix_signature(payload: bytes, secret: str, timestamp: str) -> str:
         timestamp: Unix timestamp as string
 
     Returns:
-        Signature in format: v1,signature1 v1,signature2
+        Signature in format: v1,base64_signature
     """
-    # Extract the base64 part of the secret (remove "whsec_" prefix)
+    # Extract and decode the base64 secret (remove "whsec_" prefix, then decode)
     if secret.startswith("whsec_"):
-        secret = secret[6:]
+        secret_b64 = secret[6:]
+    else:
+        secret_b64 = secret
+
+    # Decode the base64-encoded secret to get raw bytes
+    secret_bytes = base64.b64decode(secret_b64)
 
     # Svix signature format: f"{msg_id}.{timestamp}.{payload}"
     msg_id = "msg_test123"
     to_sign = f"{msg_id}.{timestamp}.{payload.decode('utf-8')}"
 
-    # Generate HMAC-SHA256 signature
-    signature = hmac.new(
-        secret.encode(), to_sign.encode(), digestmod="sha256"
-    ).hexdigest()
+    # Generate HMAC-SHA256 signature with decoded secret
+    signature_bytes = hmac.new(
+        secret_bytes, to_sign.encode(), digestmod="sha256"
+    ).digest()
+
+    # Base64-encode the signature (NOT hexdigest!)
+    signature_b64 = base64.b64encode(signature_bytes).decode('utf-8')
 
     # Svix format: "v1,signature"
-    return f"v1,{signature}"
+    return f"v1,{signature_b64}"
 
 
-def create_webhook_headers(payload: Dict, secret: str) -> Dict[str, str]:
+def create_webhook_headers(payload: Dict, secret: str) -> tuple[Dict[str, str], bytes]:
     """
-    Create valid Svix webhook headers for testing.
+    Create valid Svix webhook headers AND payload bytes for testing.
+
+    CRITICAL: Returns both headers AND the payload bytes that were signed.
+    The test MUST send these exact bytes (not re-serialize the dict) to match the signature.
 
     Args:
         payload: Webhook payload dict
         secret: Webhook secret
 
     Returns:
-        Dict with svix-id, svix-timestamp, svix-signature headers
+        Tuple of (headers dict, payload_bytes) - use payload_bytes as POST body
     """
-    payload_bytes = json.dumps(payload).encode("utf-8")
+    # Serialize payload to bytes - these are the bytes we'll sign
+    payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     timestamp = str(int(time.time()))
     signature = generate_svix_signature(payload_bytes, secret, timestamp)
 
-    return {
+    headers = {
         "svix-id": "msg_test123",
         "svix-timestamp": timestamp,
         "svix-signature": signature,
         "Content-Type": "application/json",
     }
+
+    return headers, payload_bytes
 
 
 @pytest.mark.integration
@@ -111,10 +129,10 @@ class TestWebhookSignatureValidation:
         # Note: Uses test webhook secret from settings
         from app.core.config import settings
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -166,16 +184,18 @@ class TestWebhookSignatureValidation:
             "object": "event",
         }
 
-        # Use fake signature
+        payload_bytes = json.dumps(payload).encode("utf-8")
+
+        # Use fake signature (valid base64 format but incorrect signature)
         headers = {
             "svix-id": "msg_fake",
             "svix-timestamp": str(int(time.time())),
-            "svix-signature": "v1,fakesignature123456",
+            "svix-signature": "v1,aW52YWxpZHNpZ25hdHVyZWRhdGFoZXJl",  # Valid base64 but wrong signature
             "Content-Type": "application/json",
         }
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 400
@@ -191,13 +211,15 @@ class TestWebhookSignatureValidation:
         """
         payload = {"type": "user.created", "data": {"id": "user_test_123"}}
 
+        payload_bytes = json.dumps(payload).encode("utf-8")
+
         headers = {
             "svix-timestamp": str(int(time.time())),
             "svix-signature": "v1,signature",
         }
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 400
@@ -209,13 +231,17 @@ class TestWebhookSignatureValidation:
         Given: Payload missing svix-timestamp header
         When: POST /api/v1/webhooks/clerk
         Then: 400 Bad Request
+
+        payload_bytes = json.dumps(payload).encode("utf-8")
         """
         payload = {"type": "user.created", "data": {"id": "user_test_123"}}
+
+        payload_bytes = json.dumps(payload).encode("utf-8")
 
         headers = {"svix-id": "msg_123", "svix-signature": "v1,signature"}
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 400
@@ -227,13 +253,17 @@ class TestWebhookSignatureValidation:
         Given: Payload missing svix-signature header
         When: POST /api/v1/webhooks/clerk
         Then: 400 Bad Request
+
+        payload_bytes = json.dumps(payload).encode("utf-8")
         """
         payload = {"type": "user.created", "data": {"id": "user_test_123"}}
+
+        payload_bytes = json.dumps(payload).encode("utf-8")
 
         headers = {"svix-id": "msg_123", "svix-timestamp": str(int(time.time()))}
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 400
@@ -273,10 +303,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -320,10 +350,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -360,10 +390,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -399,10 +429,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -439,10 +469,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -478,10 +508,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -519,10 +549,10 @@ class TestUserCreatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -580,10 +610,10 @@ class TestUserUpdatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 200
@@ -631,9 +661,13 @@ class TestUserUpdatedWebhook:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
-        await client.post("/api/v1/webhooks/clerk", json=payload, headers=headers)
+        await client.post("/api/v1/webhooks/clerk", content=payload_bytes, headers=headers)
+
+        # Expire cached objects so we fetch fresh data from database
+        # (webhook handler used a different session to update the user)
+        db_session.expire_all()
 
         # Verify UUID unchanged
         result = await db_session.execute(
@@ -679,18 +713,18 @@ class TestWebhookIdempotency:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         # Send first webhook
         response1 = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
         assert response1.status_code == 200
 
         # Send duplicate (regenerate headers with new timestamp)
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
         response2 = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
         assert response2.status_code == 200
 
@@ -728,9 +762,9 @@ class TestWebhookIdempotency:
             "object": "event",
         }
 
-        headers = create_webhook_headers(create_payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(create_payload, settings.CLERK_WEBHOOK_SECRET)
         response1 = await client.post(
-            "/api/v1/webhooks/clerk", json=create_payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
         assert response1.status_code == 200
 
@@ -745,9 +779,9 @@ class TestWebhookIdempotency:
             "object": "event",
         }
 
-        headers = create_webhook_headers(update_payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(update_payload, settings.CLERK_WEBHOOK_SECRET)
         response2 = await client.post(
-            "/api/v1/webhooks/clerk", json=update_payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
         assert response2.status_code == 200
 
@@ -786,8 +820,8 @@ class TestWebhookIdempotency:
             },
             "object": "event",
         }
-        headers1 = create_webhook_headers(payload1, settings.CLERK_WEBHOOK_SECRET)
-        await client.post("/api/v1/webhooks/clerk", json=payload1, headers=headers1)
+        headers1, payload_bytes1 = create_webhook_headers(payload1, settings.CLERK_WEBHOOK_SECRET)
+        await client.post("/api/v1/webhooks/clerk", content=payload_bytes1, headers=headers1)
 
         # Update 2
         payload2 = {
@@ -799,8 +833,8 @@ class TestWebhookIdempotency:
             },
             "object": "event",
         }
-        headers2 = create_webhook_headers(payload2, settings.CLERK_WEBHOOK_SECRET)
-        await client.post("/api/v1/webhooks/clerk", json=payload2, headers=headers2)
+        headers2, payload_bytes2 = create_webhook_headers(payload2, settings.CLERK_WEBHOOK_SECRET)
+        await client.post("/api/v1/webhooks/clerk", content=payload_bytes2, headers=headers2)
 
         # Verify final state is from last update
         result = await db_session.execute(
@@ -834,10 +868,10 @@ class TestWebhookErrorHandling:
         # Send invalid JSON (missing required fields)
         payload = {"type": "invalid"}  # Missing 'data' and 'object'
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         assert response.status_code == 400
@@ -866,10 +900,10 @@ class TestWebhookErrorHandling:
             "object": "event",
         }
 
-        headers = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
+        headers, payload_bytes = create_webhook_headers(payload, settings.CLERK_WEBHOOK_SECRET)
 
         response = await client.post(
-            "/api/v1/webhooks/clerk", json=payload, headers=headers
+            "/api/v1/webhooks/clerk", content=payload_bytes, headers=headers
         )
 
         # Should succeed but log as unhandled

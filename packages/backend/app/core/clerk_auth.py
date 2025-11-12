@@ -6,6 +6,7 @@ Validates session tokens and loads authenticated users with proper JWT signature
 import httpx
 import jwt
 import logging
+import os
 from typing import Annotated, Dict, Any
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -101,7 +102,10 @@ async def get_current_user(
     # TEST MODE: Skip JWKS verification (tests use mock tokens with HS256)
     # PRODUCTION: Full JWKS verification with RS256
     try:
-        is_test_env = settings.ENVIRONMENT in ["test", "testing"]
+        # CRITICAL: Check os.environ directly, not settings.ENVIRONMENT
+        # The settings singleton is created at import time before tests set the env variable
+        # Tests set ENVIRONMENT via pytest_configure() hook in conftest.py
+        is_test_env = os.getenv("ENVIRONMENT") in ["test", "testing"]
 
         if is_test_env:
             # TEST MODE: Decode without signature verification
