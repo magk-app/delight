@@ -1,0 +1,436 @@
+<story-context id="story-1-5-deployment-pipeline" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.5</storyId>
+    <title>Set Up Deployment Pipeline and Environment Configuration</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-11</generatedAt>
+    <generator>BMAD Story Context Workflow (Claude BMM)</generator>
+    <sourceStoryPath>docs/stories/1-5-set-up-deployment-pipeline-and-environment-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>automated deployment and environment management with CI/CD pipeline</iWant>
+    <soThat>we can deploy to staging/production with confidence and proper quality gates</soThat>
+    <tasks>
+      <task id="1" ac="2">Environment Configuration - Create .env.example files for frontend and backend, update .gitignore, document variables</task>
+      <task id="2" ac="3">Health Check Endpoints - Implement basic and detailed health checks with database/Redis/Clerk status</task>
+      <task id="3" ac="4">Docker Configuration - Restore and improve backend Dockerfile with multi-stage build, create .dockerignore, test locally</task>
+      <task id="4" ac="1">CI/CD Pipeline - Create GitHub Actions workflow for lint/test/build verification</task>
+      <task id="5" ac="4,5">Deployment Setup - Configure Vercel (frontend) and Railway/Fly.io (backend) with environment variables</task>
+      <task id="6" ac="5,6">Documentation - Create DEPLOYMENT.md, update SETUP.md and README with deployment instructions and badges</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>CI/CD Pipeline (GitHub Actions)</title>
+      <given>code is pushed to the repository</given>
+      <when>the CI/CD pipeline runs</when>
+      <then>
+        - Linting checks execute: Frontend ESLint with Next.js config, Backend Ruff + Black
+        - Type checking: Frontend TypeScript compilation, Backend mypy (if enabled)
+        - Testing: Backend pytest with ≥70% coverage target, integration tests for API endpoints
+        - Build verification: Frontend next build succeeds, Backend Docker image builds
+        - Pipeline fails if any check fails with clear error messages
+        - Status badges added to README showing build status
+        - PR comments show test results and coverage reports
+      </then>
+      <source>docs/stories/1-5-*.md Acceptance Criteria section 1</source>
+    </criterion>
+
+    <criterion id="AC2">
+      <title>Environment Configuration</title>
+      <given>developers and ops teams need to configure environments</given>
+      <when>they reference environment documentation</when>
+      <then>
+        Frontend .env.example includes: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY, NEXT_PUBLIC_API_URL, NODE_ENV
+        Backend .env.example includes: DATABASE_URL, REDIS_URL, CLERK_SECRET_KEY, CLERK_WEBHOOK_SECRET, OPENAI_API_KEY, ENVIRONMENT, INFRA_MODE, SENTRY_DSN, ALLOWED_ORIGINS, PORT, LOG_LEVEL
+        .gitignore includes .env patterns to prevent secret commits
+        Different configs exist for development, staging, production
+        All environment variables documented with inline comments explaining purpose
+      </then>
+      <source>docs/stories/1-5-*.md Acceptance Criteria section 2</source>
+    </criterion>
+
+    <criterion id="AC3">
+      <title>Health Check Endpoints</title>
+      <given>the backend API is deployed</given>
+      <when>monitoring systems or load balancers query health endpoints</when>
+      <then>
+        Basic health check GET /api/v1/health returns {"status": "healthy", "timestamp": "ISO8601", "version": "0.1.0"}
+        Detailed health check GET /api/v1/health/detailed includes checks object with database, redis, clerk service status
+        Each service check reports status (connected/disconnected/configured/error), response_time_ms, optional error message
+        Overall status is "healthy" if all critical services ok, "degraded" if Redis fails, "unhealthy" if database fails
+        Health checks used for container readiness probes and uptime monitoring
+        Response times measured and included in detailed health check
+      </then>
+      <source>docs/stories/1-5-*.md Acceptance Criteria section 3, Technical Implementation Details health.py</source>
+    </criterion>
+
+    <criterion id="AC4">
+      <title>Deployment Configuration</title>
+      <given>the application needs to be deployed</given>
+      <when>deployment is triggered</when>
+      <then>
+        Backend Dockerfile exists with multi-stage build (builder + production stages)
+        Dockerfile uses Python 3.11-slim, Poetry for dependencies, creates non-root user for security
+        Dockerfile includes HEALTHCHECK command using curl to /api/v1/health
+        .dockerignore excludes __pycache__, .env, tests, docs, .git directories
+        Migrations NOT run in Dockerfile startup (manual process documented)
+        Frontend deployed via Vercel with build command, environment variables configured
+        Or frontend Dockerfile created if not using Vercel (Node 20 Alpine, multi-stage build)
+        PORT environment variable configurable, defaults to 8000 for backend
+      </then>
+      <source>docs/stories/1-5-*.md Acceptance Criteria section 4, git history commits a467b4d-983a8b3</source>
+    </criterion>
+
+    <criterion id="AC5">
+      <title>Deployment Process Documentation</title>
+      <given>team members need to deploy the application</given>
+      <when>they follow deployment documentation</when>
+      <then>
+        Local development documented in Makefile (make local, make cloud-dev, make dev already exist)
+        Staging deployment: PR merge to develop triggers automatic deploy, health checks must pass
+        Production deployment: Tag release triggers deploy, blue-green or rolling deployment strategy
+        Manual deployment steps documented for both staging and production
+        Database migration process documented separately from container deployment
+        Automated rollback on health check failure (future enhancement noted)
+        DEPLOYMENT.md created with architecture overview, setup instructions, troubleshooting
+        SETUP.md updated with deployment section
+        README updated with deployment badges and environment setup links
+      </then>
+      <source>docs/stories/1-5-*.md Acceptance Criteria section 5</source>
+    </criterion>
+
+    <criterion id="AC6">
+      <title>Secrets Management</title>
+      <given>sensitive configuration needs to be stored</given>
+      <when>deploying to different environments</when>
+      <then>
+        Local development uses .env files (gitignored), .env.example checked into git
+        Staging/Production use platform-specific secret management: Vercel dashboard, Railway secrets, GitHub Actions repository secrets
+        Actual .env files with secrets NEVER committed to git
+        .gitignore verified to include: .env, .env.local, .env.*.local
+        No API keys, database passwords, JWT secrets in git history
+        Environment variable validation on startup with clear error messages for missing secrets
+      </then>
+      <source>docs/stories/1-5-*.md Acceptance Criteria section 6</source>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: User Onboarding & Foundation</title>
+        <section>Infrastructure Constraints</section>
+        <snippet>Cost target &lt;$0.50 per active user per day. Development uses Supabase (managed PostgreSQL), Upstash or Docker Redis. Deployment containerized with Docker, environment-based configuration. Observability via Sentry for errors.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/deployment-architecture.md</path>
+        <title>Deployment Architecture</title>
+        <section>Experimental and Production Versions</section>
+        <snippet>Experimental: Vercel (frontend), Railway/Fly.io (backend Docker), Supabase (DB with pgvector), Upstash (Redis). Production: Vercel edge network, AWS ECS/Fargate or Fly.io auto-scaling, AWS RDS or Supabase, AWS ElastiCache or Upstash, Sentry + CloudWatch monitoring.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.5: Set Up Deployment Pipeline</section>
+        <snippet>Prerequisites: Stories 1.1-1.4 foundation components. Deliverables: CI/CD with lint/test/build, Docker images, environment configs, health checks, staging/production deployment, rollback procedures. Cost estimate: $0-30/month staging, $20-50/month production MVP.</snippet>
+      </doc>
+      <doc>
+        <path>docs/SETUP.md</path>
+        <title>Setup Guide</title>
+        <section>Development Environment</section>
+        <snippet>Existing setup instructions for local PostgreSQL/Redis (Docker), Supabase configuration, Clerk authentication. Story 1.5 adds deployment section covering CI/CD setup, environment variables, Docker builds, staging/production deployment process.</snippet>
+      </doc>
+      <doc>
+        <path>git:a467b4d</path>
+        <title>Git History: Deployment Attempts</title>
+        <section>Previous Deployment Work</section>
+        <snippet>Commits a467b4d through 983a8b3 show Railway deployment attempts. Learnings: manual migrations worked (removed from Dockerfile startup), database connection reliability critical, multiple runtime fixes needed. Dockerfile last at commit a467b4d uses Poetry export, no migrations in CMD.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>packages/backend/pyproject.toml</path>
+        <kind>configuration</kind>
+        <symbol>tool.poetry.dependencies</symbol>
+        <lines>9-29</lines>
+        <reason>Existing Poetry dependencies - Dockerfile exports these to requirements.txt. Includes fastapi, uvicorn, sqlalchemy, asyncpg, alembic, clerk-backend-sdk, redis, sentry-sdk. No new dependencies needed for Story 1.5.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/frontend/package.json</path>
+        <kind>configuration</kind>
+        <symbol>scripts</symbol>
+        <lines>5-9</lines>
+        <reason>Existing npm scripts - CI pipeline uses "build" command. Includes dev, build, start, lint. Story 1.5 references these in GitHub Actions workflow.</reason>
+      </artifact>
+      <artifact>
+        <path>docker-compose.yml</path>
+        <kind>infrastructure</kind>
+        <symbol>services</symbol>
+        <lines>1-39</lines>
+        <reason>Existing local development Docker Compose - defines postgres and redis services. Used for "make local" command. Story 1.5 focuses on production Dockerfiles, not modifying this.</reason>
+      </artifact>
+      <artifact>
+        <path>Makefile</path>
+        <kind>infrastructure</kind>
+        <symbol>targets</symbol>
+        <lines>1-93</lines>
+        <reason>Existing development commands - make local, cloud-dev, install, dev, lint, test. Story 1.5 documents these in deployment guide. No modifications needed.</reason>
+      </artifact>
+      <artifact>
+        <path>.github/workflows/claude-code-review.yml</path>
+        <kind>ci_workflow</kind>
+        <symbol>claude-review job</symbol>
+        <lines>1-58</lines>
+        <reason>Existing GitHub Actions for Claude Code reviews. Story 1.5 adds separate ci.yml workflow for lint/test/build. Does not modify this file.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/core/config.py</path>
+        <kind>configuration</kind>
+        <symbol>Settings</symbol>
+        <lines>1-60</lines>
+        <reason>Existing Pydantic settings - Story 1.5 may add SENTRY_DSN, PORT, LOG_LEVEL, ALLOWED_ORIGINS environment variables. Health check endpoint reads from this.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/api/v1/__init__.py</path>
+        <kind>router_registry</kind>
+        <symbol>api_router</symbol>
+        <lines>1-20</lines>
+        <reason>Existing API router registry - Story 1.5 adds health.router for health check endpoints. Must include router in api_router registration.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/db/session.py</path>
+        <kind>infrastructure</kind>
+        <symbol>get_db</symbol>
+        <lines>1-40</lines>
+        <reason>Existing database session factory - detailed health check uses get_db dependency to test database connection with SELECT 1 query.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node-frontend">
+        <package name="next" version="^15.0.0">Already installed - CI pipeline runs "next build" to verify production build succeeds</package>
+        <package name="eslint" version="^8.56.0">Already installed - CI pipeline runs "next lint" for code quality checks</package>
+      </ecosystem>
+      <ecosystem name="python-backend">
+        <package name="pytest" version=">=7.4.0">Already installed (dev dependency) - CI runs pytest with coverage for automated testing</package>
+        <package name="pytest-cov" version=">=4.1.0">Already installed (dev dependency) - generates coverage reports for CI pipeline</package>
+        <package name="ruff" version=">=0.1.11">Already installed (dev dependency) - CI runs ruff check for Python linting</package>
+        <package name="black" version=">=23.12.0">Already installed (dev dependency) - CI runs black --check for Python formatting</package>
+        <package name="sentry-sdk" version=">=1.40.0">Already installed with [fastapi] extras - used for production error tracking and monitoring</package>
+      </ecosystem>
+      <ecosystem name="infrastructure">
+        <package name="docker">Required for building backend container images - Dockerfile uses python:3.11-slim base image</package>
+        <package name="curl">Required in Docker image for HEALTHCHECK command - tests /api/v1/health endpoint</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <category>deployment</category>
+      <rule>Database migrations must be run manually BEFORE deploying new containers - never run migrations in Dockerfile CMD or container startup scripts</rule>
+      <source>git history a467b4d, docs/stories/1-5-*.md Notes section</source>
+    </constraint>
+    <constraint>
+      <category>deployment</category>
+      <rule>Backend Dockerfile must use multi-stage build to minimize production image size - separate builder stage for Poetry and production stage with runtime dependencies only</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation Improved Dockerfile</source>
+    </constraint>
+    <constraint>
+      <category>deployment</category>
+      <rule>Docker containers must run as non-root user for security - create appuser with UID 1000, chown application files</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation Improved Dockerfile</source>
+    </constraint>
+    <constraint>
+      <category>deployment</category>
+      <rule>Health check endpoint must be included in Docker HEALTHCHECK command - enables container orchestration to detect unhealthy containers</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation Improved Dockerfile</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>NEVER commit .env files with actual secrets - .gitignore must include .env, .env.local, .env.*.local patterns</rule>
+      <source>docs/stories/1-5-*.md Acceptance Criteria 6, Risks section</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>Frontend NEXT_PUBLIC_* variables are exposed to browser - only use for non-sensitive configuration like API URLs, Clerk publishable keys</rule>
+      <source>docs/stories/1-5-*.md Environment File Templates</source>
+    </constraint>
+    <constraint>
+      <category>security</category>
+      <rule>CLERK_SECRET_KEY must NEVER be exposed to client-side code - only use in server-side middleware and backend API</rule>
+      <source>docs/tech-spec-epic-1.md, docs/stories/1-5-*.md Environment File Templates</source>
+    </constraint>
+    <constraint>
+      <category>cicd</category>
+      <rule>CI pipeline must fail fast on linting errors before running tests - saves CI minutes and provides faster feedback</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation GitHub Actions CI Pipeline</source>
+    </constraint>
+    <constraint>
+      <category>cicd</category>
+      <rule>Backend tests in CI must use SQLite (sqlite+aiosqlite:///./test.db) not PostgreSQL - avoids external service dependencies in CI environment</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation GitHub Actions CI Pipeline</source>
+    </constraint>
+    <constraint>
+      <category>cicd</category>
+      <rule>Test coverage reports should be uploaded to Codecov for visibility - helps track coverage trends over time</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation GitHub Actions CI Pipeline</source>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Frontend deployment uses Vercel (preferred) for Next.js 15 optimization - alternative Docker deployment only if Vercel not viable</rule>
+      <source>docs/architecture/deployment-architecture.md, docs/stories/1-5-*.md Acceptance Criteria 4</source>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Backend deployment targets Railway or Fly.io for MVP - AWS ECS/Fargate for production scale later</rule>
+      <source>docs/architecture/deployment-architecture.md, docs/epics.md Story 1.5</source>
+    </constraint>
+    <constraint>
+      <category>monitoring</category>
+      <rule>Health check "degraded" status used for non-critical failures (Redis down) - "unhealthy" only for critical failures (database down)</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation health.py</source>
+    </constraint>
+    <constraint>
+      <category>monitoring</category>
+      <rule>Health checks must include response time measurements for database and Redis - helps detect performance degradation</rule>
+      <source>docs/stories/1-5-*.md Technical Implementation health.py</source>
+    </constraint>
+    <constraint>
+      <category>cost</category>
+      <rule>Target deployment cost &lt;$30/month for staging, &lt;$50/month for production MVP - use free tiers where possible (Vercel, Supabase, Upstash)</rule>
+      <source>docs/stories/1-5-*.md Notes Cost Considerations</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/health</name>
+      <kind>rest_endpoint</kind>
+      <signature>async def basic_health_check() -> HealthStatus</signature>
+      <path>packages/backend/app/api/v1/health.py</path>
+      <usage>Basic health check endpoint for load balancers and uptime monitoring - returns simple {"status": "healthy", "timestamp": ISO8601, "version": "0.1.0"}. No authentication required. Used by Docker HEALTHCHECK command and external monitoring.</usage>
+    </interface>
+    <interface>
+      <name>GET /api/v1/health/detailed</name>
+      <kind>rest_endpoint</kind>
+      <signature>async def detailed_health_check(db: AsyncSession = Depends(get_db)) -> DetailedHealthStatus</signature>
+      <path>packages/backend/app/api/v1/health.py</path>
+      <usage>Detailed health check with service status - tests database (SELECT 1 query), Redis (PING), Clerk (config validation). Returns {"status": "healthy|degraded|unhealthy", "timestamp": ISO8601, "version": "0.1.0", "checks": {...}}. Each check includes status, response_time_ms, optional error. Database failure = unhealthy, Redis failure = degraded.</usage>
+    </interface>
+    <interface>
+      <name>HealthStatus</name>
+      <kind>pydantic_schema</kind>
+      <signature>class HealthStatus(BaseModel): status: Literal["healthy", "degraded", "unhealthy"]; timestamp: datetime; version: str</signature>
+      <path>packages/backend/app/api/v1/health.py</path>
+      <usage>Pydantic response model for basic health check - ensures consistent response format. Version field tracks API version for debugging.</usage>
+    </interface>
+    <interface>
+      <name>ServiceCheck</name>
+      <kind>pydantic_schema</kind>
+      <signature>class ServiceCheck(BaseModel): status: Literal["connected", "disconnected", "configured", "error"]; response_time_ms: int | None; error: str | None</signature>
+      <path>packages/backend/app/api/v1/health.py</path>
+      <usage>Pydantic model for individual service checks in detailed health - represents status of database, Redis, Clerk, etc. Includes timing info for performance monitoring.</usage>
+    </interface>
+    <interface>
+      <name>DetailedHealthStatus</name>
+      <kind>pydantic_schema</kind>
+      <signature>class DetailedHealthStatus(HealthStatus): checks: dict[str, ServiceCheck]</signature>
+      <path>packages/backend/app/api/v1/health.py</path>
+      <usage>Pydantic response model for detailed health check - extends HealthStatus with checks dictionary. Keys: "database", "redis", "clerk". Overall status derived from check statuses.</usage>
+    </interface>
+    <interface>
+      <name>CI Pipeline Workflow</name>
+      <kind>github_actions</kind>
+      <signature>.github/workflows/ci.yml</signature>
+      <path>.github/workflows/ci.yml</path>
+      <usage>GitHub Actions workflow for continuous integration - triggered on push to main/develop and PRs. Runs: setup Node/Python, install deps, lint (ESLint, Ruff, Black), type check (tsc), test (pytest with coverage), build (next build, docker build). Uploads coverage to Codecov. Must pass before merge allowed.</usage>
+    </interface>
+    <interface>
+      <name>Dockerfile</name>
+      <kind>docker_config</kind>
+      <signature>packages/backend/Dockerfile</signature>
+      <path>packages/backend/Dockerfile</path>
+      <usage>Multi-stage Docker configuration for backend - Stage 1 (builder): installs Poetry, exports dependencies to requirements.txt. Stage 2 (production): installs runtime deps only, copies app code, creates non-root user, sets HEALTHCHECK. CMD runs uvicorn without migrations. PORT env var defaults to 8000.</usage>
+    </interface>
+    <interface>
+      <name>.env.example Templates</name>
+      <kind>documentation</kind>
+      <signature>packages/frontend/.env.example, packages/backend/.env.example</signature>
+      <path>packages/frontend/.env.example, packages/backend/.env.example</path>
+      <usage>Environment variable templates for developers - documents all required and optional env vars with inline comments explaining purpose. Developers copy to .env and fill in actual values. Never contains real secrets. Checked into git for discoverability.</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing: pytest with coverage target ≥70%. Health checks tested with intentional failures (disconnect DB mock, Redis mock fails). Environment variable validation tested with missing/invalid configs. Docker build tested locally before CI. Frontend build tested with "next build" command. Manual testing: deploy to staging, verify health checks return 200, test all environment configs (dev/staging/production), verify secrets not in git with "git log -p | grep -i 'secret\|password\|key'" audit. CI pipeline tested by creating test PR. Deployment rollback tested by intentionally breaking health check and verifying container restart.
+    </standards>
+    <locations>
+      <location>packages/backend/tests/integration/test_health.py</location>
+      <location>packages/backend/tests/unit/test_config.py</location>
+      <location>.github/workflows/ci.yml (workflow itself is test harness)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test CI pipeline: Create PR with intentional lint error, verify pipeline fails with clear error message in PR comment</idea>
+      <idea ac="AC1">Test CI pipeline: Create PR with passing code, verify all checks pass (lint, type, test, build), coverage report posted</idea>
+      <idea ac="AC1">Test Docker build in CI: Verify backend Dockerfile builds successfully, image tagged with commit SHA</idea>
+      <idea ac="AC2">Test environment templates: Verify .env.example files exist for frontend and backend with all documented variables</idea>
+      <idea ac="AC2">Test .gitignore: Run "git status" after creating .env with secrets, verify .env not shown in untracked files</idea>
+      <idea ac="AC2">Test environment validation: Start backend with missing DATABASE_URL, verify clear error message on startup</idea>
+      <idea ac="AC3">Test basic health check: GET /api/v1/health, verify 200 response with {"status": "healthy", "timestamp": ..., "version": "0.1.0"}</idea>
+      <idea ac="AC3">Test detailed health check: GET /api/v1/health/detailed, verify checks object includes database, redis, clerk with response times</idea>
+      <idea ac="AC3">Test health check with DB failure: Mock database to raise exception, verify detailed health returns {"status": "unhealthy", "checks": {"database": {"status": "error", "error": "..."}}}</idea>
+      <idea ac="AC3">Test health check with Redis failure: Mock Redis to fail, verify status "degraded" (not unhealthy), checks shows redis error</idea>
+      <idea ac="AC4">Test Docker build locally: cd packages/backend && docker build -t delight-backend:test ., verify succeeds</idea>
+      <idea ac="AC4">Test Docker run locally: docker run with .env file, curl http://localhost:8000/api/v1/health, verify responds</idea>
+      <idea ac="AC4">Test Docker healthcheck: Verify HEALTHCHECK command exists in Dockerfile, uses curl to /api/v1/health</idea>
+      <idea ac="AC4">Test non-root user: docker exec into running container, run "whoami", verify returns "appuser" not "root"</idea>
+      <idea ac="AC5">Manual test staging deploy: Push to develop branch, verify Railway/Fly.io deploys automatically, check deployment logs</idea>
+      <idea ac="AC5">Manual test health after deploy: curl https://staging-api.delight.app/api/v1/health, verify healthy status</idea>
+      <idea ac="AC5">Manual test environment vars in deployed container: Check Railway/Fly.io logs for env var validation on startup</idea>
+      <idea ac="AC6">Security audit: Run "git log -p | grep -E 'CLERK_SECRET_KEY|DATABASE_URL|sk_|postgres://'" to verify no secrets in history</idea>
+      <idea ac="AC6">Test secret management: Verify Vercel dashboard shows environment variables, Railway secrets set, no .env files in git</idea>
+    </ideas>
+  </tests>
+
+  <historicalContext>
+    <previousAttempts>
+      <attempt>
+        <commits>983a8b3 through a467b4d (2025-11-11)</commits>
+        <description>Previous Railway deployment attempts with Docker</description>
+        <learnings>
+          - Manual migrations strategy worked better than automatic (a467b4d removed migrations from Dockerfile startup)
+          - Multiple runtime fixes needed (328ad80 made database connection optional for startup)
+          - Docker configuration iterated multiple times (docker-compose for local dev already works)
+          - Railway deployment partially successful but lacked CI/CD quality gates
+        </learnings>
+        <whatToReuse>
+          - Dockerfile structure from a467b4d (Poetry export pattern, uvicorn startup)
+          - .dockerignore patterns (already existed in 983a8b3)
+          - Manual migration approach (run "alembic upgrade head" separately from container startup)
+        </whatToReuse>
+        <whatToImprove>
+          - Add multi-stage build for smaller production image
+          - Add non-root user for security
+          - Add HEALTHCHECK command for orchestration
+          - Create comprehensive CI/CD pipeline before deployment
+          - Document deployment process thoroughly
+        </whatToImprove>
+      </attempt>
+    </previousAttempts>
+    <existingInfrastructure>
+      <item>Makefile with local, cloud-dev, dev, lint, test commands - already functional, just needs documentation</item>
+      <item>docker-compose.yml for local PostgreSQL and Redis - used for "make local", not modified in this story</item>
+      <item>Supabase PostgreSQL database already configured - deployment uses same DATABASE_URL, no changes needed</item>
+      <item>Upstash Redis considered for production - alternative to local Docker Redis, serverless</item>
+      <item>Clerk authentication configured - CLERK_SECRET_KEY and CLERK_WEBHOOK_SECRET already in use, add to .env.example</item>
+      <item>GitHub Actions workflows exist for Claude Code - ci.yml is separate workflow, doesn't conflict</item>
+    </existingInfrastructure>
+  </historicalContext>
+</story-context>

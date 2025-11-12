@@ -17,20 +17,26 @@ async def lifespan(app: FastAPI):
     """
     Application lifespan handler for startup and shutdown.
 
-    Startup: Test database connection
+    Startup: Test database connection (optional - allows app to start without DB)
     Shutdown: Clean up database connections
     """
-    # Startup: Test database connection
-    async with engine.begin() as conn:
-        # Connection test - if this succeeds, database is accessible
-        pass
-    print("✅ Database connection established")
+    # Startup: Test database connection (optional)
+    try:
+        async with engine.begin() as conn:
+            # Connection test - if this succeeds, database is accessible
+            pass
+        print("✅ Database connection established")
+    except Exception as e:
+        print(f"⚠️  Database connection failed (app will continue): {e}")
 
     yield
 
     # Shutdown: Clean up database connections
-    await engine.dispose()
-    print("✅ Database connections closed")
+    try:
+        await engine.dispose()
+        print("✅ Database connections closed")
+    except Exception as e:
+        print(f"⚠️  Error closing database connections: {e}")
 
 
 app = FastAPI(
