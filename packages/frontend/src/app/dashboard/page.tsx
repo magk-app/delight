@@ -19,7 +19,8 @@ export default function DashboardPage() {
         <div className="rounded-lg bg-white p-6 shadow">
           <h2 className="mb-4 text-xl font-semibold">Welcome to Delight!</h2>
           <p className="text-gray-600 mb-8">
-            Your personalized dashboard is coming soon. We're building something special for you.
+            Your personalized dashboard is coming soon. We&apos;re building
+            something special for you.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
