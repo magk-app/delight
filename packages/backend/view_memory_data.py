@@ -69,7 +69,7 @@ async def view_all_data():
         # Stressor memories (JSONB query demo)
         result = await session.execute(
             select(Memory)
-            .where(Memory.extra_data["stressor"].as_boolean() == True)  # noqa: E712
+            .where(Memory.extra_data["stressor"].as_boolean().is_(True))  # NULL-safe comparison
         )
         stressors = result.scalars().all()
         print(f"\n😰 Stressor Memories: {len(stressors)}")
