@@ -562,7 +562,7 @@ Story 2-5 (Chat UI)
 
 ### Context Reference
 
-<!-- Path(s) to story context XML will be added here by context workflow -->
+- `docs/stories/2-1-set-up-postgresql-pgvector-and-memory-schema.context.xml` - Generated 2025-11-12
 
 ### Agent Model Used
 
