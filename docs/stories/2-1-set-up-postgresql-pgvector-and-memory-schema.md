@@ -2,7 +2,7 @@
 
 **Story ID:** 2.1
 **Epic:** 2 - Companion & Memory System
-**Status:** drafted
+**Status:** ready-for-dev
 **Priority:** P0 (Core Memory Foundation)
 **Estimated Effort:** 2-4 hours
 **Assignee:** TBD
