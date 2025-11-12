@@ -1,0 +1,308 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Set Up PostgreSQL pgvector and Memory Schema</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>vector storage integrated into PostgreSQL for AI memory</iWant>
+    <soThat>we have unified storage for structured and vector data without managing separate databases</soThat>
+    <tasks>
+      <taskGroup id="1" ac="2">
+        <title>Create Memory Enum Type</title>
+        <subtask id="1.1">Create Alembic migration file: 003_create_memory_tables.py</subtask>
+        <subtask id="1.2">Add SQL to create memory_type enum: CREATE TYPE memory_type AS ENUM ('personal', 'project', 'task')</subtask>
+        <subtask id="1.3">Verify enum creation in Supabase SQL Editor</subtask>
+      </taskGroup>
+
+      <taskGroup id="2" ac="2">
+        <title>Create Memory Tables</title>
+        <subtask id="2.1">Add memories table creation to migration with UUID, foreign key, memory_type enum, content TEXT, embedding VECTOR(1536), metadata JSONB, timestamps</subtask>
+        <subtask id="2.2">Add memory_collections table creation to migration with UUID, foreign key, collection_type, name, description, created_at</subtask>
+        <subtask id="2.3">Create standard indexes (user_id, memory_type, created_at)</subtask>
+      </taskGroup>
+
+      <taskGroup id="3" ac="3">
+        <title>Create HNSW Vector Index</title>
+        <subtask id="3.1">Add HNSW index creation to migration: CREATE INDEX ix_memories_embedding ON memories USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)</subtask>
+        <subtask id="3.2">Document HNSW parameters in migration comments</subtask>
+        <subtask id="3.3">Add index to downgrade section for proper rollback</subtask>
+      </taskGroup>
+
+      <taskGroup id="4" ac="4">
+        <title>Create SQLAlchemy Models</title>
+        <subtask id="4.1">Create packages/backend/app/models/memory.py</subtask>
+        <subtask id="4.2">Define MemoryType enum class (PERSONAL, PROJECT, TASK)</subtask>
+        <subtask id="4.3">Define Memory model class with all columns, using Vector(1536) from pgvector.sqlalchemy</subtask>
+        <subtask id="4.4">Define MemoryCollection model class</subtask>
+        <subtask id="4.5">Import models in app/models/__init__.py for Alembic autodiscovery</subtask>
+      </taskGroup>
+
+      <taskGroup id="5" ac="5">
+        <title>Update User Model</title>
+        <subtask id="5.1">Open packages/backend/app/models/user.py</subtask>
+        <subtask id="5.2">Add memories relationship with cascade delete</subtask>
+        <subtask id="5.3">Add memory_collections relationship with cascade delete</subtask>
+        <subtask id="5.4">Verify imports for relationship and cascade</subtask>
+      </taskGroup>
+
+      <taskGroup id="6" ac="4">
+        <title>Create Pydantic Schemas</title>
+        <subtask id="6.1">Create packages/backend/app/schemas/memory.py</subtask>
+        <subtask id="6.2">Define MemoryCreate schema</subtask>
+        <subtask id="6.3">Define MemoryResponse schema with from_attributes = True</subtask>
+        <subtask id="6.4">Define MemoryCollectionCreate and MemoryCollectionResponse schemas</subtask>
+      </taskGroup>
+
+      <taskGroup id="7" ac="6">
+        <title>Testing and Verification</title>
+        <subtask id="7.1">Run migration: poetry run alembic upgrade head</subtask>
+        <subtask id="7.2">Verify tables in Supabase Table Editor</subtask>
+        <subtask id="7.3">Verify HNSW index created in Supabase</subtask>
+        <subtask id="7.4">Test rollback: poetry run alembic downgrade -1</subtask>
+        <subtask id="7.5">Re-apply: poetry run alembic upgrade head</subtask>
+        <subtask id="7.6">Create manual test script to insert/query test memory</subtask>
+        <subtask id="7.7">Verify vector similarity search returns results</subtask>
+      </taskGroup>
+
+      <taskGroup id="8" ac="all">
+        <title>Documentation</title>
+        <subtask id="8.1">Add migration notes to CHANGELOG</subtask>
+        <subtask id="8.2">Document memory_type enum values in code comments</subtask>
+        <subtask id="8.3">Add docstrings to Memory and MemoryCollection models</subtask>
+        <subtask id="8.4">Update docs/SETUP.md if needed</subtask>
+      </taskGroup>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>pgvector Extension Enabled</title>
+      <given>the Supabase database is connected</given>
+      <when>I verify the pgvector extension</when>
+      <then>the extension is enabled and functional</then>
+      <verification>Run in Supabase SQL Editor: CREATE EXTENSION IF NOT EXISTS vector; SELECT * FROM pg_extension WHERE extname = 'vector';</verification>
+    </criterion>
+
+    <criterion id="AC2">
+      <title>Memory Tables Created with Correct Schema</title>
+      <given>Alembic migrations are configured</given>
+      <when>I create and run the memory tables migration</when>
+      <then>memories table exists with: id UUID, user_id UUID FK, memory_type ENUM, content TEXT, embedding VECTOR(1536), metadata JSONB, created_at/accessed_at timestamps; memory_collections table exists with: id UUID, user_id UUID FK, collection_type VARCHAR(50), name VARCHAR(255), description TEXT, created_at timestamp; Indexes on: ix_memories_user_id, ix_memories_memory_type, ix_memories_created_at, ix_memory_collections_user_id</then>
+    </criterion>
+
+    <criterion id="AC3">
+      <title>HNSW Vector Index Created for Fast Similarity Search</title>
+      <given>the memories table exists with embedding column</given>
+      <when>I create the HNSW index</when>
+      <then>vector similarity searches execute in &lt; 100ms (p95). Index: CREATE INDEX ix_memories_embedding ON memories USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)</then>
+      <verification>SELECT content, embedding &lt;=&gt; '[vector_here]'::vector AS distance FROM memories WHERE user_id = 'test-user-id' ORDER BY embedding &lt;=&gt; '[vector_here]'::vector LIMIT 5;</verification>
+    </criterion>
+
+    <criterion id="AC4">
+      <title>SQLAlchemy Models Created and Working</title>
+      <given>the database tables exist</given>
+      <when>I use the Memory and MemoryCollection models</when>
+      <then>I can perform CRUD operations successfully using Memory(user_id, memory_type=MemoryType.PERSONAL, content, embedding, metadata)</then>
+    </criterion>
+
+    <criterion id="AC5">
+      <title>User Relationship Updated</title>
+      <given>the Memory models exist</given>
+      <when>I update the User model</when>
+      <then>relationships are properly configured: memories = relationship("Memory", back_populates="user", cascade="all, delete-orphan"); memory_collections = relationship("MemoryCollection", back_populates="user", cascade="all, delete-orphan"). Verification: Deleting a user cascades to delete all their memories</then>
+    </criterion>
+
+    <criterion id="AC6">
+      <title>Migration Up/Down Works Correctly</title>
+      <given>the migration file is created</given>
+      <when>I run migration commands</when>
+      <then>migrations apply and rollback successfully: alembic upgrade head, alembic downgrade -1, alembic upgrade head all succeed</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/tech-spec-epic-2.md" section="Data Models and Contracts - Memory Tables">
+        <title>Epic 2 Technical Specification</title>
+        <snippet>Complete schema design for memories table with VECTOR(1536) column, HNSW index parameters (m=16, ef_construction=64), and memory_type enum. Includes SQLAlchemy model definitions for Memory and MemoryCollection classes with pgvector.sqlalchemy Vector type.</snippet>
+      </doc>
+
+      <doc path="docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md" section="Memory System Principles">
+        <title>How Eliza Should Respond - Case Study</title>
+        <snippet>Defines stressor logging pattern with emotion metadata, 3-tier memory architecture (personal/project/task), and selective querying strategies. Example: personal memories enable Eliza to say "Is this about the class registration and debt email, or something new?"</snippet>
+      </doc>
+
+      <doc path="docs/epic-2/2-1-to-2-5-implementation-guide (draft).md" section="Story 2.1 Implementation">
+        <title>Epic 2 Implementation Guide</title>
+        <snippet>Step-by-step implementation guidance for memory schema creation, including exact SQL for tables and indexes, HNSW tuning parameters, and metadata JSONB usage patterns for stressor logging.</snippet>
+      </doc>
+
+      <doc path="docs/epics.md" section="Story 2.1: Set Up PostgreSQL pgvector and Memory Schema">
+        <title>Epic and Story Breakdown</title>
+        <snippet>Story requirements: pgvector extension confirmed enabled in Supabase, memories table with vector similarity search using cosine distance, support for 3-tier memory architecture. Uses OpenAI text-embedding-3-small (1536 dimensions).</snippet>
+      </doc>
+
+      <doc path="docs/ARCHITECTURE.md" section="ADR-004: PostgreSQL pgvector for Vector Storage">
+        <title>Architecture Decision Record</title>
+        <snippet>Decision to use pgvector over dedicated vector databases (Pinecone, Weaviate) for unified storage, zero separate services (Supabase includes pgvector pre-installed), ACID guarantees, and cost-effectiveness. Excellent LangChain integration via PostgresVectorStore wrapper.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact path="packages/backend/app/models/user.py" kind="model" symbol="User, UserPreferences" lines="1-76">
+        <reason>Provides relationship pattern for memories cascade delete: relationship("UserPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan"). Shows UUID column pattern, JSONB usage, and datetime with timezone.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/models/base.py" kind="model" symbol="Base" lines="1-8">
+        <reason>Base class import pattern: from app.db.base import Base. All models inherit from this shared declarative base.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/db/migrations/versions/001_create_users_and_preferences_tables.py" kind="migration" symbol="upgrade, downgrade" lines="1-80">
+        <reason>Alembic migration pattern: op.create_table with postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), ForeignKey with ondelete="CASCADE", JSONB columns, indexes. Shows downgrade() pattern for rollback. Note: pgvector extension enabled in line 24.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/models/__init__.py" kind="model" symbol="__all__" lines="1-8">
+        <reason>Model imports for Alembic autodiscovery. All new models must be imported here for migrations to detect them.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <python>
+        <package name="pgvector" version=">=0.2.4" usage="Vector column type for SQLAlchemy" />
+        <package name="sqlalchemy" version=">=2.0.0" usage="Async ORM, migrations, Vector type" />
+        <package name="alembic" version=">=1.13.0" usage="Database migrations" />
+        <package name="asyncpg" version=">=0.29.0" usage="Async PostgreSQL driver" />
+        <package name="langchain-postgres" version=">=0.0.3" usage="PostgresVectorStore wrapper (Story 2.2)" />
+        <package name="langchain" version=">=0.1.0" usage="Vector store integration" />
+        <package name="pydantic" version=">=2.0.0" usage="Schema validation" />
+      </python>
+
+      <database>
+        <service name="Supabase" type="managed-postgresql">pgvector extension pre-installed, just needs CREATE EXTENSION IF NOT EXISTS vector</service>
+        <extension name="pgvector" version="0.5+" status="enabled">Provides VECTOR data type and vector_cosine_ops operator class for HNSW indexing</extension>
+      </database>
+
+      <frameworks>
+        <framework name="FastAPI" usage="async endpoints, dependencies" />
+        <framework name="SQLAlchemy 2.0" usage="async ORM patterns, declarative base, relationship management" />
+        <framework name="Alembic" usage="schema version control, migrations" />
+      </frameworks>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Use async SQLAlchemy 2.0 patterns (async with get_db() as db, await db.execute())</constraint>
+    <constraint type="pattern">UUID primary keys with server_default=sa.text("gen_random_uuid()")</constraint>
+    <constraint type="pattern">Foreign keys with ondelete="CASCADE" for user relationships</constraint>
+    <constraint type="pattern">Timestamps: created_at with server_default=sa.func.now(), accessed_at with onupdate=func.now()</constraint>
+    <constraint type="pattern">JSONB for flexible metadata storage with default={}</constraint>
+    <constraint type="pattern">Relationships use cascade="all, delete-orphan" pattern from User model</constraint>
+    <constraint type="naming">Model files: snake_case (memory.py), Classes: PascalCase (Memory, MemoryType)</constraint>
+    <constraint type="naming">Migration files: {revision}_description.py (003_create_memory_tables.py)</constraint>
+    <constraint type="testing">Follow pytest patterns: async tests with @pytest.mark.asyncio, markers for unit/integration/database</constraint>
+    <constraint type="testing">Coverage target: ≥70% for app/ (excludes migrations)</constraint>
+    <constraint type="security">Never commit .env files or database credentials - use environment variables only</constraint>
+    <constraint type="migration">Include downgrade() function for all migrations to enable rollback</constraint>
+    <constraint type="migration">Test migrations on separate Supabase project before applying to main database</constraint>
+    <constraint type="performance">HNSW index parameters tuned for 1536-dim vectors: m=16 (connections), ef_construction=64 (build quality)</constraint>
+    <constraint type="performance">Target query performance: &lt; 100ms p95 for vector similarity search</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Memory Model" kind="sqlalchemy-model" path="packages/backend/app/models/memory.py">
+      <signature>
+class MemoryType(str, Enum):
+    PERSONAL = "personal"
+    PROJECT = "project"
+    TASK = "task"
+
+class Memory(Base):
+    __tablename__ = "memories"
+    id: UUID
+    user_id: UUID  # ForeignKey("users.id", ondelete="CASCADE")
+    memory_type: MemoryType
+    content: str
+    embedding: Optional[list[float]]  # Vector(1536)
+    metadata: Optional[Dict[str, Any]]  # JSONB
+    created_at: datetime
+    accessed_at: datetime
+    user = relationship("User", back_populates="memories")
+      </signature>
+    </interface>
+
+    <interface name="MemoryCollection Model" kind="sqlalchemy-model" path="packages/backend/app/models/memory.py">
+      <signature>
+class MemoryCollection(Base):
+    __tablename__ = "memory_collections"
+    id: UUID
+    user_id: UUID  # ForeignKey("users.id", ondelete="CASCADE")
+    collection_type: str  # VARCHAR(50)
+    name: str  # VARCHAR(255)
+    description: Optional[str]
+    created_at: datetime
+    user = relationship("User", back_populates="memory_collections")
+      </signature>
+    </interface>
+
+    <interface name="User Model Updates" kind="sqlalchemy-relationship" path="packages/backend/app/models/user.py">
+      <signature>
+# Add to User class:
+memories = relationship("Memory", back_populates="user", cascade="all, delete-orphan")
+memory_collections = relationship("MemoryCollection", back_populates="user", cascade="all, delete-orphan")
+      </signature>
+    </interface>
+
+    <interface name="Alembic Migration 003" kind="migration" path="packages/backend/app/db/migrations/versions/003_create_memory_tables.py">
+      <signature>
+"""create memory tables with pgvector support
+
+Revision ID: 003
+Revises: 002
+Create Date: 2025-11-12
+"""
+
+def upgrade() -> None:
+    # CREATE TYPE memory_type AS ENUM ('personal', 'project', 'task')
+    # CREATE TABLE memories (...)
+    # CREATE INDEX ix_memories_embedding USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)
+
+def downgrade() -> None:
+    # DROP TABLE memory_collections
+    # DROP TABLE memories
+    # DROP TYPE memory_type
+      </signature>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing follows pytest patterns with async support (pytest-asyncio). Test structure: tests/unit/ for fast isolated tests, tests/integration/ for database/API tests. Use markers: @pytest.mark.unit, @pytest.mark.database, @pytest.mark.asyncio. Coverage target ≥70% (excludes migrations). Test database: SQLite with aiosqlite for unit tests, test Supabase project for integration tests. Fixtures in tests/conftest.py provide async db sessions, test users, mock data.
+    </standards>
+
+    <locations>
+      <location>packages/backend/tests/unit/ - Fast unit tests, no external dependencies</location>
+      <location>packages/backend/tests/integration/ - Database, API, service integration tests</location>
+      <location>packages/backend/tests/conftest.py - Shared fixtures (async_db_session, test_user, etc.)</location>
+    </locations>
+
+    <ideas>
+      <idea ac="AC1">Unit test: Verify pgvector extension is available in test database (query pg_extension)</idea>
+      <idea ac="AC2">Integration test: Create Memory record with all fields, verify table schema matches, test cascade delete</idea>
+      <idea ac="AC2">Integration test: Create MemoryCollection record, verify relationships work</idea>
+      <idea ac="AC3">Integration test: Insert memories with embeddings, test vector similarity query with &lt;=&gt; operator, verify results ordered by distance</idea>
+      <idea ac="AC3">Performance test: Benchmark vector search with 1000+ memories, verify &lt; 100ms p95</idea>
+      <idea ac="AC4">Unit test: Test Memory model CRUD operations (create, read, update, delete) using async session</idea>
+      <idea ac="AC4">Unit test: Test MemoryType enum values (PERSONAL, PROJECT, TASK)</idea>
+      <idea ac="AC5">Integration test: Create User with memories, delete User, verify cascade delete removes all memories</idea>
+      <idea ac="AC6">Integration test: Run migration upgrade, verify tables exist, run downgrade, verify tables dropped</idea>
+      <idea ac="AC6">Integration test: Test migration idempotency (running twice doesn't error)</idea>
+    </ideas>
+  </tests>
+</story-context>
