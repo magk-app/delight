@@ -68,7 +68,7 @@ async def clerk_webhook_handler(
 
     # Parse and validate payload
     try:
-        webhook_data = ClerkWebhookPayload.model_validate(payload)
+        webhook_data = ClerkWebhookPayload.model_validate_json(payload)
     except Exception as e:
         logger.error(f"Invalid webhook payload: {e}")
         raise HTTPException(status_code=400, detail="Invalid payload format")
