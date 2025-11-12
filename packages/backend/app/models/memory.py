@@ -72,7 +72,12 @@ class Memory(Base):
         comment="User who owns this memory",
     )
     memory_type = Column(
-        SQLEnum(MemoryType, name="memory_type"),
+        SQLEnum(
+            MemoryType,
+            name="memory_type",
+            create_type=False,  # Don't create enum - already exists from migration
+            values_callable=lambda x: [e.value for e in x],  # Use enum values ('personal'), not names ('PERSONAL')
+        ),
         nullable=False,
         index=True,
         comment="Memory tier: personal (never pruned), project (goals), task (30-day pruning)",
