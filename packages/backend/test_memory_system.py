@@ -11,15 +11,18 @@ Usage:
     poetry run python test_memory_system.py
 
 Prerequisites:
-    - DATABASE_URL environment variable set
+    - .env file with DATABASE_URL configured
     - Alembic migration 003 applied: `poetry run alembic upgrade head`
     - At least one test user in the database
 """
 
 import asyncio
 import os
+import sys
+from pathlib import Path
 from uuid import UUID
 
+from dotenv import load_dotenv
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -27,9 +30,25 @@ from sqlalchemy.orm import sessionmaker
 from app.models.memory import Memory, MemoryType, MemoryCollection
 from app.models.user import User
 
+# Load environment variables from .env file
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Database connection
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost:5432/delight")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    print("\n❌ ERROR: DATABASE_URL environment variable is not set")
+    print("\n💡 SOLUTION:")
+    print("   1. Create a .env file in packages/backend/ if it doesn't exist")
+    print("   2. Copy env.example to .env: cp env.example .env")
+    print("   3. Set DATABASE_URL in your .env file")
+    print("      Local format: postgresql+asyncpg://postgres:postgres@localhost:5432/delight")
+    print("      Cloud format: postgresql+asyncpg://postgres:[password]@[host]:5432/postgres")
+    print("\n   4. Load the .env file or set the environment variable:")
+    print("      Windows PowerShell: $env:DATABASE_URL=\"postgresql+asyncpg://postgres:postgres@localhost:5432/delight\"")
+    print("      Linux/Mac: export DATABASE_URL=\"postgresql+asyncpg://postgres:postgres@localhost:5432/delight\"")
+    sys.exit(1)
+
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
