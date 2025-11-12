@@ -14,6 +14,13 @@ Prerequisites:
     - .env file with DATABASE_URL configured
     - Alembic migration 003 applied: `poetry run alembic upgrade head`
     - At least one test user in the database
+    - Network connectivity to Supabase (VPN required if applicable)
+
+Troubleshooting:
+    - If you get "getaddrinfo failed" or network errors:
+      * Check VPN connection status
+      * Verify: poetry run alembic current (should work if network is OK)
+      * Reconnect VPN and try again
 """
 
 import asyncio
