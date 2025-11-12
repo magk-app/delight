@@ -36,6 +36,16 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    memories = relationship(
+        "Memory",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    memory_collections = relationship(
+        "MemoryCollection",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, clerk_user_id={self.clerk_user_id}, email={self.email})>"
