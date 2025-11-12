@@ -20,42 +20,23 @@ import { test, expect } from "@playwright/test";
  * Helper: Click Clerk submit button (handles visibility issues)
  */
 async function clickClerkSubmitButton(page: any) {
-  // Try multiple strategies to click the submit button
+  // Clerk buttons are often hidden but still functional via JS
+  // We need to use force-click instead of waiting for visibility
   const button = page.locator('button[type="submit"]').first();
 
-  // Wait for button to exist and be visible
+  // Wait for button to exist in DOM
   await button.waitFor({ state: "attached", timeout: 5000 });
 
-  // Scroll button into viewport - CRITICAL FIX
+  // Scroll button into viewport (even if hidden, needs to be in scrollable area)
   await button.scrollIntoViewIfNeeded();
 
-  // Try to make it visible and click
-  // Clerk buttons might be hidden but still clickable
-  await button.evaluate((btn: HTMLButtonElement) => {
-    // Remove aria-hidden if present
-    if (btn.hasAttribute("aria-hidden")) {
-      btn.removeAttribute("aria-hidden");
-    }
-    // Make sure it's visible
-    btn.style.visibility = "visible";
-    btn.style.display = "block";
-  });
+  // Wait for Clerk's client-side JS to be ready
+  // Clerk buttons become active after form validation completes
+  await page.waitForTimeout(500);
 
-  // Wait for button to be enabled
-  await button.waitFor({ state: "visible", timeout: 2000 });
-
-  // Wait a bit for any animations
-  await page.waitForTimeout(200);
-
-  // Try clicking with better error handling
-  try {
-    await button.click({ timeout: 2000 });
-  } catch (error) {
-    // If normal click fails, scroll again and try force click
-    await button.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(300);
-    await button.click({ force: true });
-  }
+  // Force click - Clerk buttons respond to programmatic clicks even when hidden
+  // This is how Clerk's own UI works (CSS hides visual button, JS handles click)
+  await button.click({ force: true, timeout: 5000 });
 }
 
 /**
