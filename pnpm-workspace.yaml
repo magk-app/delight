@@ -1,3 +1,9 @@
 packages:
-  - 'packages/*'
+  - "packages/*"
 
+# Allow these packages to run build scripts during installation
+# Required for @clerk/shared, sharp, and unrs-resolver
+onlyBuiltDependencies:
+  - "@clerk/shared"
+  - "sharp"
+  - "unrs-resolver"
