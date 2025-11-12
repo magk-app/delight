@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -8,6 +10,25 @@ export default function Home() {
         <p className="text-lg text-muted-foreground mb-8">
           Your AI-powered self-improvement companion
         </p>
+
+        {/* Call-to-action buttons */}
+        <div className="flex gap-4 justify-center mb-12">
+          <Link
+            href="/sign-in"
+            data-testid="sign-in-button"
+            className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 transition-colors"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/sign-up"
+            data-testid="get-started-button"
+            className="rounded-lg border border-blue-600 px-6 py-3 text-blue-600 hover:bg-blue-50 transition-colors"
+          >
+            Get Started
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
           <div className="p-6 border rounded-lg">
             <h2 className="text-xl font-semibold mb-2">Remembered Context</h2>
