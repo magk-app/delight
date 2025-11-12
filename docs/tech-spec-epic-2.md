@@ -1,6 +1,6 @@
 # Epic Technical Specification: Companion & Memory System
 
-Date: 2025-11-11
+Date: 2025-11-11 (Updated: 2025-11-12 - Story order revised for vertical slice approach)
 Author: Claude (with Jack)
 Epic ID: 2
 Status: Draft - Ready for Implementation
@@ -24,36 +24,85 @@ This epic aligns with the Product Brief's vision of "emotionally aware AI coachi
 - Balance between productivity coaching and well-being support
 - Build trust through consistent, context-aware interactions
 
+## Implementation Strategy: Vertical Slice Approach (REVISED 2025-11-12)
+
+**IMPORTANT: Story order revised to follow vertical slice pattern**
+
+Instead of building horizontal layers (infrastructure first, then UI), we build **vertical slices** (working features end-to-end):
+
+### Story Sequence (Revised):
+1. **Story 2.1**: Database foundation (pgvector, memory tables) ✅ COMPLETE
+2. **Story 2.5**: Chat UI + Essential Memory (VERTICAL SLICE - do this FIRST)
+   - Working chat interface with SSE streaming
+   - Essential memory operations inline (not extracted yet)
+   - All test scenarios working (venting, goals, memory recall)
+   - **Validates**: Memory patterns, search quality, UX flow
+3. **Story 2.2**: Memory Service Extraction (REFACTORED - do this SECOND)
+   - Extract proven memory operations into proper service
+   - Add hybrid search (time decay, frequency boost)
+   - Add pruning worker
+   - **Benefits from**: Learnings from Story 2.5
+4. **Story 2.3**: Full Eliza Agent (LangGraph)
+5. **Story 2.4**: Enhanced Chat API (advanced features)
+6. **Story 2.6**: Emotion Detection
+
+### Why This Order?
+
+**❌ Original Plan (2.2 → 2.5):**
+- Build memory service blindly (can't test until UI exists)
+- Discover UX issues late
+- Hard to iterate on architecture
+
+**✅ Revised Plan (2.5 → 2.2):**
+- See memory working immediately in browser
+- Test all scenarios (venting, tasks, recall) right away
+- Refine architecture based on real usage
+- Faster feedback loop, lower risk
+
+### Story 2.2 Status Note (2025-11-12)
+
+Story 2.2 is **being refactored** to focus on service extraction and enhancements after Story 2.5 validates the patterns. The current draft (14 ACs) will be simplified to:
+- Extract memory operations from Story 2.5 into proper service
+- Add hybrid search based on Story 2.5 learnings
+- Add pruning worker
+- Advanced features (goal-based search, user priorities) may move to Story 2.2b
+
+See `docs/stories/2-5-companion-chat-ui-with-essential-memory.md` for the vertical slice implementation.
+
 ## Objectives and Scope
 
 ### In Scope
 
-1. **Memory System (Stories 2.1-2.2)**
+1. **Memory Foundation (Story 2.1)** ✅ COMPLETE
    - PostgreSQL pgvector integration for vector storage
    - 3-tier memory tables (personal, project, task)
-   - Memory service with embedding generation (OpenAI text-embedding-3-small)
-   - Hybrid search (semantic + time-weighted + access frequency)
-   - Background worker for pruning old task memories (30-day retention)
+   - HNSW index for fast similarity search
 
-2. **Eliza Agent (Story 2.3)**
+2. **Working Chat with Essential Memory (Story 2.5)** ← DO THIS FIRST
+   - Chat UI with SSE streaming
+   - Essential memory operations (inline, not service yet)
+   - Basic semantic search (vector similarity only)
+   - All test scenarios working
+   - **Output**: Working chat you can test in browser!
+
+3. **Memory Service Extraction (Story 2.2)** ← DO THIS SECOND
+   - Extract memory service from Story 2.5
+   - Add hybrid search (semantic + time + frequency)
+   - Add pruning worker (30-day retention for task memories)
+   - Optimize based on Story 2.5 learnings
+
+4. **Eliza Agent (Story 2.3)**
    - LangGraph state machine with 5 nodes
    - System prompt emphasizing empathy and emotional intelligence
    - Memory-aware context retrieval (strategic querying by tier)
    - Conversation state management across sessions
 
-3. **Chat API (Story 2.4)**
-   - REST endpoint for initiating chat sessions
-   - SSE (Server-Sent Events) streaming for token-by-token responses
-   - Conversation persistence in PostgreSQL
-   - Authentication via Clerk session tokens
+5. **Enhanced Chat API (Story 2.4)**
+   - Advanced features and optimizations
+   - Conversation management endpoints
+   - Performance tuning
 
-4. **Chat UI (Story 2.5)**
-   - Beautiful, responsive React chat interface
-   - Real-time SSE streaming with loading states
-   - Framer Motion animations (breathing effect, message transitions)
-   - Mobile-responsive design with accessibility support
-
-5. **Emotional State Detection (Story 2.6)**
+6. **Emotional State Detection (Story 2.6)**
    - Open source RoBERTa emotion model (7 emotions)
    - Integration with Eliza agent for emotion-aware responses
    - User emotional state tracking in database
