@@ -77,6 +77,7 @@ def upgrade() -> None:
         op.create_index("ix_memories_user_id", "memories", ["user_id"])
         op.create_index("ix_memories_memory_type", "memories", ["memory_type"])
         op.create_index("ix_memories_created_at", "memories", ["created_at"])
+        op.create_index("ix_memories_accessed_at", "memories", ["accessed_at"])  # For LRU pruning
 
         # Create HNSW index for fast vector similarity search
         # Parameters optimized for 1536-dim vectors:
@@ -133,8 +134,9 @@ def upgrade() -> None:
         ),
         )
 
-        # Create index for memory_collections
+        # Create indexes for memory_collections
         op.create_index("ix_memory_collections_user_id", "memory_collections", ["user_id"])
+        op.create_index("ix_memory_collections_collection_type", "memory_collections", ["collection_type"])
     else:
         print("Table 'memory_collections' already exists, skipping creation")
 
@@ -142,8 +144,10 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Drop indexes first (using IF EXISTS to handle cases where indexes don't exist)
     # This makes the downgrade idempotent and safe to run even if upgrade was partial
+    op.execute("DROP INDEX IF EXISTS ix_memory_collections_collection_type;")
     op.execute("DROP INDEX IF EXISTS ix_memory_collections_user_id;")
     op.execute("DROP INDEX IF EXISTS ix_memories_embedding;")
+    op.execute("DROP INDEX IF EXISTS ix_memories_accessed_at;")
     op.execute("DROP INDEX IF EXISTS ix_memories_created_at;")
     op.execute("DROP INDEX IF EXISTS ix_memories_memory_type;")
     op.execute("DROP INDEX IF EXISTS ix_memories_user_id;")

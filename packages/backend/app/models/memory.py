@@ -6,7 +6,7 @@ Defines 3-tier memory architecture for AI companion system.
 import uuid
 from enum import Enum
 from typing import Any, Dict, Optional
-from sqlalchemy import Column, DateTime, Enum as SQLEnum, ForeignKey, String, Text, func
+from sqlalchemy import Column, DateTime, Enum as SQLEnum, ForeignKey, String, Text, event, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
@@ -181,3 +181,21 @@ class MemoryCollection(Base):
             f"<MemoryCollection(id={self.id}, user_id={self.user_id}, "
             f"type={self.collection_type}, name='{self.name}')>"
         )
+
+
+# Validation: Ensure embedding dimensions match expected size (1536)
+@event.listens_for(Memory, "before_insert")
+@event.listens_for(Memory, "before_update")
+def validate_embedding_dimensions(mapper, connection, target):
+    """
+    Validate that embedding vector has exactly 1536 dimensions.
+
+    Raises ValueError if embedding is not None and has wrong dimensions.
+    This prevents runtime errors from OpenAI embedding mismatches.
+    """
+    if target.embedding is not None:
+        if len(target.embedding) != 1536:
+            raise ValueError(
+                f"Memory embedding must be exactly 1536 dimensions "
+                f"(OpenAI text-embedding-3-small), got {len(target.embedding)}"
+            )
