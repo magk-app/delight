@@ -82,6 +82,7 @@ cd ../..
    - Enable providers: **Email**, **Google**, **GitHub** (optional)
 
 2. **Get API Keys**
+
    - In Clerk dashboard, go to **API Keys**
    - Copy **"Publishable Key"** (starts with `pk_test_`)
    - Copy **"Secret Key"** (starts with `sk_test_`)

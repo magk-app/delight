@@ -30,12 +30,8 @@ poetry run uvicorn main:app --reload
 **For webhook testing, also start ngrok in a separate terminal:**
 
 ```bash
-# Temporary domain (expires in 2 hours)
 ngrok http 8000
-
-# OR use reserved domain (permanent - recommended!)
-ngrok http --domain=delight-dev.ngrok-free.app 8000
-# Get reserved domain from: https://dashboard.ngrok.com/cloud-edge/domains
+# Copy the HTTPS URL and update Clerk webhook configuration
 ```
 
 Visit:
