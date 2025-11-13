@@ -14,7 +14,7 @@
   "topbarLinks": [
     {
       "name": "GitHub",
-      "url": "https://github.com/your-org/delight"
+      "url": "https://github.com/magk-app/delight"
     }
   ],
   "topbarCtaButton": {
@@ -30,7 +30,7 @@
     {
       "name": "GitHub",
       "icon": "github",
-      "url": "https://github.com/your-org/delight"
+      "url": "https://github.com/magk-app/delight"
     }
   ],
   "navigation": [
@@ -48,7 +48,6 @@
     }
   ],
   "footerSocials": {
-    "github": "https://github.com/your-org/delight",
-    "linkedin": "https://www.linkedin.com/company/delight"
+    "github": "https://github.com/magk-app/delight"
   }
 }
