@@ -31,19 +31,18 @@ def get_clerk_jwks_client() -> PyJWKClient:
         PyJWKClient: JWKS client configured for Clerk's API
 
     Note:
-        The JWKS URL is constructed from the Clerk instance.
-        For development: Uses clerk.accounts.dev domain
-        For production: Should use your custom Clerk domain
+        JWKS URL must be set in environment variable CLERK_JWKS_URL.
+        Find this in your Clerk Dashboard → API Keys → Advanced → JWKS endpoint
+        Format: https://YOUR-INSTANCE.clerk.accounts.dev/.well-known/jwks.json
     """
-    # Determine Clerk instance from secret key
-    # Format: sk_test_xxx or sk_live_xxx
-    is_live = settings.CLERK_SECRET_KEY.startswith("sk_live_")
+    if not settings.CLERK_JWKS_URL:
+        raise ValueError(
+            "CLERK_JWKS_URL environment variable is required. "
+            "Find this in Clerk Dashboard → API Keys → Advanced → JWKS endpoint. "
+            "Format: https://YOUR-INSTANCE.clerk.accounts.dev/.well-known/jwks.json"
+        )
 
-    # JWKS endpoint - Clerk uses a standard format
-    # For test keys: https://api.clerk.com/.well-known/jwks.json
-    # For live keys: https://api.clerk.com/.well-known/jwks.json (same endpoint)
-    jwks_url = "https://api.clerk.com/.well-known/jwks.json"
-
+    jwks_url = settings.CLERK_JWKS_URL
     logger.info(f"Initializing Clerk JWKS client with URL: {jwks_url}")
 
     return PyJWKClient(
