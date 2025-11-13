@@ -14,4 +14,4 @@ workflow_status: |
   tech-spec: mintlify/tech-spec.md
 
   # Phase 2: Implementation
-  sprint-planning: required
+  sprint-planning: mintlify/sprint-status.yaml
