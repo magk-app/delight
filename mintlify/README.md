@@ -63,17 +63,23 @@ To update the favicon:
 
 1. **Place your favicon file** in the `mintlify/` directory root:
 
-   - Supported formats: `.svg`, `.png`, `.ico`
-   - Recommended: Use `.svg` for best quality and scalability
-   - File should be named `favicon.svg` (or update the path in `mint.json`)
+   **Supported formats** (you can use any of these):
 
-2. **Update `mint.json`** if using a different filename or format:
+   - `.svg` - Scalable vector graphics (recommended for best quality)
+   - `.png` - Portable Network Graphics (works great too)
+   - `.ico` - Traditional favicon format (also supported)
+
+   **Recommendation**: Use `.svg` for best quality and scalability, but `.png` and `.ico` work perfectly fine.
+
+2. **Update `mint.json`** to point to your favicon file:
 
    ```json
    {
-     "favicon": "/favicon.svg" // or "/favicon.png", "/favicon.ico"
+     "favicon": "/favicon.svg" // Use "/favicon.png" or "/favicon.ico" if preferred
    }
    ```
+
+   You can name your file anything (e.g., `logo.svg`, `icon.png`) - just update the path in `mint.json` accordingly.
 
 3. **Restart the dev server** to see changes:
    ```bash
