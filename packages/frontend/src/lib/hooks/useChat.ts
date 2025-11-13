@@ -1,232 +1,248 @@
-/**
- * useChat Hook - SSE-based chat with Eliza
- *
- * Manages chat state, message history, and real-time SSE streaming.
- * Integrates with Clerk authentication for secure API calls.
- */
+"use client";
 
-import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-/**
- * Message interface for chat history
- */
-export interface Message {
+export type Message = {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+};
+
+type StreamEvent =
+  | { type: "token"; content: string }
+  | { type: "complete" }
+  | { type: "error"; message?: string };
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
+
+function resolveApiUrl(path: string): string {
+  if (!path.startsWith("/")) {
+    throw new Error(`API path must start with '/': received ${path}`);
+  }
+
+  if (API_BASE_URL) {
+    return `${API_BASE_URL}${path}`;
+  }
+
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${path}`;
+  }
+
+  return path;
 }
 
-/**
- * useChat Hook
- *
- * Provides chat functionality with SSE streaming from backend.
- *
- * @returns Chat state and functions
- */
 export function useChat() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const assistantTimestampRef = useRef<number | null>(null);
 
-  /**
-   * Load conversation history on mount
-   */
-  useEffect(() => {
-    loadHistory();
-    // Cleanup event source on unmount
-    return () => {
-      eventSourceRef.current?.close();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const closeEventSource = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+      assistantTimestampRef.current = null;
+    }
   }, []);
 
-  /**
-   * Load conversation history from API
-   */
-  async function loadHistory() {
+  useEffect(() => closeEventSource, [closeEventSource]);
+
+  const loadHistory = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!isSignedIn) {
+      setMessages([]);
+      setConversationId(null);
+      return;
+    }
+
     try {
       const token = await getToken();
       if (!token) {
-        throw new Error("Not authenticated");
+        throw new Error("Missing authentication token");
       }
 
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-        }/api/v1/companion/history`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(resolveApiUrl("/api/v1/companion/history"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to load history");
+        throw new Error(`Failed to load history: ${response.status}`);
       }
 
       const data = await response.json();
+      const latestConversation = data?.conversations?.[0];
 
-      // Load latest conversation
-      if (data.conversations && data.conversations.length > 0) {
-        const latest = data.conversations[0];
-        setConversationId(latest.id);
-        setMessages(
-          latest.messages.map((m: any) => ({
-            ...m,
-            timestamp: new Date(m.timestamp),
-          }))
-        );
+      if (!latestConversation) {
+        setMessages([]);
+        setConversationId(null);
+        return;
       }
-    } catch (err) {
-      console.error("Error loading history:", err);
-      // Don't set error state here - empty history is okay for new users
+
+      setConversationId(latestConversation.id);
+      setMessages(
+        (latestConversation.messages ?? []).map((message: any) => ({
+          role: message.role === "assistant" ? "assistant" : "user",
+          content: message.content ?? "",
+          timestamp: new Date(message.timestamp),
+        }))
+      );
+    } catch (historyError) {
+      console.error("Failed to load conversation history", historyError);
+      setError("Unable to load previous messages. Please try again later.");
     }
-  }
+  }, [getToken, isLoaded, isSignedIn]);
 
-  /**
-   * Send message to Eliza
-   *
-   * @param content - Message content
-   */
-  async function sendMessage(content: string) {
-    if (!content.trim()) return;
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
-    // Optimistic update - add user message immediately
-    const userMessage: Message = {
-      role: "user",
-      content,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-    setError(null);
+  const streamResponse = useCallback(
+    (convId: string, token: string) => {
+      closeEventSource();
 
-    try {
-      const token = await getToken();
-      if (!token) {
-        throw new Error("Not authenticated");
+      const streamUrl = `${resolveApiUrl(
+        `/api/v1/companion/stream/${convId}`
+      )}?token=${encodeURIComponent(token)}`;
+      const eventSource = new EventSource(streamUrl);
+
+      eventSourceRef.current = eventSource;
+      let assistantBuffer = "";
+
+      eventSource.onmessage = (event) => {
+        try {
+          const payload: StreamEvent = JSON.parse(event.data);
+
+          if (payload.type === "token") {
+            assistantBuffer += payload.content;
+            setMessages((previous) => {
+              const lastMessage = previous[previous.length - 1];
+
+              if (
+                lastMessage?.role === "assistant" &&
+                assistantTimestampRef.current ===
+                  lastMessage.timestamp.getTime()
+              ) {
+                return [
+                  ...previous.slice(0, -1),
+                  {
+                    ...lastMessage,
+                    content: assistantBuffer,
+                  },
+                ];
+              }
+
+              const timestamp = new Date();
+              assistantTimestampRef.current = timestamp.getTime();
+
+              return [
+                ...previous,
+                {
+                  role: "assistant",
+                  content: assistantBuffer,
+                  timestamp,
+                },
+              ];
+            });
+          } else if (payload.type === "complete") {
+            setIsLoading(false);
+            closeEventSource();
+          } else if (payload.type === "error") {
+            setError(
+              payload.message ??
+                "Something went wrong while streaming the response."
+            );
+            setIsLoading(false);
+            closeEventSource();
+          }
+        } catch (parseError) {
+          console.error("Failed to parse streaming event", parseError);
+        }
+      };
+
+      eventSource.onerror = () => {
+        setError("Connection lost. Please try sending your message again.");
+        setIsLoading(false);
+        closeEventSource();
+      };
+    },
+    [closeEventSource]
+  );
+
+  const sendMessage = useCallback(
+    async (content: string) => {
+      const trimmed = content.trim();
+      if (!trimmed) {
+        return;
       }
 
-      // Send message to API
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-        }/api/v1/companion/chat`,
-        {
+      if (!isLoaded || !isSignedIn) {
+        setError("You need to be signed in to chat.");
+        return;
+      }
+
+      const userMessage: Message = {
+        role: "user",
+        content: trimmed,
+        timestamp: new Date(),
+      };
+
+      setMessages((previous) => [...previous, userMessage]);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          throw new Error("Missing authentication token");
+        }
+
+        const response = await fetch(resolveApiUrl("/api/v1/companion/chat"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            message: content,
+            message: trimmed,
             conversation_id: conversationId,
           }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to send message: ${response.status}`);
         }
-      );
 
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
+        const data = await response.json();
+        const nextConversationId = data?.conversation_id;
 
-      const data = await response.json();
-      const newConversationId = data.conversation_id;
-      setConversationId(newConversationId);
-
-      // Start SSE stream
-      await streamResponse(newConversationId, token);
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setError("Failed to send message. Please try again.");
-      setIsLoading(false);
-
-      // Remove optimistic user message on error
-      setMessages((prev) => prev.slice(0, -1));
-    }
-  }
-
-  /**
-   * Stream Eliza's response via SSE
-   *
-   * @param convId - Conversation ID
-   * @param token - Auth token
-   */
-  async function streamResponse(convId: string, token: string) {
-    // Close existing connection
-    eventSourceRef.current?.close();
-
-    // Create new SSE connection
-    // Note: EventSource doesn't support custom headers, so we pass token as query param
-    const eventSource = new EventSource(
-      `${
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      }/api/v1/companion/stream/${convId}?token=${token}`
-    );
-    eventSourceRef.current = eventSource;
-
-    let assistantMessage = "";
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "token") {
-          assistantMessage += data.content;
-
-          // Update message in real-time
-          setMessages((prev) => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage?.role === "assistant") {
-              // Update existing assistant message
-              return [
-                ...prev.slice(0, -1),
-                {
-                  ...lastMessage,
-                  content: assistantMessage,
-                },
-              ];
-            } else {
-              // Add new assistant message
-              return [
-                ...prev,
-                {
-                  role: "assistant",
-                  content: assistantMessage,
-                  timestamp: new Date(),
-                },
-              ];
-            }
-          });
-        } else if (data.type === "complete") {
-          setIsLoading(false);
-          eventSource.close();
-        } else if (data.type === "error") {
-          setError(data.message || "An error occurred");
-          setIsLoading(false);
-          eventSource.close();
+        if (nextConversationId) {
+          setConversationId(nextConversationId);
+          streamResponse(nextConversationId, token);
+        } else {
+          throw new Error("Missing conversation identifier in response");
         }
-      } catch (err) {
-        console.error("Error parsing SSE event:", err);
+      } catch (sendError) {
+        console.error("Failed to send message", sendError);
+        setError("Failed to send message. Please try again.");
+        setIsLoading(false);
       }
-    };
-
-    eventSource.onerror = (err) => {
-      console.error("SSE connection error:", err);
-      setError("Connection lost. Please try again.");
-      setIsLoading(false);
-      eventSource.close();
-    };
-  }
+    },
+    [conversationId, getToken, isLoaded, isSignedIn, streamResponse]
+  );
 
   return {
     messages,
     isLoading,
-    sendMessage,
     error,
+    sendMessage,
   };
 }
