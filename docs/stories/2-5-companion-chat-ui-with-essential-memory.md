@@ -2,7 +2,7 @@
 
 **Story ID:** 2.5
 **Epic:** 2 - Companion & Memory System
-**Status:** drafted
+**Status:** ready-for-dev
 **Priority:** P0 (Core User Experience - First Working Chat)
 **Estimated Effort:** 8-12 hours (vertical slice including frontend + backend + essential memory)
 **Assignee:** Claude Dev Agent
