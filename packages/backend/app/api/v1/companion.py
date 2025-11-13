@@ -118,8 +118,9 @@ async def _store_memory(
         await db.refresh(memory)
 
         logger.info(
-            f"Stored {memory_type.value} memory for user {user_id}: {content[:50]}..."
+            f"✅ STORED {memory_type.value.upper()} memory for user {user_id}: '{content[:50]}...'"
         )
+        logger.debug(f"   Metadata: {metadata}")
         return memory
 
     except Exception as e:
@@ -178,14 +179,12 @@ async def _query_memories(
 
 def _detect_memory_type(message: str) -> MemoryType:
     """
-    Determine memory type from message content using simple heuristics.
+    Determine memory type from message content using keyword heuristics.
 
-    Story 2.3 will improve this with LLM-based classification.
-
-    Heuristics:
-    - Stressors/venting (overwhelmed, stressed, anxious) → PERSONAL
-    - Goals/plans (goal, plan, want to, working on) → PROJECT
-    - Default → TASK
+    Fast classification based on content patterns:
+    - PERSONAL: Emotions, feelings, struggles (never pruned)
+    - PROJECT: Goals, plans, aspirations (meaningful retention)
+    - TASK: Immediate actions, questions (30-day pruning)
 
     Args:
         message: User message content
@@ -195,135 +194,122 @@ def _detect_memory_type(message: str) -> MemoryType:
     """
     message_lower = message.lower()
 
-    # Check for stressors/venting (personal tier)
-    stressor_keywords = [
-        "overwhelmed",
-        "stressed",
-        "anxious",
-        "worried",
-        "nervous",
-        "scared",
-        "frustrated",
-        "tired",
-        "exhausted",
-        "struggling",
+    # PERSONAL: Emotional expressions, feelings, struggles
+    personal_keywords = [
+        "feel", "feeling", "felt", "overwhelmed", "stressed", "anxious",
+        "worried", "scared", "frustrated", "tired", "exhausted",
+        "struggling", "sad", "depressed", "angry", "nervous",
     ]
-    if any(keyword in message_lower for keyword in stressor_keywords):
+    if any(kw in message_lower for kw in personal_keywords):
+        logger.info(f"🔍 DETECTED PERSONAL: '{message[:50]}...'")
         return MemoryType.PERSONAL
 
-    # Check for goals/plans (project tier)
-    goal_keywords = [
-        "goal",
-        "plan",
-        "want to",
-        "working on",
-        "trying to",
-        "hope to",
-        "dream",
-        "ambition",
-        "achieve",
+    # PROJECT: Goals, plans, long-term intentions
+    project_keywords = [
+        "goal", "want to", "plan", "working on", "trying to",
+        "hope to", "dream", "graduate", "career", "thesis",
+        "semester", "long-term", "future", "achieve",
     ]
-    if any(keyword in message_lower for keyword in goal_keywords):
+    if any(kw in message_lower for kw in project_keywords):
+        logger.info(f"🔍 DETECTED PROJECT: '{message[:50]}...'")
         return MemoryType.PROJECT
 
-    # Default to task tier
+    # Default: TASK
+    logger.info(f"🔍 DETECTED TASK (default): '{message[:50]}...'")
     return MemoryType.TASK
 
 
-def _classify_message_metadata(message: str, memory_type: MemoryType) -> Dict[str, Any]:
+async def _classify_message_metadata_llm(
+    message: str, memory_type: MemoryType
+) -> Dict[str, Any]:
     """
-    Generate metadata for message based on content and type.
+    Use LLM to classify emotions, intensity, categories for rich metadata.
 
-    Story 2.5 AC9 requires emotion severity, goal scope, task priority.
-    This is a simple version - Story 2.2 will add full emotion detection.
+    Uses GPT-4o-mini for fast, accurate classification of:
+    - Emotions (joy, fear, sadness, anger, etc.)
+    - Emotion severity/intensity
+    - Categories (academic, social, health, etc.)
+    - Goal scope (big/small goals)
+    - Task priority/difficulty
 
     Args:
         message: User message content
         memory_type: Detected memory type
 
     Returns:
-        Dict[str, Any]: Metadata with source, category, and type-specific fields
+        Dict[str, Any]: Rich metadata from LLM classification
     """
-    metadata = {
-        "source": "conversation",
-        "timestamp": datetime.utcnow().isoformat(),
-    }
+    try:
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-    message_lower = message.lower()
+        # Build classification prompt based on memory type
+        if memory_type == MemoryType.PERSONAL:
+            system_prompt = """Analyze this emotional message and return JSON with:
+{
+  "emotion": "joy" | "sadness" | "fear" | "anger" | "surprise" | "neutral",
+  "emotion_severity": "mild_annoyance" | "moderate_concern" | "persistent_stressor" | "crisis",
+  "category": "academic" | "social" | "health" | "financial" | "family" | "other",
+  "intensity": 0.0 to 1.0
+}"""
+        elif memory_type == MemoryType.PROJECT:
+            system_prompt = """Analyze this goal/plan message and return JSON with:
+{
+  "goal_scope": "small_goal" | "big_goal",
+  "category": "academic" | "career" | "personal_growth" | "health" | "creative" | "other",
+  "timeline": "days" | "weeks" | "months" | "years",
+  "confidence": 0.0 to 1.0
+}"""
+        else:  # TASK
+            system_prompt = """Analyze this task message and return JSON with:
+{
+  "task_priority": "low" | "medium" | "high",
+  "task_difficulty": "easy" | "medium" | "hard",
+  "category": "academic" | "personal" | "work" | "other",
+  "estimated_time": "minutes" | "hours" | "days"
+}"""
 
-    # Personal memory metadata (stressors)
-    if memory_type == MemoryType.PERSONAL:
-        metadata["stressor"] = True
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message},
+            ],
+            temperature=0,
+            max_tokens=200,
+            response_format={"type": "json_object"},  # Force JSON output
+        )
 
-        # Simple emotion detection (Story 2.6 will add cardiffnlp/roberta model)
-        if any(
-            word in message_lower for word in ["overwhelmed", "stressed", "anxious"]
-        ):
-            metadata["emotion"] = "fear"
-            metadata["category"] = "academic"  # Simplified categorization
+        llm_metadata = json.loads(response.choices[0].message.content)
+        logger.debug(f"📊 LLM metadata: {llm_metadata}")
 
-        # Emotion severity (AC9) - simplified intensity estimation
-        # Story 2.6 will add proper emotion detection with intensity scores
-        if any(word in message_lower for word in ["very", "extremely", "completely"]):
-            metadata["emotion_severity"] = "persistent_stressor"  # 0.4-0.7 intensity
-        else:
-            metadata["emotion_severity"] = "mild_annoyance"  # <0.4 intensity
-
-    # Project memory metadata (goals)
-    elif memory_type == MemoryType.PROJECT:
-        metadata["goal_related"] = True
-
-        # Goal scope detection (AC9)
-        # Big goal: mentions semester, year, months, or long timelines
-        # Small goal: short-term, immediate
-        if any(
-            word in message_lower
-            for word in [
-                "semester",
-                "year",
-                "month",
-                "graduate",
-                "career",
-                "long-term",
-            ]
-        ):
-            metadata["goal_scope"] = "big_goal"
-        else:
-            metadata["goal_scope"] = "small_goal"
-
-        metadata["category"] = "goal"
-
-    # Task memory metadata
-    else:
-        metadata["task_related"] = True
-
-        # Task priority estimation (AC9) - based on urgency keywords
-        if any(word in message_lower for word in ["urgent", "asap", "immediately"]):
-            metadata["task_priority"] = "high"
-        elif any(word in message_lower for word in ["soon", "today", "tomorrow"]):
-            metadata["task_priority"] = "medium"
-        else:
-            metadata["task_priority"] = "low"
-
-        # Task difficulty estimation (AC9)
-        if any(word in message_lower for word in ["difficult", "hard", "complex"]):
-            metadata["task_difficulty"] = "hard"
-        elif any(word in message_lower for word in ["easy", "simple", "quick"]):
-            metadata["task_difficulty"] = "easy"
-        else:
-            metadata["task_difficulty"] = "medium"
-
-        # Universal factors (AC9) - simplified defaults
-        # Story 2.2 will add sophisticated factor detection
-        metadata["universal_factors"] = {
-            "learning": 0.4,
-            "discipline": 0.3,
-            "health": 0.1,
-            "craft": 0.2,
-            "connection": 0.0,
+        # Merge LLM results with base metadata
+        metadata = {
+            "source": "conversation",
+            "timestamp": datetime.utcnow().isoformat(),
+            **llm_metadata,
         }
 
-    return metadata
+        # Add type-specific flags
+        if memory_type == MemoryType.PERSONAL:
+            metadata["stressor"] = True
+        elif memory_type == MemoryType.PROJECT:
+            metadata["goal_related"] = True
+        else:
+            metadata["task_related"] = True
+
+        return metadata
+
+    except Exception as e:
+        # Fallback to simple metadata if LLM fails
+        logger.warning(
+            f"LLM metadata classification failed, using fallback: {type(e).__name__}: {str(e)}"
+        )
+        return {
+            "source": "conversation",
+            "timestamp": datetime.utcnow().isoformat(),
+            "category": "unknown",
+            "fallback": True,
+        }
 
 
 # ============================================================================
@@ -362,11 +348,14 @@ async def chat_with_eliza(
         # Generate conversation ID if not provided
         conversation_id = request.conversation_id or uuid.uuid4()
 
-        # Detect memory type from message content
-        memory_type = _detect_memory_type(request.message)
+        logger.info(f"📨 USER MESSAGE: '{request.message[:100]}...'")
 
-        # Generate metadata
-        metadata = _classify_message_metadata(request.message, memory_type)
+        # Detect memory type from message content (fast keyword-based)
+        memory_type = _detect_memory_type(request.message)
+        logger.info(f"   → Memory type detected: {memory_type.value.upper()}")
+
+        # Generate rich metadata using LLM (async)
+        metadata = await _classify_message_metadata_llm(request.message, memory_type)
         metadata["conversation_id"] = str(conversation_id)
         metadata["role"] = "user"
 
@@ -471,6 +460,7 @@ async def stream_response(
             # Build conversation history for agent
             conversation_history = []
             last_user_message = ""
+            last_user_memory_type = MemoryType.TASK  # Default for new conversations
 
             for mem in reversed(conversation_memories):  # Chronological order
                 role = mem.extra_data.get("role", "user")
@@ -479,6 +469,7 @@ async def stream_response(
                 # Track last user message for memory query
                 if role == "user":
                     last_user_message = mem.content
+                    last_user_memory_type = mem.memory_type  # Inherit type from user
 
             # Query relevant memories (basic vector search)
             retrieved_memories = []
@@ -504,7 +495,12 @@ async def stream_response(
                 full_response += response_token
                 yield f"data: {json.dumps({'type': 'token', 'content': response_token})}\n\n"
 
-            # Store assistant response as task memory
+            # Store assistant response with SAME memory type as user message
+            # This maintains semantic coherence - emotional support stays PERSONAL,
+            # goal guidance stays PROJECT, task help stays TASK
+            logger.info(f"🤖 ASSISTANT RESPONSE: '{full_response[:100]}...'")
+            logger.info(f"   → Memory type: {last_user_memory_type.value.upper()} (inherited from user message)")
+
             assistant_metadata = {
                 "source": "conversation",
                 "conversation_id": str(conversation_id),
@@ -515,7 +511,7 @@ async def stream_response(
             await _store_memory(
                 db=db,
                 user_id=current_user.id,
-                memory_type=MemoryType.TASK,  # Assistant responses are task tier
+                memory_type=last_user_memory_type,  # Inherit type from user message!
                 content=full_response,
                 metadata=assistant_metadata,
             )
@@ -540,6 +536,74 @@ async def stream_response(
             "Connection": "keep-alive",
         },
     )
+
+
+@router.get("/debug/memory-stats")
+async def get_memory_stats(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    DEBUG ENDPOINT: Get memory type distribution for current user.
+
+    Returns counts of PERSONAL, PROJECT, and TASK memories.
+    """
+    try:
+        from sqlalchemy import func
+
+        # Count memories by type
+        result = await db.execute(
+            select(Memory.memory_type, func.count(Memory.id))
+            .where(Memory.user_id == current_user.id)
+            .group_by(Memory.memory_type)
+        )
+        counts = result.all()
+
+        # Build distribution dict
+        distribution = {
+            "PERSONAL": 0,
+            "PROJECT": 0,
+            "TASK": 0,
+        }
+
+        for memory_type, count in counts:
+            distribution[memory_type.value.upper()] = count
+
+        # Get recent memories by type
+        recent_by_type = {}
+        for mem_type in [MemoryType.PERSONAL, MemoryType.PROJECT, MemoryType.TASK]:
+            result = await db.execute(
+                select(Memory.content, Memory.created_at, Memory.extra_data)
+                .where(
+                    Memory.user_id == current_user.id,
+                    Memory.memory_type == mem_type,
+                )
+                .order_by(Memory.created_at.desc())
+                .limit(3)
+            )
+            memories = result.all()
+            recent_by_type[mem_type.value.upper()] = [
+                {
+                    "content": mem[0][:100],
+                    "created_at": mem[1].isoformat(),
+                    "role": mem[2].get("role", "unknown") if mem[2] else "unknown",
+                }
+                for mem in memories
+            ]
+
+        return {
+            "user_id": str(current_user.id),
+            "distribution": distribution,
+            "total": sum(distribution.values()),
+            "recent_by_type": recent_by_type,
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting memory stats: {type(e).__name__}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get memory stats",
+        )
 
 
 @router.get("/history", response_model=ConversationHistoryResponse)
