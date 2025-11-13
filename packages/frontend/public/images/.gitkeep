@@ -1,0 +1,8 @@
+# Images Directory
+
+Place static images here for use in the frontend app.
+
+Reference them in components using:
+- `/images/your-image.png` (for public assets)
+- Or import directly: `import image from '@/public/images/your-image.png'`
+

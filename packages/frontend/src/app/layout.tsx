@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: "Delight - AI-Powered Self-Improvement Companion",
   description:
     "Transform your ambitions into achievement, one mission at a time",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
