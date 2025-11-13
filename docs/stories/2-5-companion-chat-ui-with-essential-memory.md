@@ -606,31 +606,43 @@ async def test_memory_hierarchy_metadata(client, db, test_user):
 
 - **Note:** Keep `memory.extra_data = metadata` (not `memory.metadata`) so we respect the SQLAlchemy keyword workaround from Story 2.1.
 - [Source: stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md lines 574-609]
-- [ ] **2.2** Implement memory storage logic in `stream_response()`:
-  - Determine memory type from message content (simple heuristics)
-  - Store user message as memory
-  - Store assistant response as task memory
+- [x] **2.2** ✅ **Implemented**: Memory storage logic in chat endpoints:
+  - Determine memory type from message content (keyword-based triage + LLM metadata)
+  - Store user message as memory with rich metadata (emotion, goal scope, task priority)
+  - Store assistant response with INHERITED memory type (semantic coherence)
 - [ ] **2.3** Implement memory retrieval in `stream_response()`:
   - Query memories before generating response
   - Format memories for Eliza's context window
-- [ ] **2.4** Add simple heuristics for memory type detection:
+- [x] **2.4** ✅ **Enhanced**: Implemented hybrid memory type detection (keyword-based for fast triage):
 
   ```python
   def _detect_memory_type(message: str) -> MemoryType:
-      """Determine memory type from message content."""
+      """Fast keyword-based classification for memory tier selection (~1ms)."""
       message_lower = message.lower()
 
-      # Check for stressors/venting
-      if any(word in message_lower for word in ['overwhelmed', 'stressed', 'anxious', 'worried']):
+      # PERSONAL: Emotional expressions, feelings, struggles
+      personal_keywords = [
+          "feel", "feeling", "felt", "overwhelmed", "stressed", "anxious",
+          "worried", "scared", "frustrated", "tired", "exhausted",
+          "struggling", "sad", "depressed", "angry", "nervous",
+      ]
+      if any(kw in message_lower for kw in personal_keywords):
           return MemoryType.PERSONAL
 
-      # Check for goals/plans
-      if any(word in message_lower for word in ['goal', 'plan', 'want to', 'working on']):
+      # PROJECT: Goals, plans, long-term intentions
+      project_keywords = [
+          "goal", "want to", "plan", "working on", "trying to",
+          "hope to", "dream", "graduate", "career", "thesis",
+          "semester", "long-term", "future", "achieve",
+      ]
+      if any(kw in message_lower for kw in project_keywords):
           return MemoryType.PROJECT
 
-      # Default to task
+      # Default: TASK
       return MemoryType.TASK
   ```
+
+  **Note**: Combined with async `_classify_message_metadata_llm()` for rich metadata analysis. See Task 12 and Implementation Updates section for full details.
 
 ### Task 3: Implement Simple Eliza Agent (AC: #6)
 
