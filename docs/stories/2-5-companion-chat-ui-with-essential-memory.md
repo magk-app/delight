@@ -415,6 +415,44 @@ await expect(input).toHaveAttribute('aria-label');
 
 [Source: docs/tech-spec-epic-2.md lines 704-715]
 
+### AC9: Memory Hierarchy Captures Emotions, Goals, and Tasks
+
+**Given** I vent about a mild annoyance, reference a persistent stressor, and log both a big goal and a quick task in the same session
+**When** inline memory helpers persist personal/project/task memories
+**Then** the saved metadata must include:
+
+- **Emotion block:** `severity` (`mild_annoyance`, `persistent_stressor`, or `compounding_event`) derived from emotion intensity, plus `dominant`, `scores`, `intensity`, and `triggers`.
+- **Project block:** `goal_id`, `goal_title`, `goal_scope` (`big_goal` vs `small_goal`), and optional `target_date` pulled from goal references.
+- **Task block:** `task_id`, `task_priority`, `task_deadline`, `task_difficulty`, and `universal_factors` weights that sum to ≈1.0.
+
+**Verification Steps:**
+```python
+async def test_memory_hierarchy_metadata(client, db, test_user):
+    resp = await client.post("/api/v1/companion/chat", json={"message": sample_payload})
+    assert resp.status_code == 200
+
+    stored = await db.execute(
+        select(Memory)
+        .where(Memory.user_id == test_user.id)
+        .order_by(Memory.created_at.desc())
+    )
+    memory = stored.scalars().first()
+
+    emotion = memory.extra_data["emotion"]
+    assert emotion["severity"] in {"mild_annoyance", "persistent_stressor", "compounding_event"}
+    assert emotion["intensity"] >= 0 and "scores" in emotion
+
+    project_meta = memory.extra_data["project"]
+    assert project_meta["goal_scope"] in {"big_goal", "small_goal"}
+    assert project_meta["goal_title"]
+
+    task_meta = memory.extra_data["task"]
+    assert task_meta["task_priority"] in {"low", "medium", "high"}
+    assert sum(task_meta["universal_factors"].values()) <= 1.2
+```
+
+[Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 465-540; docs/tech-spec-epic-2.md lines 217-223; docs/epics.md lines 660-706]
+
 ---
 
 ## Tasks / Subtasks
@@ -436,6 +474,8 @@ await expect(input).toHaveAttribute('aria-label');
       # Store user message
       # Return conversation_id
   ```
+- `get_current_user` dependency + token validation must reuse the exact Clerk integration from Story 1.3 so we inherit the hardened auth flow (middleware + pyclerk verification).
+- [Source: stories/1-3-integrate-clerk-authentication-system.md lines 34-81, 355-433]
 - [ ] **1.3** Implement `GET /api/v1/companion/stream/{conversation_id}` endpoint:
   ```python
   @router.get("/stream/{conversation_id}")
@@ -469,6 +509,14 @@ await expect(input).toHaveAttribute('aria-label');
 
 **Estimated Time:** 2.5 hours
 
+- [ ] **2.0** Import Story 2.1 models/schemas so we reuse the shipped foundation (do **not** recreate classes):
+  ```python
+  from app.models.memory import Memory, MemoryCollection, MemoryType
+  from app.schemas.memory import MemoryCreate, MemoryResponse
+  ```
+  - Module paths: `packages/backend/app/models/memory.py`, `packages/backend/app/schemas/memory.py`
+  - Keeps parity with the Project Structure delivered in Story 2.1 and preserves the `extra_data` alias for JSONB metadata storage.
+  - [Source: stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md lines 438-520, 574-609]
 - [ ] **2.1** Create inline helper functions in `companion.py`:
   ```python
   async def _generate_embedding(text: str) -> List[float]:
@@ -519,6 +567,8 @@ await expect(input).toHaveAttribute('aria-label');
       )
       return result.scalars().all()
   ```
+- **Note:** Keep `memory.extra_data = metadata` (not `memory.metadata`) so we respect the SQLAlchemy keyword workaround from Story 2.1.
+- [Source: stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md lines 574-609]
 - [ ] **2.2** Implement memory storage logic in `stream_response()`:
   - Determine memory type from message content (simple heuristics)
   - Store user message as memory
@@ -884,16 +934,18 @@ Be warm, supportive, and contextual."""
               }
           };
 
-          eventSource.onerror = () => {
-              setError('Connection lost. Please try again.');
-              setIsLoading(false);
-              eventSource.close();
-          };
-      }
-
-      return { messages, isLoading, sendMessage, error };
+      eventSource.onerror = () => {
+          setError('Connection lost. Please try again.');
+          setIsLoading(false);
+          eventSource.close();
+      };
   }
-  ```
+
+  return { messages, isLoading, sendMessage, error };
+}
+```
+- Match Story 1.3 guidance by sourcing tokens through `useAuth().getToken()` and passing them via `Authorization: Bearer ...` so backend `get_current_user()` continues to recognize Clerk sessions.
+- [Source: stories/1-3-integrate-clerk-authentication-system.md lines 1020-1070]
 - [ ] **6.2** Add error handling for SSE disconnections
 - [ ] **6.3** Add auto-reconnect logic (optional enhancement)
 - [ ] **6.4** Test SSE streaming in browser DevTools
@@ -1029,6 +1081,38 @@ Be warm, supportive, and contextual."""
 - [ ] **11.4** Update `docs/dev/SETUP.md` with companion chat setup
 - [ ] **11.5** Create `docs/stories/2-5-TESTING-GUIDE.md` with manual testing steps
 - [ ] **11.6** Document memory storage patterns discovered
+
+### Task 12: Encode Memory Hierarchy Metadata (AC: #9)
+
+**Estimated Time:** 1.5 hours
+
+- [ ] **12.1** Add `_classify_emotion_severity()` helper that maps detected intensity to categories (`mild_annoyance`, `persistent_stressor`, `compounding_event`). Use the `emotion.intensity` guidance from Story 2.2 and persist the result inside `metadata["emotion"]["severity"]`.
+  - Intensity < 0.4 → `mild_annoyance`
+  - 0.4–0.7 → `persistent_stressor`
+  - ≥ 0.7 → `compounding_event`
+  - Store `triggers`, `scores`, and `dominant` fields exactly as the Story 2.2 template to keep compatibility with future service extraction.
+  - [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 465-489; docs/tech-spec-epic-2.md lines 217-219]
+- [ ] **12.2** Enrich project metadata before saving memories:
+  - Add `goal_id`, `goal_title`, and derive `goal_scope` = `big_goal` if message references semester/years or `target_date` > 4 weeks, otherwise `small_goal`.
+  - Carry forward `task_priority`, `task_deadline`, and `task_title` so later services can reason about urgency.
+  - Cite Epic guidance on breaking down big goals so we stay aligned with PM expectations.
+  - [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 497-533; docs/epics.md lines 660-706]
+- [ ] **12.3** Capture universal factor weights + task difficulty:
+  - Add helper `_map_universal_factors(content: str) -> Dict[str, float>` seeded with defaults from Story 2.2.
+  - Store `task_difficulty` (easy/medium/hard) for UI nudging.
+  - Persist metadata fragment:
+    ```json
+    {
+      "universal_factors": {"learning": 0.6, "discipline": 0.3, "connection": 0.1},
+      "task_difficulty": "medium",
+      "universal_alignment": ["learning", "discipline"]
+    }
+    ```
+  - [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 503-540; docs/epics.md lines 538-539]
+- [ ] **12.4** Extend backend + Playwright tests to assert enriched metadata is written:
+  - Backend: update `test_companion_chat.py` to create a venting + goal + task flow and assert severity, goal scope, deadlines, and universal factors exist in `memory.extra_data`.
+  - Frontend: add Playwright assertion that SSE response payload includes `memoryPreview` JSON snippet summarizing severity + task priority so QA can spot regressions.
+  - [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 510-540]
 
 ---
 
@@ -1191,6 +1275,30 @@ def _detect_memory_type(message: str) -> MemoryType:
 - LLM-based classification (GPT-4o-mini)
 - Context-aware detection
 - User-specific patterns
+
+### Comprehensive Memory Hierarchy (Emotions → Projects → Tasks)
+
+- **Emotion Severity Ladder:** Use Story 2.2's `emotion.intensity` field and map values to `mild_annoyance` (<0.4), `persistent_stressor` (0.4–0.7), or `compounding_event` (≥0.7). Persist `dominant`, `scores`, `context`, and `triggers` so we can distinguish quick annoyances from long-term problems when Eliza responds.
+  - [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 465-489; docs/tech-spec-epic-2.md lines 217-219]
+- **Project Scope:** When a message references goals with longer timelines (semester, year, multi-milestone), flag `project.goal_scope = "big_goal"`; otherwise use `small_goal`. Aligns with Epic guidance on breaking large ambitions into actionable quests.
+  - [Source: docs/epics.md lines 660-706]
+- **Task Metadata:** Every task memory must include `task_priority`, `task_deadline`, `task_difficulty`, and `universal_factors` weights that approximate Story 2.2's productivity structure so we understand why a task matters.
+  - `universal_factors` should highlight how the task advances core life categories (learning, discipline, health, craft, connection).
+  - [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 497-540; docs/epic-2/VERTICAL-SLICE-APPROACH-NOTES.md line 31]
+- **Metadata Schema Stub:** Inline helper should emit a normalized payload:
+  ```json
+  {
+    "emotion": {"severity": "persistent_stressor", "intensity": 0.68, "dominant": "fear"},
+    "project": {"goal_id": "...", "goal_scope": "big_goal", "target_date": "2025-12-15"},
+    "task": {
+      "task_priority": "high",
+      "task_deadline": "2025-11-20T21:00:00Z",
+      "task_difficulty": "medium",
+      "universal_factors": {"learning": 0.6, "discipline": 0.25, "connection": 0.15}
+    }
+  }
+  ```
+- **Why now?** Capturing full hierarchy in Story 2.5 ensures Story 2.2 (memory service) and Epic 3 (goal decomposition) inherit consistent metadata from day one rather than backfilling once UI is live.
 
 ### SSE Streaming Implementation
 
@@ -1370,9 +1478,12 @@ Story 2.6 (Emotion Detection) ← Integrate emotions
 
 **Source Documents:**
 - **Epic 2 Tech Spec**: `docs/tech-spec-epic-2.md` (Chat flow, SSE streaming)
+- **Epics File**: `docs/epics.md` (lines 468-515 for Story 2.5 scope, lines 660-706 for goal decomposition/big-goal guidance)
 - **Story 2.1**: `docs/stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md` (Database foundation)
+- **Story 2.2**: `docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md` (Comprehensive memory metadata + universal factors)
 - **Story 1.3**: `docs/stories/1-3-integrate-clerk-authentication-system.md` (Auth patterns)
 - **How Eliza Should Respond**: `docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md` (Agent behavior)
+- **Vertical Slice Notes**: `docs/epic-2/VERTICAL-SLICE-APPROACH-NOTES.md` (lines 29-37: universal factors deferred to 2.5 learnings)
 
 **Technical Documentation:**
 - **OpenAI Streaming**: https://platform.openai.com/docs/api-reference/streaming
@@ -1393,6 +1504,7 @@ Story 2.6 (Emotion Detection) ← Integrate emotions
 - [ ] ✅ Mobile responsive design (works on <768px screens)
 - [ ] ✅ Keyboard navigation fully functional
 - [ ] ✅ Screen reader announces new messages
+- [ ] ✅ Memory hierarchy metadata stored (emotion severity, goal scope, task priority/deadline, universal factors)
 - [ ] ✅ All test scenarios passing (venting, goal, recall, task)
 - [ ] ✅ Integration tests passing (backend + frontend)
 - [ ] ✅ E2E tests passing (Playwright)
@@ -1401,7 +1513,7 @@ Story 2.6 (Emotion Detection) ← Integrate emotions
 - [ ] ✅ Learnings documented for Story 2.2
 - [ ] ✅ No secrets committed (API keys in .env only)
 - [ ] ✅ Code follows async patterns (backend) and React best practices (frontend)
-- [ ] ✅ Story status updated to `done` in `docs/sprint-status.yaml`
+- [ ] ✅ Story status updated to `ready-for-dev` in `docs/sprint-status.yaml`
 
 ---
 
@@ -1458,9 +1570,17 @@ Story 2.3 will add:
 
 ---
 
-**Last Updated:** 2025-11-12 (Initial draft - vertical slice approach)
-**Story Status:** drafted
-**Next Steps:** Run `story-context` workflow to generate technical context XML → mark `ready-for-dev`
+**Last Updated:** 2025-11-12 (Auto-improved draft + context ready)
+**Story Status:** ready-for-dev
+**Next Steps:** Begin implementation using this story + context XML, capture telemetry for AC9 metadata, and feed learnings into Story 2.2 planning
+
+## Dev Agent Record
+
+### Context Reference
+- `docs/stories/2-5-companion-chat-ui-with-essential-memory.context.xml` — Generated 2025-11-12T16:00:00Z (Story Context workflow)
+
+### Status Notes
+- Story auto-improved per create-story workflow, validation report closed, and sprint-status updated to `ready-for-dev`.
 
 ## Vertical Slice Success Criteria
 
