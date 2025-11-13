@@ -5,12 +5,12 @@
  * Handles empty state and loading indicator.
  */
 
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { Message } from './Message';
-import { LoadingIndicator } from './LoadingIndicator';
-import { Message as MessageType } from '@/lib/hooks/useChat';
+import { useEffect, useRef } from "react";
+import { Message } from "./Message";
+import { LoadingIndicator } from "./LoadingIndicator";
+import { Message as MessageType } from "@/lib/hooks/useChat";
 
 interface MessageListProps {
   messages: MessageType[];
@@ -28,7 +28,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   return (
@@ -47,8 +47,8 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
             Chat with Eliza
           </h2>
           <p className="text-gray-600 max-w-md">
-            Hi! I'm Eliza, your AI companion. I'm here to help you transform
-            your goals into reality. What's on your mind?
+            Hi! I&apos;m Eliza, your AI companion. I&apos;m here to help you
+            transform your goals into reality. What&apos;s on your mind?
           </p>
         </div>
       )}
