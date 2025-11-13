@@ -32,11 +32,13 @@ cd packages/backend && poetry install
 ### Backend Setup
 
 1. Copy the example environment file:
+
 ```bash
 cp packages/backend/.env.example packages/backend/.env
 ```
 
 2. Fill in your environment variables:
+
 ```env
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_anon_key
@@ -47,11 +49,13 @@ CLERK_SECRET_KEY=your_clerk_secret
 ### Frontend Setup
 
 1. Copy the example environment file:
+
 ```bash
 cp packages/frontend/.env.example packages/frontend/.env.local
 ```
 
 2. Fill in your environment variables:
+
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -78,6 +82,7 @@ pnpm dev
 ```
 
 This starts:
+
 - Frontend on http://localhost:3000
 - Backend API on http://localhost:8000
 
@@ -100,6 +105,7 @@ pnpm dev:backend
 ## Development Workflow
 
 See the [Developer Guide](/dev/developer-guide) for:
+
 - Story development workflow
 - Code quality standards
 - Testing guidelines
@@ -108,16 +114,20 @@ See the [Developer Guide](/dev/developer-guide) for:
 ## Troubleshooting
 
 ### Port Already in Use
+
 Change ports in:
+
 - Frontend: `packages/frontend/package.json` scripts
 - Backend: `packages/backend/main.py` uvicorn configuration
 
 ### Poetry Not Installed
+
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
 ### Database Connection Errors
+
 - Verify Supabase URL and keys
 - Ensure Supabase project is active
 - Check migrations ran successfully
@@ -127,4 +137,3 @@ curl -sSL https://install.python-poetry.org | python3 -
 - Read the [Developer Guide](/dev/developer-guide)
 - Check the [Quick Reference](/dev/quick-reference) for commands
 - Review [Contributing Guidelines](/dev/contributing)
-
