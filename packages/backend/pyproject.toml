@@ -26,7 +26,8 @@ pgvector = ">=0.2.4"
 transformers = ">=4.36.0"
 torch = ">=2.1.0"
 svix = "1.45.0"
-pyjwt = "2.10.1"
+pyjwt = { version = "2.10.1", extras = ["crypto"] }
+cryptography = ">=42.0.0"
 openai = "^2.7.2"
 
 [tool.poetry.group.dev.dependencies]

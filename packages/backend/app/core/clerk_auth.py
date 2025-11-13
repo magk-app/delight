@@ -132,6 +132,7 @@ async def get_current_user(
             # - Token expiration (exp claim)
             # - Token not-before time (nbf claim) if present
             # - Token issued-at time (iat claim) if present
+            # leeway: Allow 30 seconds clock skew between Clerk and backend
             payload = jwt.decode(
                 token,
                 signing_key.key,
@@ -142,6 +143,7 @@ async def get_current_user(
                     "verify_iat": True,  # Verify issued-at time
                     "verify_nbf": True,  # Verify not-before time
                 },
+                leeway=30,  # 30 seconds leeway for clock skew
             )
             logger.debug("Production JWT verification successful")
 
@@ -168,6 +170,13 @@ async def get_current_user(
             detail="Token expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    except jwt.ImmatureSignatureError:
+        logger.warning("JWT token not yet valid (nbf claim)")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token not yet valid",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid JWT token: {type(e).__name__}")
         raise HTTPException(
@@ -188,9 +197,27 @@ async def get_current_user(
     user = result.scalar_one_or_none()
 
     if not user:
-        # Return 401 (not 404) to prevent user enumeration
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found in database"
+        # Auto-create user if JWT is valid but user doesn't exist
+        # This handles edge cases where webhooks might miss events
+        # or during development when webhooks aren't configured
+        email = payload.get("email") or payload.get("primary_email_address_id")
+        display_name = payload.get("name") or payload.get("username")
+        
+        logger.info(
+            f"Auto-creating user from JWT: {clerk_user_id[:8]}... "
+            f"(email={email}, display_name={display_name})"
         )
+        
+        user = User(
+            clerk_user_id=clerk_user_id,
+            email=email,
+            display_name=display_name,
+            timezone="UTC",  # Default timezone
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+        logger.info(f"User auto-created successfully: {user.id}")
 
     return user
