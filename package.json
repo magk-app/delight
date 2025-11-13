@@ -18,9 +18,9 @@
     "test:backend": "cd packages/backend && poetry run pytest",
     "test:e2e": "pnpm --filter frontend test:e2e",
     "test:e2e:ui": "pnpm --filter frontend test:e2e:ui",
-    "docs:dev": "cd mintlify && mintlify dev",
-    "docs:lint": "cd mintlify && mintlify lint",
-    "docs:deploy": "cd mintlify && mintlify deploy"
+    "docs:dev": "cd mintlify && mint dev",
+    "docs:lint": "cd mintlify && mint lint",
+    "docs:deploy": "cd mintlify && mint deploy"
   },
   "dependencies": {
     "mintlify": "^3.0.0"
