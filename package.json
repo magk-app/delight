@@ -17,7 +17,13 @@
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd packages/backend && poetry run pytest",
     "test:e2e": "pnpm --filter frontend test:e2e",
-    "test:e2e:ui": "pnpm --filter frontend test:e2e:ui"
+    "test:e2e:ui": "pnpm --filter frontend test:e2e:ui",
+    "docs:dev": "mintlify dev --config mintlify/mint.json",
+    "docs:lint": "mintlify lint --config mintlify/mint.json",
+    "docs:deploy": "mintlify deploy --config mintlify/mint.json"
+  },
+  "dependencies": {
+    "mintlify": "^3.0.0"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
