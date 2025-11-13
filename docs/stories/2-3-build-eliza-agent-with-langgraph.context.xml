@@ -1,0 +1,627 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/2-3-build-eliza-agent-with-langgraph" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.3</storyId>
+    <title>Build Eliza Agent with LangGraph</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-3-build-eliza-agent-with-langgraph.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a stateful LangGraph agent for the Eliza companion</iWant>
+    <soThat>conversations maintain state and can execute multi-step reasoning with memory-aware, empathetic responses</soThat>
+    <tasks>
+### Task 1: Set Up LangGraph Dependencies (AC: #1, #7)
+- [x] 1.1 Install LangGraph and LangChain dependencies (already installed)
+- [ ] 1.2 Verify imports work
+- [ ] 1.3 Add OPENAI_API_KEY to .env.example if not already present
+- [ ] 1.4 Verify API key loaded in app/core/config.py
+
+### Task 2: Define ElizaState Schema (AC: #1)
+- [ ] 2.1 Create packages/backend/app/agents/state.py
+- [ ] 2.2 Define ElizaState TypedDict with all required fields
+- [ ] 2.3 Add type hints and docstrings
+- [ ] 2.4 Import in app/agents/__init__.py
+
+### Task 3: Create System Prompt with Empathy Guidelines (AC: #3)
+- [ ] 3.1 Create packages/backend/app/agents/prompts.py
+- [ ] 3.2 Define ELIZA_SYSTEM_PROMPT constant with empathy techniques
+- [ ] 3.3 Add prompt templates for different scenarios (optional)
+- [ ] 3.4 Document prompt versioning strategy
+
+### Task 4: Implement receive_input Node (AC: #1)
+- [ ] 4.1 Create packages/backend/app/agents/eliza_agent.py
+- [ ] 4.2 Define receive_input(state: ElizaState) -> ElizaState function
+- [ ] 4.3 Parse user message from last HumanMessage
+- [ ] 4.4 Update state with user context
+- [ ] 4.5 Extract keywords for project tier querying
+- [ ] 4.6 Estimate energy level (MVP heuristic)
+- [ ] 4.7 Add logging
+- [ ] 4.8 Return updated state
+
+### Task 5: Implement recall_context Node (AC: #2)
+- [ ] 5.1 Define recall_context(state: ElizaState) -> ElizaState function
+- [ ] 5.2 Always query personal tier (top 5)
+- [ ] 5.3 Conditionally query project tier (if goal keywords)
+- [ ] 5.4 Always query task tier for recent context
+- [ ] 5.5 Extract current stressors from personal memories
+- [ ] 5.6 Update state with retrieved_memories and current_stressors
+- [ ] 5.7 Add logging
+- [ ] 5.8 Return updated state
+
+### Task 6: Implement reason Node (AC: #3, #4)
+- [ ] 6.1 Define reason(state: ElizaState) -> ElizaState function
+- [ ] 6.2 Build LLM input messages
+- [ ] 6.3 Initialize ChatOpenAI with GPT-4o-mini
+- [ ] 6.4 Invoke LLM (non-streaming for MVP, streaming in Story 2.4)
+- [ ] 6.5 Append AI response to state["messages"]
+- [ ] 6.6 Add logging
+- [ ] 6.7 Return updated state
+
+### Task 7: Implement respond Node (AC: #5)
+- [ ] 7.1 Define respond(state: ElizaState) -> ElizaState function
+- [ ] 7.2 For MVP: pass through state (response already in messages)
+- [ ] 7.3 Add logging
+- [ ] 7.4 (Future) Add response validation, toxicity filtering
+
+### Task 8: Implement store_memory Node (AC: #6)
+- [ ] 8.1 Define store_memory(state: ElizaState) -> ElizaState function
+- [ ] 8.2 Extract last user message and AI response
+- [ ] 8.3 Format exchange for storage
+- [ ] 8.4 Store as task memory using MemoryService
+- [ ] 8.5 Add logging
+- [ ] 8.6 Return state
+
+### Task 9: Build LangGraph State Machine (AC: #1)
+- [ ] 9.1 Create ElizaAgent class
+- [ ] 9.2 Initialize with MemoryService dependency
+- [ ] 9.3 Define build_graph() method
+- [ ] 9.4 Create chat() convenience method
+
+### Task 10: Testing and Verification (AC: All)
+- [ ] 10.1 Create packages/backend/tests/test_eliza_agent.py
+- [ ] 10.2 Test AC1: Verify graph structure
+- [ ] 10.3 Test AC2: Memory retrieval by tier
+- [ ] 10.4 Test AC3: System prompt content
+- [ ] 10.5 Test AC4: Empathetic responses (integration test)
+- [ ] 10.6 Test AC5: Conversation state maintenance
+- [ ] 10.7 Test AC6: Memory storage after conversation
+- [ ] 10.8 Test AC7: GPT-4o-mini configuration
+- [ ] 10.9 Test AC8: Code structure and quality
+
+### Task 11: LangGraph Studio Integration (AC: #8)
+- [ ] 11.1 Create packages/backend/langgraph.json configuration
+- [ ] 11.2 Install LangGraph CLI
+- [ ] 11.3 Test LangGraph Studio
+- [ ] 11.4 Document Studio usage in docs/epic-2/LANGGRAPH-STUDIO-SETUP.md
+- [ ] 11.5 Add Studio workflow to development process
+
+### Task 12: Documentation (AC: All)
+- [ ] 12.1 Add comprehensive docstrings to all functions
+- [ ] 12.2 Create docs/epic-2/ELIZA-AGENT-GUIDE.md
+- [ ] 12.3 Update docs/SETUP.md with LangGraph setup
+- [ ] 12.4 Add example conversations to documentation
+- [ ] 12.5 Document cost metrics (GPT-4o-mini usage estimates)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+### AC1: LangGraph State Machine Defined with 5 Nodes
+- State machine is a LangGraph StateGraph with typed state containing:
+  - messages: List[BaseMessage] (conversation history)
+  - user_id: str (user identifier)
+  - user_context: Dict[str, Any] (user preferences, timezone, custom hours)
+  - retrieved_memories: List[Memory] (memories from recall_context node)
+  - emotional_state: Dict[str, float] (from Story 2.6, optional for MVP)
+  - current_stressors: List[Dict] (active stressors from personal memory)
+  - energy_level: str ("high", "medium", "low" heuristic for MVP)
+- State machine has 5 nodes: receive_input, recall_context, reason, respond, store_memory
+- Edges connect nodes in sequence: receive_input → recall_context → reason → respond → store_memory → END
+
+### AC2: Memory Retrieval Works Strategically by Tier
+- Personal tier always queried (top 5 memories)
+- Project tier conditionally queried (if message contains goal-related keywords: "goal", "mission", "plan", "project")
+- Task tier always queried for recent context (top 3, sorted by created_at)
+- Retrieved memories added to state["retrieved_memories"]
+- Current stressors extracted (filter personal memories where metadata.stressor == true)
+
+### AC3: System Prompt Emphasizes Empathy and Emotional Intelligence
+- System prompt includes:
+  1. Identity & Role: "You are Eliza, an emotionally intelligent AI companion..."
+  2. Emotional Intelligence Techniques:
+     - Control Triage: Distinguish controllable vs uncontrollable stressors
+     - Energy-Based Push: Adapt intensity based on user's emotional state
+     - Circuit Breaker: Permission to suggest not working when overwhelmed
+  3. Response Guidelines: Validate feelings, ask clarifying questions, reference memories, suggest micro-actions
+  4. Memory Usage: Use retrieved memories to show continuity and context
+
+### AC4: LLM Generates Empathetic Responses Using Memory Context
+- Scenario 1 (Overwhelm): Suggests circuit breaker, not productivity push
+- Scenario 2 (Past Stressor): References stressor from personal memory
+- Scenario 3 (Goal Discussion): References graduation goal from project memory
+- Response demonstrates empathy and memory awareness
+
+### AC5: Conversation State Maintained Across Messages
+- Conversation history includes last 10 messages (user + assistant)
+- Retrieved memories persist across turns
+- User context loaded once per session
+- Sequential messages maintain continuity
+
+### AC6: Conversation Exchanges Stored as Task Memories
+- After each conversation turn, exchange saved to task memory
+- Memory content: "User: {user_message}\n\nEliza: {agent_response}"
+- Metadata includes: conversation_id, exchange_type, timestamp
+- Memory type: TASK (30-day retention)
+
+### AC7: Agent Uses GPT-4o-mini for Cost Efficiency
+- LLM model: "gpt-4o-mini"
+- Temperature: 0.7 (balance creativity and consistency)
+- Streaming: True (for Story 2.4 SSE streaming)
+- Cost: ~$0.004/user/day (10K tokens in + 5K tokens out)
+
+### AC8: Agent Code is Testable and Well-Structured
+- File structure: app/agents/{eliza_agent.py, prompts.py, state.py}
+- All nodes are async functions
+- Type hints for all parameters and returns
+- Comprehensive docstrings with usage examples
+- Logging at key decision points
+- Error handling with graceful degradation
+- Each node testable independently
+- Mock MemoryService and ChatOpenAI for unit tests
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- Epic 2 Technical Specification -->
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic Technical Specification: Companion & Memory System</title>
+        <section>Agent Architecture (lines 95-119, 721-734)</section>
+        <snippet>LangGraph state machine with 5 nodes: receive_input, recall_context, reason, respond, store_memory. Uses GPT-4o-mini for cost efficiency ($0.004/user/day). Implements 4 emotional intelligence principles: Stressor Log, Control Triage, Energy-Based Push, Circuit Breaker.</snippet>
+      </doc>
+
+      <!-- Emotional Intelligence Design -->
+      <doc>
+        <path>docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md</path>
+        <title>How Eliza Should Respond (Case Study)</title>
+        <section>4 Core Principles</section>
+        <snippet>Principle 1 (Stressor Log): Store distinct stressors in personal memory with emotion metadata. Principle 2 (Control Triage): Distinguish controllable vs uncontrollable stressors. Principle 3 (Energy-Based Push): Adapt intensity based on user energy level. Principle 4 (Circuit Breaker): Suggest not working when overwhelmed.</snippet>
+      </doc>
+
+      <!-- Implementation Strategy -->
+      <doc>
+        <path>docs/epic-2/IMPLEMENTATION-STRATEGY.md</path>
+        <title>Strategic Implementation Plan</title>
+        <section>Phase 2: LangGraph Agent Development</section>
+        <snippet>Start simple: Build agent with hardcoded context first. Test LangGraph structure independently using LangGraph Studio Web. Add memory integration gradually. Use mock memory service for testing before connecting real MemoryService.</snippet>
+      </doc>
+
+      <!-- LangGraph Studio Setup -->
+      <doc>
+        <path>docs/epic-2/LANGGRAPH-STUDIO-SETUP.md</path>
+        <title>LangGraph Studio Web - Quick Setup Guide</title>
+        <section>Setup and Testing</section>
+        <snippet>Install langgraph-cli, create langgraph.json config, export graph for Studio, run langgraph dev (opens http://localhost:8123). Visual debugging: See nodes/edges, inspect state at each step, test with different inputs, monitor token usage.</snippet>
+      </doc>
+
+      <!-- Epic Definition -->
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Story 2.3 Definition</title>
+        <section>Lines 386-424</section>
+        <snippet>Build stateful LangGraph agent with 5 nodes. Agent maintains conversation state across messages. Strategic memory querying: always personal, conditionally project, always task. Uses GPT-4o-mini ($0.15/$0.60 per 1M tokens). State includes: messages, user_context, retrieved_memories, emotional_state.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- Memory Models -->
+      <artifact>
+        <path>packages/backend/app/models/memory.py</path>
+        <kind>model</kind>
+        <symbol>Memory, MemoryType</symbol>
+        <lines>17-202</lines>
+        <reason>3-tier memory model (PERSONAL, PROJECT, TASK) with pgvector embeddings. Required for recall_context and store_memory nodes. Note: extra_data attribute maps to metadata column in DB.</reason>
+      </artifact>
+
+      <!-- Existing Simple Agent -->
+      <artifact>
+        <path>packages/backend/app/agents/simple_eliza.py</path>
+        <kind>agent</kind>
+        <symbol>SimpleElizaAgent</symbol>
+        <lines>1-148</lines>
+        <reason>Simple streaming agent without LangGraph (Story 2.5 vertical slice). Reference for system prompt structure and OpenAI streaming patterns. Story 2.3 will replace this with full LangGraph-based agent.</reason>
+      </artifact>
+
+      <!-- Configuration -->
+      <artifact>
+        <path>packages/backend/app/core/config.py</path>
+        <kind>config</kind>
+        <symbol>Settings</symbol>
+        <lines>11-53</lines>
+        <reason>Application settings with OPENAI_API_KEY. Verify API key is loaded and available for ChatOpenAI initialization.</reason>
+      </artifact>
+
+      <!-- Test Fixtures -->
+      <artifact>
+        <path>packages/backend/tests/conftest.py</path>
+        <kind>test_fixture</kind>
+        <symbol>db_session, client, async_engine</symbol>
+        <lines>1-354</lines>
+        <reason>Shared test fixtures for database session, test client, and async engine. Use db_session for integration tests. Tests use separate test database (TEST_DATABASE_URL), never production.</reason>
+      </artifact>
+
+      <!-- Integration Test Patterns -->
+      <artifact>
+        <path>packages/backend/tests/integration/test_companion_chat.py</path>
+        <kind>test</kind>
+        <symbol>test_post_chat_creates_conversation, test_venting_creates_personal_memory</symbol>
+        <lines>1-378</lines>
+        <reason>Integration test patterns for chat API with memory creation. Shows how to test async chat flows, memory retrieval, and metadata verification. Useful patterns for Story 2.3 agent tests.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <python>
+        <package name="langchain" version=">=0.1.0" />
+        <package name="langgraph" version=">=0.0.20" />
+        <package name="langchain-postgres" version=">=0.0.3" />
+        <package name="openai" version="^2.7.2" />
+        <package name="pgvector" version=">=0.2.4" />
+        <package name="sqlalchemy" version=">=2.0.25" extras="asyncio" />
+        <package name="pytest" version=">=7.4.0" group="dev" />
+        <package name="pytest-asyncio" version=">=0.23.0" group="dev" />
+        <package name="httpx" version=">=0.26.0" group="dev" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+### Critical Dependencies
+- **Story 2.2 (Memory Service) is DRAFTED but NOT complete**: This story assumes MemoryService exists with methods:
+  - add_memory(user_id, memory_type, content, metadata)
+  - query_memories(user_id, memory_type, query_text, limit, sort_by)
+- **Mitigation**: Implement simplified memory operations inline or wait for Story 2.2 completion
+- **Alternative**: Follow vertical slice approach (Story 2.5 first) per tech spec revision
+
+### Async Patterns Required
+- All nodes MUST be async functions (async def node_name(state: ElizaState) -> ElizaState)
+- Database operations use async SQLAlchemy (await db.execute(...))
+- LLM calls use await llm.ainvoke(messages)
+- Memory service calls use await memory_service.query_memories(...)
+
+### Type Hints Required
+- All functions must have type hints for parameters and returns
+- Use TypedDict for ElizaState (from typing import TypedDict)
+- Memory model uses MemoryType enum (from app.models.memory import MemoryType)
+
+### Testing Standards
+- Unit tests: 80%+ coverage for agent logic
+- Mock MemoryService and ChatOpenAI for unit tests
+- Integration tests with real DB (optional but recommended)
+- Test each acceptance criterion with specific test function
+
+### Cost Constraints
+- Use GPT-4o-mini (NOT GPT-4o) for cost efficiency
+- Target: $0.004/user/day (~10K tokens in + 5K tokens out)
+- Limit conversation history to last 10 messages in context
+- Monitor token usage in logs
+
+### Security Constraints
+- OPENAI_API_KEY stored in environment variables only (never in code or DB)
+- User can only access their own memories (enforce user_id filtering)
+- No secrets committed to repository (.env in .gitignore)
+
+### Performance Constraints
+- Memory query target: < 100ms p95 (HNSW index already optimized in Story 2.1)
+- LLM first token target: < 1s p95 (streaming in Story 2.4)
+- Limit memory retrieval: max 5 personal + 3 project + 3 task = 11 memories per conversation
+  </constraints>
+
+  <interfaces>
+### MemoryService Interface (Dependency from Story 2.2)
+```python
+class MemoryService:
+    async def add_memory(
+        self,
+        user_id: str,
+        memory_type: MemoryType,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Memory:
+        """Add memory with optional embedding generation."""
+        pass
+
+    async def query_memories(
+        self,
+        user_id: str,
+        memory_type: Optional[MemoryType] = None,
+        query_text: Optional[str] = None,
+        limit: int = 10,
+        sort_by: str = "similarity"
+    ) -> List[Memory]:
+        """Query memories by type, semantic similarity, or recency."""
+        pass
+```
+
+### LangGraph StateGraph Interface
+```python
+from langgraph.graph import StateGraph, END
+from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
+
+class ElizaState(TypedDict):
+    messages: List[BaseMessage]
+    user_id: str
+    user_context: Dict[str, Any]
+    retrieved_memories: List[Memory]
+    emotional_state: Dict[str, float]
+    current_stressors: List[Dict]
+    energy_level: str
+
+graph = StateGraph(ElizaState)
+graph.add_node("receive_input", receive_input)
+graph.add_node("recall_context", recall_context)
+graph.add_node("reason", reason)
+graph.add_node("respond", respond)
+graph.add_node("store_memory", store_memory)
+graph.add_edge("receive_input", "recall_context")
+graph.add_edge("recall_context", "reason")
+graph.add_edge("reason", "respond")
+graph.add_edge("respond", "store_memory")
+graph.add_edge("store_memory", END)
+graph.set_entry_point("receive_input")
+compiled_graph = graph.compile()
+```
+
+### ChatOpenAI Interface
+```python
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-4o-mini",
+    temperature=0.7,
+    streaming=True,  # For Story 2.4
+    openai_api_key=settings.OPENAI_API_KEY
+)
+
+# Non-streaming (MVP)
+response = await llm.ainvoke(messages)
+
+# Streaming (Story 2.4)
+async for chunk in llm.astream(messages):
+    yield chunk.content
+```
+
+### ElizaAgent Public Interface
+```python
+class ElizaAgent:
+    def __init__(self, memory_service: MemoryService):
+        self.memory_service = memory_service
+        self.graph = self.build_graph()
+
+    def build_graph(self) -> StateGraph:
+        """Build and return compiled LangGraph state machine."""
+        pass
+
+    async def chat(
+        self,
+        user_id: str,
+        message: str,
+        conversation_id: Optional[str] = None
+    ) -> ElizaState:
+        """
+        Process user message through agent.
+        Returns final state with AI response in messages[-1].
+        """
+        pass
+```
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing Framework: pytest with pytest-asyncio for async test support
+
+Test Organization:
+- Unit tests: packages/backend/tests/unit/test_eliza_agent.py
+- Integration tests: packages/backend/tests/integration/test_eliza_agent_integration.py
+- Test fixtures in conftest.py (db_session, client, test_user)
+
+Coverage Target: 80%+ for agent logic (nodes, graph building, chat method)
+
+Mocking Strategy:
+- Mock MemoryService for unit tests (return hardcoded memories)
+- Mock ChatOpenAI for LLM tests (return hardcoded responses)
+- Use real database for integration tests (test database, auto-rollback)
+
+Async Patterns:
+- All test functions use @pytest.mark.asyncio decorator
+- Use await for async function calls
+- Use async fixtures with @pytest_asyncio.fixture
+    </standards>
+
+    <locations>
+- packages/backend/tests/unit/test_eliza_agent.py (create new)
+- packages/backend/tests/integration/test_eliza_agent_integration.py (create new)
+- packages/backend/tests/conftest.py (existing fixtures)
+    </locations>
+
+    <ideas>
+### AC1: Graph Structure Tests
+```python
+def test_graph_has_all_nodes():
+    """Verify LangGraph state machine has all 5 nodes."""
+    agent = ElizaAgent(mock_memory_service)
+    graph = agent.build_graph()
+
+    assert "receive_input" in graph.nodes
+    assert "recall_context" in graph.nodes
+    assert "reason" in graph.nodes
+    assert "respond" in graph.nodes
+    assert "store_memory" in graph.nodes
+
+def test_graph_edges_connected():
+    """Verify nodes connected in correct sequence."""
+    agent = ElizaAgent(mock_memory_service)
+    graph = agent.build_graph()
+
+    # Verify edge sequence
+    assert graph.get_edge("receive_input", "recall_context") is not None
+    assert graph.get_edge("recall_context", "reason") is not None
+    assert graph.get_edge("reason", "respond") is not None
+    assert graph.get_edge("respond", "store_memory") is not None
+```
+
+### AC2: Memory Retrieval Tests
+```python
+async def test_memory_retrieval_strategic():
+    """Verify personal tier always queried, project tier conditional."""
+    # Mock memory service with test data
+    mock_service = MockMemoryService(
+        personal_memories=[Memory(content="I prefer mornings", memory_type="personal")],
+        project_memories=[Memory(content="Goal: Graduate early", memory_type="project")],
+        task_memories=[Memory(content="Discussed time management", memory_type="task")]
+    )
+
+    agent = ElizaAgent(mock_service)
+
+    # Test with goal keyword
+    state = await agent.chat(user_id="test", message="I want to work on my goal")
+
+    # Verify personal tier always retrieved
+    assert any(m.memory_type == MemoryType.PERSONAL for m in state["retrieved_memories"])
+
+    # Verify project tier retrieved (goal keyword present)
+    assert any(m.memory_type == MemoryType.PROJECT for m in state["retrieved_memories"])
+
+    # Verify task tier retrieved
+    assert any(m.memory_type == MemoryType.TASK for m in state["retrieved_memories"])
+```
+
+### AC3: System Prompt Tests
+```python
+def test_system_prompt_has_empathy():
+    """Verify system prompt includes emotional intelligence techniques."""
+    from app.agents.prompts import ELIZA_SYSTEM_PROMPT
+
+    assert "emotionally intelligent" in ELIZA_SYSTEM_PROMPT
+    assert "controllable" in ELIZA_SYSTEM_PROMPT.lower() or "control triage" in ELIZA_SYSTEM_PROMPT.lower()
+    assert "circuit breaker" in ELIZA_SYSTEM_PROMPT.lower()
+    assert "validate" in ELIZA_SYSTEM_PROMPT.lower()
+```
+
+### AC4: Empathetic Response Tests
+```python
+async def test_circuit_breaker_response():
+    """Verify overwhelm triggers circuit breaker, not productivity push."""
+    # Mock LLM to return circuit breaker response
+    mock_llm = MockChatOpenAI(response="Let's try a 20-minute walk first...")
+
+    agent = ElizaAgent(mock_memory_service)
+    agent.llm = mock_llm
+
+    # User expresses overwhelm
+    state = await agent.chat(
+        user_id="test",
+        message="I have 5 deadlines this week and I'm so stressed"
+    )
+
+    response = state["messages"][-1].content
+
+    # Should suggest circuit breaker, not task push
+    assert "walk" in response.lower() or "break" in response.lower() or "rest" in response.lower()
+    assert "let's break down all 5" not in response.lower()  # NOT pushy
+
+async def test_memory_recall_response():
+    """Verify agent references past stressor from memory."""
+    # Mock memory service with past stressor
+    mock_service = MockMemoryService(
+        personal_memories=[
+            Memory(
+                content="Stressed about class registration",
+                memory_type="personal",
+                extra_data={"stressor": True, "emotion": "fear"}
+            )
+        ]
+    )
+
+    agent = ElizaAgent(mock_service)
+
+    # User mentions anxiety again
+    state = await agent.chat(user_id="test", message="I'm feeling anxious again")
+
+    response = state["messages"][-1].content
+
+    # Should reference past stressor
+    assert "class registration" in response.lower() or "remember" in response.lower()
+```
+
+### AC5: Conversation State Tests
+```python
+async def test_conversation_state_persists():
+    """Verify context maintained across sequential messages."""
+    agent = ElizaAgent(mock_memory_service)
+
+    # Message 1
+    state1 = await agent.chat(user_id="test", message="I prefer working in the morning")
+
+    # Message 2 (references message 1)
+    state2 = await agent.chat(user_id="test", message="Can you suggest a mission for me?")
+
+    response = state2["messages"][-1].content
+
+    # Response should reference morning preference
+    assert "morning" in response.lower()
+```
+
+### AC6: Memory Storage Tests
+```python
+async def test_conversation_stored_as_task_memory(db_session):
+    """Verify conversation exchange saved to task memory."""
+    memory_service = MemoryService(db_session)
+    agent = ElizaAgent(memory_service)
+
+    # Send message
+    await agent.chat(user_id="test_user_id", message="Hello Eliza")
+
+    # Query task memories
+    memories = await memory_service.query_memories(
+        user_id="test_user_id",
+        memory_type=MemoryType.TASK,
+        limit=1
+    )
+
+    assert len(memories) > 0
+    assert "User:" in memories[0].content
+    assert "Eliza:" in memories[0].content
+```
+
+### AC7: Cost Configuration Tests
+```python
+def test_llm_uses_gpt4o_mini():
+    """Verify agent uses GPT-4o-mini for cost efficiency."""
+    agent = ElizaAgent(mock_memory_service)
+
+    assert agent.llm.model == "gpt-4o-mini"
+    assert agent.llm.temperature == 0.7
+    assert agent.llm.streaming == True
+```
+
+### AC8: Code Quality Tests
+```python
+def test_all_nodes_are_async():
+    """Verify all node functions are async."""
+    import inspect
+
+    agent = ElizaAgent(mock_memory_service)
+
+    assert inspect.iscoroutinefunction(agent.receive_input)
+    assert inspect.iscoroutinefunction(agent.recall_context)
+    assert inspect.iscoroutinefunction(agent.reason)
+    assert inspect.iscoroutinefunction(agent.respond)
+    assert inspect.iscoroutinefunction(agent.store_memory)
+```
+    </ideas>
+  </tests>
+</story-context>
