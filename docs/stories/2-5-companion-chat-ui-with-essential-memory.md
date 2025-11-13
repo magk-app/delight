@@ -31,6 +31,7 @@ This is the **critical validation story** for Epic 2. Instead of building memory
 - **Validate the experience** before committing to complex architecture
 
 This approach follows the "make it work, make it right, make it fast" principle:
+
 1. **Story 2.5 (this story)**: Make it work - functional chat with basic memory
 2. **Story 2.2 (refactored)**: Make it right - extract service, add hybrid search
 3. **Story 2.3**: Make it fast - advanced agent features, optimizations
@@ -48,6 +49,7 @@ We implement a vertical slice instead of horizontal layers because:
 - ✅ **Risk Mitigation**: Fail fast on UX issues before building complex architecture
 
 **What This Story Includes (Scope):**
+
 - Chat UI with real-time SSE streaming
 - Simple Eliza agent (basic prompt, no LangGraph yet)
 - Essential memory operations (inline, not extracted service):
@@ -57,6 +59,7 @@ We implement a vertical slice instead of horizontal layers because:
 - All test scenarios working end-to-end
 
 **What This Story Defers (to Story 2.2):**
+
 - ❌ Memory service extraction (keep it inline for now)
 - ❌ Hybrid search (time decay, frequency boost)
 - ❌ Memory pruning worker
@@ -67,6 +70,7 @@ We implement a vertical slice instead of horizontal layers because:
 ### Dependencies
 
 - **Prerequisite Stories:**
+
   - 2.1 (PostgreSQL pgvector and Memory Schema) ✅ Complete
   - 1.3 (Clerk Authentication) ✅ Complete
   - Database tables (`memories`, `conversations`) exist
@@ -74,6 +78,7 @@ We implement a vertical slice instead of horizontal layers because:
   - OpenAI API key configured (`OPENAI_API_KEY`)
 
 - **Epic 2 Context:** This story **validates**:
+
   - Memory storage patterns (what metadata is useful?)
   - Memory retrieval quality (does semantic search work?)
   - User interaction flow (how do users want to chat?)
@@ -89,6 +94,7 @@ We implement a vertical slice instead of horizontal layers because:
 **From Epic 2 Tech Spec (tech-spec-epic-2.md lines 390-458 - Chat Flow section):**
 
 This story implements the basic chat flow:
+
 1. User types message → POST /api/v1/companion/chat
 2. Backend stores user message → conversations table
 3. Backend queries memories → basic vector search (HNSW index)
@@ -101,6 +107,7 @@ This story implements the basic chat flow:
 **From "How Eliza Should Respond" (docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md):**
 
 The chat must support these scenarios:
+
 - **Venting**: "I'm overwhelmed with schoolwork" → store as personal memory
 - **Creating Task**: "I want to work on my goal" → store as project/task memory
 - **Asking Questions**: "What did I say about stress?" → retrieve memories
@@ -117,6 +124,7 @@ The chat must support these scenarios:
 **Given** I am authenticated and viewing `/companion` page
 **When** I type a message and press Enter or click Send
 **Then**:
+
 - Message appears immediately in chat history (optimistic update)
 - Input field clears
 - Loading indicator shows (typing dots animation)
@@ -125,20 +133,23 @@ The chat must support these scenarios:
 - Send button disabled during loading
 
 **Verification Steps:**
+
 ```typescript
 // Playwright test
-await page.goto('/companion');
-await page.fill('[data-testid="chat-input"]', 'Hello Eliza');
+await page.goto("/companion");
+await page.fill('[data-testid="chat-input"]', "Hello Eliza");
 await page.click('[data-testid="send-button"]');
 
 // Message appears
-await expect(page.locator('[data-testid="message-user"]')).toContainText('Hello Eliza');
+await expect(page.locator('[data-testid="message-user"]')).toContainText(
+  "Hello Eliza"
+);
 
 // Loading state
 await expect(page.locator('[data-testid="loading-indicator"]')).toBeVisible();
 
 // Input cleared
-await expect(page.locator('[data-testid="chat-input"]')).toHaveValue('');
+await expect(page.locator('[data-testid="chat-input"]')).toHaveValue("");
 ```
 
 [Source: docs/tech-spec-epic-2.md lines 704-715, docs/epics.md lines 308-310]
@@ -148,6 +159,7 @@ await expect(page.locator('[data-testid="chat-input"]')).toHaveValue('');
 **Given** I sent a message and backend is responding
 **When** tokens stream via SSE
 **Then**:
+
 - Eliza's message appears token-by-token (word-by-word)
 - Smooth scrolling keeps latest token visible
 - Loading indicator hides when first token arrives
@@ -156,13 +168,16 @@ await expect(page.locator('[data-testid="chat-input"]')).toHaveValue('');
 - Connection errors show user-friendly message
 
 **Verification Steps:**
+
 ```typescript
 // Send message
-await page.fill('[data-testid="chat-input"]', 'How are you?');
+await page.fill('[data-testid="chat-input"]', "How are you?");
 await page.click('[data-testid="send-button"]');
 
 // Wait for first token
-await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible({ timeout: 2000 });
+await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible({
+  timeout: 2000,
+});
 
 // Token-by-token display (check message grows)
 const message = page.locator('[data-testid="message-assistant"]').last();
@@ -181,6 +196,7 @@ expect(text2.length).toBeGreaterThan(text1.length); // Message grew
 **Given** I had a conversation with Eliza
 **When** I refresh the page or navigate away and back
 **Then**:
+
 - Full conversation history loads
 - Messages display in chronological order
 - User and assistant messages correctly labeled
@@ -188,9 +204,10 @@ expect(text2.length).toBeGreaterThan(text1.length); // Message grew
 - Conversation continues from same context (conversation_id maintained)
 
 **Verification Steps:**
+
 ```typescript
 // Have conversation
-await page.fill('[data-testid="chat-input"]', 'Remember I like coffee');
+await page.fill('[data-testid="chat-input"]', "Remember I like coffee");
 await page.click('[data-testid="send-button"]');
 await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible();
 
@@ -198,7 +215,9 @@ await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible();
 await page.reload();
 
 // History loads
-await expect(page.locator('[data-testid="message-user"]')).toContainText('Remember I like coffee');
+await expect(page.locator('[data-testid="message-user"]')).toContainText(
+  "Remember I like coffee"
+);
 await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible();
 ```
 
@@ -209,6 +228,7 @@ await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible();
 **Given** I vent about stress or problems
 **When** I send message: "I'm overwhelmed with my schoolwork because I have to catch up"
 **Then**:
+
 - Message stored in `conversations` table
 - Memory created in `memories` table:
   - `memory_type` = "personal" (stressor)
@@ -219,6 +239,7 @@ await expect(page.locator('[data-testid="message-assistant"]')).toBeVisible();
 - Memory retrievable in next conversation
 
 **Verification Steps:**
+
 ```python
 # Backend test
 async def test_venting_creates_personal_memory(client, test_user):
@@ -255,12 +276,14 @@ async def test_venting_creates_personal_memory(client, test_user):
 **Given** I discuss tasks or goals
 **When** I send message: "I want to work on my goal to graduate early"
 **Then**:
+
 - Memory created with `memory_type` = "project"
 - `metadata` includes: `{source: 'conversation', category: 'goal', goal_related: true}`
 - Eliza responds supportively (acknowledges goal)
 - Memory retrievable when discussing goals later
 
 **Verification Steps:**
+
 ```python
 async def test_goal_discussion_creates_project_memory(client, test_user):
     response = await client.post(
@@ -288,6 +311,7 @@ async def test_goal_discussion_creates_project_memory(client, test_user):
 **Given** I had previous conversations stored as memories
 **When** I send a new message related to past topics
 **Then**:
+
 - Backend queries memories via vector similarity search
 - Top 5 relevant memories retrieved (semantic search)
 - Memories included in Eliza's context window
@@ -295,6 +319,7 @@ async def test_goal_discussion_creates_project_memory(client, test_user):
 - Response feels contextual, not generic
 
 **Example Flow (from "How Eliza Should Respond" case study):**
+
 ```
 Message 1: "I'm stressed about class registration"
 → Memory stored: {type: personal, content: "stressed about class registration"}
@@ -307,6 +332,7 @@ Message 2: "I'm feeling overwhelmed"
 [Source: docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md, docs/tech-spec-epic-2.md lines 423-445]
 
 **Verification Steps:**
+
 ```python
 async def test_memory_retrieval_in_conversation(client, test_user, db):
     # First message (creates memory)
@@ -345,6 +371,7 @@ async def test_memory_retrieval_in_conversation(client, test_user, db):
 **Given** I view the chat on mobile device (<768px width)
 **When** I interact with the chat
 **Then**:
+
 - Chat takes full screen (no wasted space)
 - Input field always visible at bottom
 - Messages readable without zooming
@@ -353,11 +380,12 @@ async def test_memory_retrieval_in_conversation(client, test_user, db):
 - Scrolling smooth on touch
 
 **Verification Steps:**
+
 ```typescript
 // Playwright mobile emulation
 await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
 
-await page.goto('/companion');
+await page.goto("/companion");
 
 // Layout fills screen
 const chatContainer = page.locator('[data-testid="chat-container"]');
@@ -367,7 +395,7 @@ await expect(chatContainer).toBeVisible();
 const input = page.locator('[data-testid="chat-input"]');
 await expect(input).toBeVisible();
 await input.click();
-await input.fill('Test message');
+await input.fill("Test message");
 
 // Send button tappable
 const sendButton = page.locator('[data-testid="send-button"]');
@@ -383,6 +411,7 @@ expect(box.height).toBeGreaterThanOrEqual(44);
 **Given** I use keyboard navigation (no mouse)
 **When** I interact with the chat
 **Then**:
+
 - Tab key moves focus through UI elements
 - Enter key sends message from input field
 - Escape key cancels message composition
@@ -391,26 +420,31 @@ expect(box.height).toBeGreaterThanOrEqual(44);
 - Focus indicators visible
 
 **Verification Steps:**
+
 ```typescript
 // Keyboard-only test
-await page.goto('/companion');
+await page.goto("/companion");
 
 // Tab to input
-await page.keyboard.press('Tab');
-await page.keyboard.press('Tab'); // Navigate through header
-const focusedElement = await page.evaluate(() => document.activeElement.getAttribute('data-testid'));
-expect(focusedElement).toBe('chat-input');
+await page.keyboard.press("Tab");
+await page.keyboard.press("Tab"); // Navigate through header
+const focusedElement = await page.evaluate(() =>
+  document.activeElement.getAttribute("data-testid")
+);
+expect(focusedElement).toBe("chat-input");
 
 // Type and send with Enter
-await page.keyboard.type('Hello Eliza');
-await page.keyboard.press('Enter');
+await page.keyboard.type("Hello Eliza");
+await page.keyboard.press("Enter");
 
 // Message sent
-await expect(page.locator('[data-testid="message-user"]')).toContainText('Hello Eliza');
+await expect(page.locator('[data-testid="message-user"]')).toContainText(
+  "Hello Eliza"
+);
 
 // ARIA labels present
 const input = page.locator('[data-testid="chat-input"]');
-await expect(input).toHaveAttribute('aria-label');
+await expect(input).toHaveAttribute("aria-label");
 ```
 
 [Source: docs/tech-spec-epic-2.md lines 704-715]
@@ -426,6 +460,7 @@ await expect(input).toHaveAttribute('aria-label');
 - **Task block:** `task_id`, `task_priority`, `task_deadline`, `task_difficulty`, and `universal_factors` weights that sum to ≈1.0.
 
 **Verification Steps:**
+
 ```python
 async def test_memory_hierarchy_metadata(client, db, test_user):
     resp = await client.post("/api/v1/companion/chat", json={"message": sample_payload})
@@ -518,6 +553,7 @@ async def test_memory_hierarchy_metadata(client, db, test_user):
   - Keeps parity with the Project Structure delivered in Story 2.1 and preserves the `extra_data` alias for JSONB metadata storage.
   - [Source: stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md lines 438-520, 574-609]
 - [ ] **2.1** Create inline helper functions in `companion.py`:
+
   ```python
   async def _generate_embedding(text: str) -> List[float]:
       """Generate embedding using OpenAI API."""
@@ -567,6 +603,7 @@ async def test_memory_hierarchy_metadata(client, db, test_user):
       )
       return result.scalars().all()
   ```
+
 - **Note:** Keep `memory.extra_data = metadata` (not `memory.metadata`) so we respect the SQLAlchemy keyword workaround from Story 2.1.
 - [Source: stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md lines 574-609]
 - [ ] **2.2** Implement memory storage logic in `stream_response()`:
@@ -577,6 +614,7 @@ async def test_memory_hierarchy_metadata(client, db, test_user):
   - Query memories before generating response
   - Format memories for Eliza's context window
 - [ ] **2.4** Add simple heuristics for memory type detection:
+
   ```python
   def _detect_memory_type(message: str) -> MemoryType:
       """Determine memory type from message content."""
@@ -600,6 +638,7 @@ async def test_memory_hierarchy_metadata(client, db, test_user):
 
 - [ ] **3.1** Create `packages/backend/app/agents/simple_eliza.py`
 - [ ] **3.2** Implement `SimpleElizaAgent` class:
+
   ```python
   class SimpleElizaAgent:
       """Simple Eliza agent without LangGraph (for vertical slice)."""
@@ -639,8 +678,10 @@ async def test_memory_hierarchy_metadata(client, db, test_user):
       def _build_system_prompt(self, memories: List[Memory]) -> str:
           """Build system prompt with memory context."""
           base_prompt = """You are Eliza, an emotionally intelligent AI companion.
+  ```
 
 You help users balance ambition with well-being. You:
+
 - Listen empathetically to their struggles
 - Remember past conversations and reference them
 - Validate their feelings before offering suggestions
@@ -657,7 +698,8 @@ Be warm, supportive, and contextual."""
               return base_prompt + memory_context
 
           return base_prompt
-  ```
+
+````
 - [ ] **3.3** Integrate agent into `stream_response()` endpoint
 - [ ] **3.4** Add error handling for OpenAI API failures
 
@@ -666,10 +708,12 @@ Be warm, supportive, and contextual."""
 **Estimated Time:** 1 hour
 
 - [ ] **4.1** Install SSE dependencies (if not already present):
-  ```toml
-  # pyproject.toml - already have fastapi with streaming support
-  ```
+```toml
+# pyproject.toml - already have fastapi with streaming support
+````
+
 - [ ] **4.2** Implement SSE response in `stream_response()`:
+
   ```python
   from fastapi.responses import StreamingResponse
 
@@ -709,6 +753,7 @@ Be warm, supportive, and contextual."""
           }
       )
   ```
+
 - [ ] **4.3** Test SSE streaming with curl:
   ```bash
   curl -N -H "Authorization: Bearer {token}" \
@@ -720,79 +765,89 @@ Be warm, supportive, and contextual."""
 **Estimated Time:** 3 hours
 
 - [ ] **5.1** Create `packages/frontend/src/app/companion/page.tsx`:
-  ```typescript
-  'use client';
 
-  import { useState, useEffect, useRef } from 'react';
-  import { useUser } from '@clerk/nextjs';
-  import { CompanionChat } from '@/components/companion/CompanionChat';
+  ```typescript
+  "use client";
+
+  import { useState, useEffect, useRef } from "react";
+  import { useUser } from "@clerk/nextjs";
+  import { CompanionChat } from "@/components/companion/CompanionChat";
 
   export default function CompanionPage() {
-      return (
-          <main className="flex h-screen flex-col">
-              <header className="border-b px-6 py-4">
-                  <h1 className="text-2xl font-bold">Chat with Eliza</h1>
-              </header>
-              <CompanionChat />
-          </main>
-      );
+    return (
+      <main className="flex h-screen flex-col">
+        <header className="border-b px-6 py-4">
+          <h1 className="text-2xl font-bold">Chat with Eliza</h1>
+        </header>
+        <CompanionChat />
+      </main>
+    );
   }
   ```
-- [ ] **5.2** Create `packages/frontend/src/components/companion/CompanionChat.tsx`:
-  ```typescript
-  'use client';
 
-  import { useState, useEffect, useRef } from 'react';
-  import { MessageList } from './MessageList';
-  import { MessageInput } from './MessageInput';
-  import { useChat } from '@/lib/hooks/useChat';
+- [ ] **5.2** Create `packages/frontend/src/components/companion/CompanionChat.tsx`:
+
+  ```typescript
+  "use client";
+
+  import { useState, useEffect, useRef } from "react";
+  import { MessageList } from "./MessageList";
+  import { MessageInput } from "./MessageInput";
+  import { useChat } from "@/lib/hooks/useChat";
 
   export function CompanionChat() {
-      const { messages, isLoading, sendMessage, error } = useChat();
+    const { messages, isLoading, sendMessage, error } = useChat();
 
-      return (
-          <div className="flex flex-1 flex-col" data-testid="chat-container">
-              <MessageList messages={messages} isLoading={isLoading} />
-              <MessageInput onSend={sendMessage} disabled={isLoading} />
-              {error && (
-                  <div className="px-6 py-2 bg-red-50 text-red-600 text-sm">
-                      {error}
-                  </div>
-              )}
+    return (
+      <div className="flex flex-1 flex-col" data-testid="chat-container">
+        <MessageList messages={messages} isLoading={isLoading} />
+        <MessageInput onSend={sendMessage} disabled={isLoading} />
+        {error && (
+          <div className="px-6 py-2 bg-red-50 text-red-600 text-sm">
+            {error}
           </div>
-      );
+        )}
+      </div>
+    );
   }
   ```
+
 - [ ] **5.3** Create `packages/frontend/src/components/companion/MessageList.tsx`:
+
   ```typescript
-  import { useEffect, useRef } from 'react';
-  import { Message } from './Message';
-  import { LoadingIndicator } from './LoadingIndicator';
+  import { useEffect, useRef } from "react";
+  import { Message } from "./Message";
+  import { LoadingIndicator } from "./LoadingIndicator";
 
   interface MessageListProps {
-      messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
-      isLoading: boolean;
+    messages: Array<{
+      role: "user" | "assistant";
+      content: string;
+      timestamp: Date;
+    }>;
+    isLoading: boolean;
   }
 
   export function MessageList({ messages, isLoading }: MessageListProps) {
-      const bottomRef = useRef<HTMLDivElement>(null);
+    const bottomRef = useRef<HTMLDivElement>(null);
 
-      // Auto-scroll to bottom
-      useEffect(() => {
-          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, [messages]);
+    // Auto-scroll to bottom
+    useEffect(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
-      return (
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-              {messages.map((message, index) => (
-                  <Message key={index} {...message} />
-              ))}
-              {isLoading && <LoadingIndicator />}
-              <div ref={bottomRef} />
-          </div>
-      );
+    return (
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {messages.map((message, index) => (
+          <Message key={index} {...message} />
+        ))}
+        {isLoading && <LoadingIndicator />}
+        <div ref={bottomRef} />
+      </div>
+    );
   }
   ```
+
 - [ ] **5.4** Create `packages/frontend/src/components/companion/Message.tsx`:
   - User message styling
   - Assistant message styling
@@ -812,138 +867,149 @@ Be warm, supportive, and contextual."""
 **Estimated Time:** 2 hours
 
 - [ ] **6.1** Create `packages/frontend/src/lib/hooks/useChat.ts`:
+
   ```typescript
-  import { useState, useEffect, useRef } from 'react';
-  import { useAuth } from '@clerk/nextjs';
+  import { useState, useEffect, useRef } from "react";
+  import { useAuth } from "@clerk/nextjs";
 
   interface Message {
-      role: 'user' | 'assistant';
-      content: string;
-      timestamp: Date;
+    role: "user" | "assistant";
+    content: string;
+    timestamp: Date;
   }
 
   export function useChat() {
-      const { getToken } = useAuth();
-      const [messages, setMessages] = useState<Message[]>([]);
-      const [isLoading, setIsLoading] = useState(false);
-      const [error, setError] = useState<string | null>(null);
-      const [conversationId, setConversationId] = useState<string | null>(null);
-      const eventSourceRef = useRef<EventSource | null>(null);
+    const { getToken } = useAuth();
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const eventSourceRef = useRef<EventSource | null>(null);
 
-      // Load conversation history on mount
-      useEffect(() => {
-          loadHistory();
-      }, []);
+    // Load conversation history on mount
+    useEffect(() => {
+      loadHistory();
+    }, []);
 
-      async function loadHistory() {
-          const token = await getToken();
-          const response = await fetch('/api/v1/companion/history', {
-              headers: { Authorization: `Bearer ${token}` }
+    async function loadHistory() {
+      const token = await getToken();
+      const response = await fetch("/api/v1/companion/history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+
+      if (data.conversations.length > 0) {
+        const latest = data.conversations[0];
+        setConversationId(latest.id);
+        setMessages(
+          latest.messages.map((m) => ({
+            ...m,
+            timestamp: new Date(m.timestamp),
+          }))
+        );
+      }
+    }
+
+    async function sendMessage(content: string) {
+      // Optimistic update
+      const userMessage: Message = {
+        role: "user",
+        content,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const token = await getToken();
+
+        // Send message
+        const response = await fetch("/api/v1/companion/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            message: content,
+            conversation_id: conversationId,
+          }),
+        });
+
+        const data = await response.json();
+        setConversationId(data.conversation_id);
+
+        // Start SSE stream
+        streamResponse(data.conversation_id, token);
+      } catch (err) {
+        setError("Failed to send message. Please try again.");
+        setIsLoading(false);
+      }
+    }
+
+    function streamResponse(convId: string, token: string) {
+      // Close existing connection
+      eventSourceRef.current?.close();
+
+      // Create new SSE connection
+      const eventSource = new EventSource(
+        `/api/v1/companion/stream/${convId}?token=${token}`
+      );
+      eventSourceRef.current = eventSource;
+
+      let assistantMessage = "";
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "token") {
+          assistantMessage += data.content;
+
+          // Update message in real-time
+          setMessages((prev) => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage?.role === "assistant") {
+              return [
+                ...prev.slice(0, -1),
+                {
+                  ...lastMessage,
+                  content: assistantMessage,
+                },
+              ];
+            } else {
+              return [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: assistantMessage,
+                  timestamp: new Date(),
+                },
+              ];
+            }
           });
-          const data = await response.json();
-
-          if (data.conversations.length > 0) {
-              const latest = data.conversations[0];
-              setConversationId(latest.id);
-              setMessages(latest.messages.map(m => ({
-                  ...m,
-                  timestamp: new Date(m.timestamp)
-              })));
-          }
-      }
-
-      async function sendMessage(content: string) {
-          // Optimistic update
-          const userMessage: Message = {
-              role: 'user',
-              content,
-              timestamp: new Date()
-          };
-          setMessages(prev => [...prev, userMessage]);
-          setIsLoading(true);
-          setError(null);
-
-          try {
-              const token = await getToken();
-
-              // Send message
-              const response = await fetch('/api/v1/companion/chat', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                      message: content,
-                      conversation_id: conversationId
-                  })
-              });
-
-              const data = await response.json();
-              setConversationId(data.conversation_id);
-
-              // Start SSE stream
-              streamResponse(data.conversation_id, token);
-          } catch (err) {
-              setError('Failed to send message. Please try again.');
-              setIsLoading(false);
-          }
-      }
-
-      function streamResponse(convId: string, token: string) {
-          // Close existing connection
-          eventSourceRef.current?.close();
-
-          // Create new SSE connection
-          const eventSource = new EventSource(
-              `/api/v1/companion/stream/${convId}?token=${token}`
-          );
-          eventSourceRef.current = eventSource;
-
-          let assistantMessage = '';
-
-          eventSource.onmessage = (event) => {
-              const data = JSON.parse(event.data);
-
-              if (data.type === 'token') {
-                  assistantMessage += data.content;
-
-                  // Update message in real-time
-                  setMessages(prev => {
-                      const lastMessage = prev[prev.length - 1];
-                      if (lastMessage?.role === 'assistant') {
-                          return [...prev.slice(0, -1), {
-                              ...lastMessage,
-                              content: assistantMessage
-                          }];
-                      } else {
-                          return [...prev, {
-                              role: 'assistant',
-                              content: assistantMessage,
-                              timestamp: new Date()
-                          }];
-                      }
-                  });
-              } else if (data.type === 'complete') {
-                  setIsLoading(false);
-                  eventSource.close();
-              } else if (data.type === 'error') {
-                  setError(data.message);
-                  setIsLoading(false);
-                  eventSource.close();
-              }
-          };
-
-      eventSource.onerror = () => {
-          setError('Connection lost. Please try again.');
+        } else if (data.type === "complete") {
           setIsLoading(false);
           eventSource.close();
+        } else if (data.type === "error") {
+          setError(data.message);
+          setIsLoading(false);
+          eventSource.close();
+        }
       };
-  }
 
-  return { messages, isLoading, sendMessage, error };
-}
-```
+      eventSource.onerror = () => {
+        setError("Connection lost. Please try again.");
+        setIsLoading(false);
+        eventSource.close();
+      };
+    }
+
+    return { messages, isLoading, sendMessage, error };
+  }
+  ```
+
+````
 - Match Story 1.3 guidance by sourcing tokens through `useAuth().getToken()` and passing them via `Authorization: Bearer ...` so backend `get_current_user()` continues to recognize Clerk sessions.
 - [Source: stories/1-3-integrate-clerk-authentication-system.md lines 1020-1070]
 - [ ] **6.2** Add error handling for SSE disconnections
@@ -958,42 +1024,47 @@ Be warm, supportive, and contextual."""
   ```bash
   cd packages/frontend
   pnpm add framer-motion
-  ```
+````
+
 - [ ] **7.2** Add message animations in `Message.tsx`:
+
   ```typescript
-  import { motion } from 'framer-motion';
+  import { motion } from "framer-motion";
 
   export function Message({ role, content, timestamp }: MessageProps) {
-      return (
-          <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={role === 'user' ? 'user-message' : 'assistant-message'}
-          >
-              {/* Message content */}
-          </motion.div>
-      );
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={role === "user" ? "user-message" : "assistant-message"}
+      >
+        {/* Message content */}
+      </motion.div>
+    );
   }
   ```
+
 - [ ] **7.3** Add breathing effect to loading indicator:
+
   ```typescript
-  import { motion } from 'framer-motion';
+  import { motion } from "framer-motion";
 
   export function LoadingIndicator() {
-      return (
-          <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="typing-dots"
-          >
-              <span>•</span>
-              <span>•</span>
-              <span>•</span>
-          </motion.div>
-      );
+    return (
+      <motion.div
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ repeat: Infinity, duration: 1.5 }}
+        className="typing-dots"
+      >
+        <span>•</span>
+        <span>•</span>
+        <span>•</span>
+      </motion.div>
+    );
   }
   ```
+
 - [ ] **7.4** Test animations on different devices
 
 ### Task 8: Mobile Responsive Styling (AC: #7)
@@ -1004,7 +1075,7 @@ Be warm, supportive, and contextual."""
   ```tsx
   // CompanionChat.tsx
   <div className="flex h-screen flex-col md:max-w-4xl md:mx-auto">
-      {/* Chat content */}
+    {/* Chat content */}
   </div>
   ```
 - [ ] **8.2** Ensure input field stays visible on mobile keyboard open
@@ -1017,6 +1088,7 @@ Be warm, supportive, and contextual."""
 **Estimated Time:** 1 hour
 
 - [ ] **9.1** Add ARIA labels to interactive elements:
+
   ```typescript
   <input
       aria-label="Chat message input"
@@ -1032,15 +1104,16 @@ Be warm, supportive, and contextual."""
       Send
   </button>
   ```
+
 - [ ] **9.2** Add screen reader announcements for new messages:
   ```typescript
   <div
-      role="log"
-      aria-live="polite"
-      aria-relevant="additions"
-      className="sr-only"
+    role="log"
+    aria-live="polite"
+    aria-relevant="additions"
+    className="sr-only"
   >
-      {messages[messages.length - 1]?.content}
+    {messages[messages.length - 1]?.content}
   </div>
   ```
 - [ ] **9.3** Ensure keyboard navigation works (Tab, Enter, Escape)
@@ -1103,7 +1176,11 @@ Be warm, supportive, and contextual."""
   - Persist metadata fragment:
     ```json
     {
-      "universal_factors": {"learning": 0.6, "discipline": 0.3, "connection": 0.1},
+      "universal_factors": {
+        "learning": 0.6,
+        "discipline": 0.3,
+        "connection": 0.1
+      },
       "task_difficulty": "medium",
       "universal_alignment": ["learning", "discipline"]
     }
@@ -1125,11 +1202,13 @@ Be warm, supportive, and contextual."""
 This story follows the **vertical slice pattern** instead of horizontal layering:
 
 ❌ **Horizontal (Bad)**: Story 2.2 (Memory Service) → Story 2.5 (Chat UI)
+
 - Can't validate memory works until UI built
 - Discover UX issues late
 - Harder to iterate on architecture
 
 ✅ **Vertical (Good)**: Story 2.5 (Chat + Essential Memory) → Story 2.2 (Extract Service)
+
 - Immediate validation in browser
 - Fast feedback loop
 - Easy to refine based on real usage
@@ -1139,11 +1218,13 @@ This story follows the **vertical slice pattern** instead of horizontal layering
 **Decision: Keep memory operations inline (not extracted service) for this story**
 
 **Why:**
+
 - Faster to implement (no service abstraction yet)
 - Easier to iterate based on what we learn
 - Story 2.2 will extract service once patterns proven
 
 **Operations Included:**
+
 ```python
 # In companion.py
 async def _generate_embedding(text: str) -> List[float]
@@ -1153,6 +1234,7 @@ def _detect_memory_type(message: str) -> MemoryType
 ```
 
 **Operations Deferred (to Story 2.2):**
+
 - Hybrid search (time decay, frequency boost)
 - Memory pruning worker
 - Advanced search (goal-based, user priority)
@@ -1163,6 +1245,7 @@ def _detect_memory_type(message: str) -> MemoryType
 **Story 2.1 Delivered Database Foundation:** [Source: stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md]
 
 **New Files Available (Use These - Don't Recreate):**
+
 - **`packages/backend/app/models/memory.py`** - Memory, MemoryCollection models with MemoryType enum
   - Classes: `Memory`, `MemoryCollection`, `MemoryType` enum (PERSONAL, PROJECT, TASK)
   - Use these models directly in Task 2 for inline memory operations
@@ -1180,12 +1263,14 @@ def _detect_memory_type(message: str) -> MemoryType
 **⚠️ CRITICAL: SQLAlchemy Reserved Keyword Issue**
 
 From Story 2.1 Debug Log (lines 574-578):
+
 - **Problem:** `metadata` is a reserved attribute name in SQLAlchemy Declarative API
 - **Solution:** Memory model uses `extra_data` attribute internally
 - **Database column is still named "metadata"** (for API compatibility)
 - **In Task 2, you MUST use:** `memory.extra_data = {...}` NOT `memory.metadata = {...}`
 - Pydantic schemas handle the alias automatically in JSON API responses
 - Example:
+
   ```python
   # ✅ CORRECT - Use extra_data attribute
   memory = Memory(
@@ -1200,6 +1285,7 @@ From Story 2.1 Debug Log (lines 574-578):
   ```
 
 **Key Architectural Decisions from Story 2.1:**
+
 - **Vector Dimensions:** Vector(1536) for OpenAI text-embedding-3-small
 - **HNSW Index Parameters:** m=16, ef_construction=64 (optimized for 1536-dim vectors)
 - **Distance Metric:** Cosine distance (vector_cosine_ops) for semantic similarity
@@ -1211,6 +1297,7 @@ From Story 2.1 Debug Log (lines 574-578):
 - **LRU Tracking:** `accessed_at` timestamp enables future frequency-based ranking
 
 **Why Story 2.5 Before 2.2 (Vertical Slice Approach):**
+
 - Story 2.1 prepared for Story 2.2 (memory service extraction)
 - But vertical slice approach validates memory patterns with working UI first
 - Story 2.5 provides real-world usage data to inform Story 2.2 service design
@@ -1221,6 +1308,7 @@ From Story 2.1 Debug Log (lines 574-578):
   - Do simple heuristics work for memory type detection?
 
 **Migration Status:**
+
 - Migration file created and verified (`alembic history` shows 002 → 003 chain)
 - Ready to run: `poetry run alembic upgrade head`
 - Database will be ready for Story 2.5 implementation
@@ -1230,11 +1318,13 @@ From Story 2.1 Debug Log (lines 574-578):
 **Decision: Use simple OpenAI streaming, not LangGraph**
 
 **Why:**
+
 - LangGraph adds complexity (state machine, nodes, edges)
 - Don't need advanced agent features yet
 - Story 2.3 will replace with full LangGraph agent
 
 **Simple Agent Pattern:**
+
 ```python
 class SimpleElizaAgent:
     async def generate_response(self, message, history, memories):
@@ -1250,6 +1340,7 @@ class SimpleElizaAgent:
 ```
 
 **Story 2.3 will replace with:**
+
 - LangGraph state machine
 - Sophisticated memory retrieval strategies
 - Emotion-aware response generation
@@ -1257,6 +1348,7 @@ class SimpleElizaAgent:
 ### Memory Type Detection (Simple Heuristics)
 
 **Heuristics for MVP:**
+
 ```python
 def _detect_memory_type(message: str) -> MemoryType:
     # Stressors/venting → PERSONAL
@@ -1272,6 +1364,7 @@ def _detect_memory_type(message: str) -> MemoryType:
 ```
 
 **Story 2.3 will improve with:**
+
 - LLM-based classification (GPT-4o-mini)
 - Context-aware detection
 - User-specific patterns
@@ -1288,13 +1381,25 @@ def _detect_memory_type(message: str) -> MemoryType:
 - **Metadata Schema Stub:** Inline helper should emit a normalized payload:
   ```json
   {
-    "emotion": {"severity": "persistent_stressor", "intensity": 0.68, "dominant": "fear"},
-    "project": {"goal_id": "...", "goal_scope": "big_goal", "target_date": "2025-12-15"},
+    "emotion": {
+      "severity": "persistent_stressor",
+      "intensity": 0.68,
+      "dominant": "fear"
+    },
+    "project": {
+      "goal_id": "...",
+      "goal_scope": "big_goal",
+      "target_date": "2025-12-15"
+    },
     "task": {
       "task_priority": "high",
       "task_deadline": "2025-11-20T21:00:00Z",
       "task_difficulty": "medium",
-      "universal_factors": {"learning": 0.6, "discipline": 0.25, "connection": 0.15}
+      "universal_factors": {
+        "learning": 0.6,
+        "discipline": 0.25,
+        "connection": 0.15
+      }
     }
   }
   ```
@@ -1303,6 +1408,7 @@ def _detect_memory_type(message: str) -> MemoryType:
 ### SSE Streaming Implementation
 
 **Event Format:**
+
 ```json
 // Token event
 {"type": "token", "content": "I "}
@@ -1315,6 +1421,7 @@ def _detect_memory_type(message: str) -> MemoryType:
 ```
 
 **Backend Pattern:**
+
 ```python
 async def event_generator():
     try:
@@ -1331,25 +1438,29 @@ return StreamingResponse(
 ```
 
 **Frontend Pattern:**
+
 ```typescript
-const eventSource = new EventSource('/api/v1/companion/stream/{id}?token={token}');
+const eventSource = new EventSource(
+  "/api/v1/companion/stream/{id}?token={token}"
+);
 
 eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+  const data = JSON.parse(event.data);
 
-    if (data.type === 'token') {
-        // Append token to message
-    } else if (data.type === 'complete') {
-        // Finish loading
-    } else if (data.type === 'error') {
-        // Show error
-    }
+  if (data.type === "token") {
+    // Append token to message
+  } else if (data.type === "complete") {
+    // Finish loading
+  } else if (data.type === "error") {
+    // Show error
+  }
 };
 ```
 
 ### Test Scenarios (All Must Pass)
 
 **Scenario 1: Venting**
+
 ```
 User: "I'm overwhelmed with my schoolwork because I have to catch up"
 → Personal memory created with stressor metadata
@@ -1357,6 +1468,7 @@ User: "I'm overwhelmed with my schoolwork because I have to catch up"
 ```
 
 **Scenario 2: Goal Discussion**
+
 ```
 User: "I want to work on my goal to graduate early"
 → Project memory created with goal metadata
@@ -1364,6 +1476,7 @@ User: "I want to work on my goal to graduate early"
 ```
 
 **Scenario 3: Memory Recall**
+
 ```
 Message 1: "I'm stressed about class registration"
 → Memory stored
@@ -1374,6 +1487,7 @@ Message 2: "I'm feeling overwhelmed"
 ```
 
 **Scenario 4: Task Update**
+
 ```
 User: "I completed my walk today"
 → Task memory created
@@ -1382,17 +1496,18 @@ User: "I completed my walk today"
 
 ### Performance Targets
 
-| Metric | Target | Rationale |
-|--------|--------|-----------|
-| **Memory Query (p95)** | < 100ms | HNSW index from Story 2.1 |
-| **Embedding Generation** | < 200ms | OpenAI API latency |
-| **First Token (p95)** | < 1s | Streaming starts quickly |
-| **UI Responsiveness** | < 50ms | User input feels instant |
-| **SSE Connection Latency** | < 50ms | Low overhead streaming |
+| Metric                     | Target  | Rationale                 |
+| -------------------------- | ------- | ------------------------- |
+| **Memory Query (p95)**     | < 100ms | HNSW index from Story 2.1 |
+| **Embedding Generation**   | < 200ms | OpenAI API latency        |
+| **First Token (p95)**      | < 1s    | Streaming starts quickly  |
+| **UI Responsiveness**      | < 50ms  | User input feels instant  |
+| **SSE Connection Latency** | < 50ms  | Low overhead streaming    |
 
 ### Learnings to Capture (for Story 2.2)
 
 **What to Document:**
+
 - What metadata fields are actually useful?
 - What similarity threshold works best? (default 0.7)
 - How many memories to retrieve? (default 5)
@@ -1401,6 +1516,7 @@ User: "I completed my walk today"
 - SSE connection stability issues?
 
 **Feed into Story 2.2:**
+
 - Hybrid search parameters tuning
 - Service extraction patterns
 - Memory pruning strategy
@@ -1409,6 +1525,7 @@ User: "I completed my walk today"
 ### Project Structure
 
 **New Files Created:**
+
 ```
 packages/backend/
 ├── app/
@@ -1437,6 +1554,7 @@ packages/frontend/
 ```
 
 **Modified Files:**
+
 ```
 packages/backend/
 ├── app/api/v1/__init__.py             # UPDATE: Register companion router
@@ -1448,17 +1566,20 @@ packages/frontend/
 ### Relationship to Epic 2 Stories
 
 **This story (2.5) validates:**
+
 - ✅ Memory storage patterns work
 - ✅ Memory retrieval quality is good
 - ✅ User interaction flow is smooth
 - ✅ SSE streaming is performant
 
 **This story enables:**
+
 - **Story 2.2**: Extract memory service based on proven patterns
 - **Story 2.3**: Replace simple agent with LangGraph
 - **Story 2.6**: Add emotion detection to working system
 
 **Dependencies Flow (Revised):**
+
 ```
 Story 2.1 (Memory Schema) ✅
     ↓
@@ -1477,6 +1598,7 @@ Story 2.6 (Emotion Detection) ← Integrate emotions
 ### References
 
 **Source Documents:**
+
 - **Epic 2 Tech Spec**: `docs/tech-spec-epic-2.md` (Chat flow, SSE streaming)
 - **Epics File**: `docs/epics.md` (lines 468-515 for Story 2.5 scope, lines 660-706 for goal decomposition/big-goal guidance)
 - **Story 2.1**: `docs/stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md` (Database foundation)
@@ -1486,6 +1608,7 @@ Story 2.6 (Emotion Detection) ← Integrate emotions
 - **Vertical Slice Notes**: `docs/epic-2/VERTICAL-SLICE-APPROACH-NOTES.md` (lines 29-37: universal factors deferred to 2.5 learnings)
 
 **Technical Documentation:**
+
 - **OpenAI Streaming**: https://platform.openai.com/docs/api-reference/streaming
 - **Server-Sent Events**: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
 - **Framer Motion**: https://www.framer.com/motion/
@@ -1538,24 +1661,29 @@ Story 2.6 (Emotion Detection) ← Integrate emotions
 ### Risk Mitigation
 
 **Risk:** OpenAI API failures during streaming
+
 - **Mitigation**: Retry logic, error messages, graceful degradation
 - **Impact**: Medium (conversation interrupted, but doesn't lose data)
 
 **Risk:** SSE connections drop on mobile networks
+
 - **Mitigation**: Auto-reconnect logic, HTTP fallback
 - **Impact**: Medium (UX degradation, but functional)
 
 **Risk:** Memory retrieval quality poor
+
 - **Mitigation**: This story validates quality, can adjust similarity threshold
 - **Impact**: Low (easy to tune in Story 2.2)
 
 **Risk:** Chat UI feels slow/janky
+
 - **Mitigation**: Optimize animations, test on devices
 - **Impact**: Low (polish issue, not blocker)
 
 ### Future Enhancements (Post-Story)
 
 After this story completes, Story 2.2 will add:
+
 - [ ] Extract memory service (proper architecture)
 - [ ] Hybrid search (time decay, frequency boost)
 - [ ] Memory pruning worker
@@ -1564,6 +1692,7 @@ After this story completes, Story 2.2 will add:
 - [ ] Advanced features from Story 2.2 ACs 9-14
 
 Story 2.3 will add:
+
 - [ ] Replace simple agent with LangGraph state machine
 - [ ] Advanced memory retrieval strategies
 - [ ] Emotion-aware response generation
@@ -1577,14 +1706,17 @@ Story 2.3 will add:
 ## Dev Agent Record
 
 ### Context Reference
+
 - `docs/stories/2-5-companion-chat-ui-with-essential-memory.context.xml` — Generated 2025-11-12T16:00:00Z (Story Context workflow)
 
 ### Status Notes
+
 - Story auto-improved per create-story workflow, validation report closed, and sprint-status updated to `ready-for-dev`.
 
 ## Vertical Slice Success Criteria
 
 This story succeeds if:
+
 1. ✅ **Users can chat with Eliza** (functional UI + backend)
 2. ✅ **Memory is stored** (venting, goals, tasks all create memories)
 3. ✅ **Memory is retrieved** (second message shows context from first)
@@ -1592,3 +1724,80 @@ This story succeeds if:
 5. ✅ **Learnings captured** (know what to improve in Story 2.2)
 
 **Goal:** Working chat with memory retrieval in ONE story, refine architecture in NEXT story.
+
+## Deployment Issues & TODO
+
+### Backend Deployment (Railway)
+
+**Problem:** Railway shows "ok" status but API endpoints return 404 errors.
+
+**Root Causes:**
+
+1. **CORS Configuration**: Backend `main.py` had hardcoded CORS origins (`localhost:3000` only), blocking production frontend requests
+2. **Railway Root Directory**: Railway may not be detecting `packages/backend` as root directory in monorepo
+3. **Environment Variables**: `CORS_ORIGINS` environment variable not configured in Railway
+
+**Status:** ✅ **FIXED** - Code updated to use environment variables for CORS
+
+**TODO:**
+
+- [ ] **Set Railway Root Directory**: Railway Dashboard → Settings → Root Directory → Set to `packages/backend`
+- [ ] **Configure CORS_ORIGINS**: Railway → Variables → Add `CORS_ORIGINS=https://www.magk.app,https://magk.app,http://localhost:3000`
+- [ ] **Verify Start Command**: Railway → Settings → Deploy → Start Command should be `python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+- [ ] **Test Health Endpoint**: `curl https://backend-production-d69d.up.railway.app/api/v1/health` should return `{"status": "healthy"}`
+- [ ] **Test Companion Endpoints**: Verify `/api/v1/companion/history` and `/api/v1/companion/chat` return 401 (auth required) not 404
+
+**Code Changes Made:**
+
+- Updated `packages/backend/main.py` to read CORS origins from `settings.CORS_ORIGINS` environment variable
+- Added import for `settings` from `app.core.config`
+- Falls back to localhost if `CORS_ORIGINS` not set (for local dev)
+
+### Frontend Deployment (Vercel)
+
+**Problem:** Frontend cannot load conversation history - API calls to backend return 404 errors.
+
+**Root Causes:**
+
+1. **API URL Configuration**: `NEXT_PUBLIC_API_URL` may not be set correctly in Vercel environment variables
+2. **CORS Blocking**: Backend CORS not configured to allow Vercel frontend domain
+3. **Preview vs Production**: Preview deployments (`*-thejackluos-projects.vercel.app`) need to be added to backend CORS_ORIGINS
+
+**Status:** ⏳ **PENDING** - Requires backend CORS fix + Vercel env vars
+
+**TODO:**
+
+- [ ] **Set NEXT_PUBLIC_API_URL**: Vercel → Settings → Environment Variables → Add `NEXT_PUBLIC_API_URL=https://backend-production-d69d.up.railway.app` (no trailing slash)
+- [ ] **Apply to Production**: Ensure environment variable is set for Production environment (not just Preview)
+- [ ] **Add Preview URLs to CORS**: If testing preview deployments, add `https://*-thejackluos-projects.vercel.app` to Railway `CORS_ORIGINS`
+- [ ] **Test History Loading**: Visit frontend, check browser console - `/api/v1/companion/history` should return 401 (auth) or 200 (if authenticated), not 404
+- [ ] **Test Chat Functionality**: Send a message, verify SSE streaming works
+
+**Frontend Code:**
+
+- `packages/frontend/src/lib/hooks/useChat.ts` uses `resolveApiUrl()` which reads from `NEXT_PUBLIC_API_URL`
+- Falls back to `window.location.origin` if env var not set (works for local dev)
+
+### Quick Fix Checklist
+
+**Railway (Backend):**
+
+1. Set Root Directory: `packages/backend`
+2. Add Variable: `CORS_ORIGINS=https://www.magk.app,https://magk.app,http://localhost:3000`
+3. Verify Start Command: `python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Redeploy and wait 2-3 minutes
+5. Test: `curl https://backend-production-d69d.up.railway.app/api/v1/health`
+
+**Vercel (Frontend):**
+
+1. Add Variable: `NEXT_PUBLIC_API_URL=https://backend-production-d69d.up.railway.app`
+2. Apply to Production environment
+3. Redeploy (or push commit to trigger)
+4. Test: Visit `https://www.magk.app` and check browser console
+
+**Expected Result:**
+
+- Backend health endpoint returns `{"status": "healthy"}`
+- Frontend can load conversation history (401 if not auth'd, 200 if auth'd)
+- Chat messages send successfully
+- SSE streaming works
