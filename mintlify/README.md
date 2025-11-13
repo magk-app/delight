@@ -29,6 +29,9 @@ This directory contains the Mintlify configuration and documentation pages for D
 ```
 mintlify/
 ├── mint.json              # Mintlify configuration
+├── favicon.svg            # Site favicon (see below)
+├── images/                 # Documentation images
+│   └── .gitkeep
 ├── introduction.md        # Landing page
 ├── quickstart.md          # Quick start guide
 ├── architecture/          # Architecture documentation
@@ -53,6 +56,60 @@ The `mint.json` file controls:
 - Footer social links
 
 See [Mintlify Documentation](https://mintlify.com/docs) for full configuration options.
+
+## Favicon
+
+To update the favicon:
+
+1. **Place your favicon file** in the `mintlify/` directory root:
+
+   - Supported formats: `.svg`, `.png`, `.ico`
+   - Recommended: Use `.svg` for best quality and scalability
+   - File should be named `favicon.svg` (or update the path in `mint.json`)
+
+2. **Update `mint.json`** if using a different filename or format:
+
+   ```json
+   {
+     "favicon": "/favicon.svg" // or "/favicon.png", "/favicon.ico"
+   }
+   ```
+
+3. **Restart the dev server** to see changes:
+   ```bash
+   pnpm docs:dev
+   ```
+
+**Note**: The favicon path in `mint.json` should start with `/` and be relative to the `mintlify/` directory root.
+
+## Images
+
+All documentation images should be placed in the `mintlify/images/` directory.
+
+### Adding Images
+
+1. **Place your image** in `mintlify/images/`:
+
+   ```bash
+   # Example: Save your image as
+   mintlify/images/architecture-diagram.png
+   ```
+
+2. **Reference in markdown files**:
+
+   ```markdown
+   ![Architecture Diagram](/images/architecture-diagram.png)
+   ```
+
+3. **Supported formats**: `.png`, `.jpg`, `.jpeg`, `.svg`, `.gif`, `.webp`
+
+### Image Best Practices
+
+- Use descriptive filenames (e.g., `user-flow-diagram.png` not `image1.png`)
+- Optimize images for web (keep file sizes reasonable)
+- Use SVG for diagrams and logos when possible
+- Use PNG for screenshots and complex images
+- Consider responsive images for large diagrams
 
 ## Next Steps
 

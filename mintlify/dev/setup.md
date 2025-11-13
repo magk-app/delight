@@ -132,6 +132,81 @@ curl -sSL https://install.python-poetry.org | python3 -
 - Ensure Supabase project is active
 - Check migrations ran successfully
 
+## Frontend Assets
+
+### Favicon
+
+To update the favicon for the frontend app:
+
+1. **Place favicon files** in `packages/frontend/public/`:
+
+   - `favicon.ico` - Main favicon (required)
+   - `apple-touch-icon.png` - iOS home screen icon (optional, 180x180px recommended)
+   - `favicon.svg` - Modern SVG favicon (optional)
+
+2. **Update `src/app/layout.tsx`** metadata if using different filenames:
+
+   ```typescript
+   export const metadata: Metadata = {
+     icons: {
+       icon: "/favicon.ico",
+       shortcut: "/favicon.ico",
+       apple: "/apple-touch-icon.png",
+     },
+   };
+   ```
+
+3. **Alternative**: Next.js 15 also supports placing favicon files directly in `src/app/`:
+
+   - `src/app/favicon.ico`
+   - `src/app/icon.png` or `icon.svg`
+   - These are automatically detected
+
+4. **Restart dev server** to see changes:
+   ```bash
+   pnpm dev:frontend
+   ```
+
+### Images
+
+All static images should be placed in `packages/frontend/public/images/`.
+
+**Adding Images:**
+
+1. **Place your image** in `packages/frontend/public/images/`:
+
+   ```bash
+   # Example
+   packages/frontend/public/images/logo.png
+   ```
+
+2. **Reference in components**:
+
+   **Option 1: Public path (for static assets)**
+
+   ```tsx
+   <img src="/images/logo.png" alt="Logo" />
+   ```
+
+   **Option 2: Import (for optimized images)**
+
+   ```tsx
+   import Image from "next/image";
+   import logo from "@/public/images/logo.png";
+
+   <Image src={logo} alt="Logo" />;
+   ```
+
+3. **Supported formats**: `.png`, `.jpg`, `.jpeg`, `.svg`, `.gif`, `.webp`
+
+**Best Practices:**
+
+- Use Next.js `Image` component for automatic optimization
+- Keep file sizes reasonable (< 500KB for most images)
+- Use SVG for logos and icons
+- Use WebP or optimized PNG/JPG for photos
+- Consider responsive images for different screen sizes
+
 ## Next Steps
 
 - Read the [Developer Guide](/dev/developer-guide)
