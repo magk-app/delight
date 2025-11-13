@@ -1,0 +1,45 @@
+# Sprint Status - Mintlify Documentation Track
+# Generated: 2025-11-13
+# This file mirrors the BMM sprint-status format but only tracks the Mintlify publication effort.
+
+# generated: 2025-11-13
+# project: mintlify
+# project_key: mintlify
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists but has no dedicated context yet
+#   - contexted: Epic-specific tech spec/context created
+#
+# Story Status:
+#   - backlog: Story only exists in the epic breakdown
+#   - drafted: Story markdown exists in the stories folder
+#   - ready-for-dev: Story context created and approved
+#   - in-progress: Implementation underway
+#   - review: Awaiting review/QA
+#   - done: Implementation complete
+#
+# Retrospective Status:
+#   - optional: Retro planned but not executed
+#   - completed: Retro notes captured
+
+# WORKFLOW NOTES:
+# - Mintlify Quick Flow stories are sequential but can run in parallel if needed.
+# - Update this file whenever a story advances so agents stay in sync.
+
+generated: 2025-11-13
+project: mintlify
+project_key: mintlify
+tracking_system: file-system
+story_location: "{project-root}/docs/stories"
+
+development_status:
+  # Epic 1: Publish Delight Docs via Mintlify
+  epic-1: backlog
+  1-1-stand-up-mintlify-config-and-navigation: backlog
+  1-2-api-reference-ci-automation: backlog
+  1-3-deploy-mintlify-and-document-operations: backlog
+  epic-1-retrospective: optional

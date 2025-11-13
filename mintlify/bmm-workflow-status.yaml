@@ -1,0 +1,17 @@
+# Secondary workflow tracker dedicated to Mintlify documentation deployments
+# Runs independently from the primary Delight workflow status file in docs/
+importance: "secondary"
+owner: "Mintlify Docs Publishing"
+project: "mintlify"
+project_level: 1
+selected_track: "quick-flow"
+field_type: "brownfield"
+workflow_path: "bmad/bmm/workflows/workflow-status/paths/quick-flow-brownfield.yaml"
+notes: "Use this alternative workflow only when focusing on Mintlify documentation releases; Delight core remains authoritative."
+
+workflow_status: |
+  # Phase 1: Planning
+  tech-spec: mintlify/tech-spec.md
+
+  # Phase 2: Implementation
+  sprint-planning: mintlify/sprint-status.yaml

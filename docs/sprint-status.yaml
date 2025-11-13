@@ -68,7 +68,7 @@ development_status:
   2-2-implement-memory-service-with-3-tier-architecture: drafted # ✅ Comprehensive story created 2025-11-12
   2-3-build-eliza-agent-with-langgraph: backlog # Uses GPT-4o-mini
   2-4-create-companion-chat-api-with-sse-streaming: backlog
-  2-5-build-companion-chat-ui-frontend: backlog
+  2-5-companion-chat-ui-with-essential-memory: ready-for-dev # Story draft updated + context generated 2025-11-12
   2-6-implement-emotional-state-detection: backlog # CRITICAL: Uses cardiffnlp/roberta emotion model
   2-7-add-multiple-character-personas-future: backlog # Distinction: Eliza vs narrative personas
   epic-2-retrospective: optional
