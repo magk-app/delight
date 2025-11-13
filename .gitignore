@@ -124,3 +124,7 @@ Thumbs.db
 .cursor/
 .gemini/
 bmad/
+
+# other folders
+tmp/
+docs/archive/
