@@ -56,7 +56,49 @@ Copy `.env.example` to `.env` and configure:
 - **DATABASE_URL**: PostgreSQL connection string
 - **REDIS_URL**: Redis connection string
 - **CLERK_SECRET_KEY**: Clerk authentication secret
+- **CLERK_WEBHOOK_SECRET**: Clerk webhook validation secret
 - **OPENAI_API_KEY**: OpenAI API key
+- **CORS_ORIGINS**: Comma-separated list of allowed frontend URLs
 
 See `.env.example` for detailed configuration instructions.
+
+## Deployment
+
+This backend is designed to deploy to **Railway**.
+
+### Quick Deployment Checklist
+
+1. **Set Root Directory:** `packages/backend` in Railway settings
+2. **Configure Environment Variables:**
+   - `DATABASE_URL` - Supabase PostgreSQL URL (with `+asyncpg`)
+   - `CLERK_SECRET_KEY` - From Clerk Dashboard
+   - `CLERK_WEBHOOK_SECRET` - From Clerk Webhooks
+   - `CORS_ORIGINS` - Your Vercel frontend URL (no trailing slash!)
+3. **Railway auto-deploys** on push to main branch
+
+### Common Deployment Issues
+
+**502 Bad Gateway:**
+- Check Railway logs for startup errors
+- Verify all required environment variables are set
+- Ensure DATABASE_URL uses `postgresql+asyncpg://` format
+
+**CORS Errors:**
+- Update `CORS_ORIGINS` in Railway to include your Vercel domain
+- Format: `https://your-app.vercel.app,http://localhost:3000`
+- No trailing slashes, no wildcards
+
+**Database Connection Fails:**
+- Verify DATABASE_URL format: `postgresql+asyncpg://user:pass@host:5432/db`
+- URL-encode special characters in password
+- Check Supabase project is active (not paused)
+
+### Full Deployment Guide
+
+See [docs/DEPLOYMENT.md](../../docs/DEPLOYMENT.md) for comprehensive deployment instructions covering:
+- Railway configuration and environment variables
+- Vercel frontend setup
+- Clerk webhook configuration
+- Database migrations
+- Troubleshooting guide
 
