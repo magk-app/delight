@@ -2,6 +2,21 @@
 
 FastAPI backend for the Delight AI companion platform.
 
+## ⚠️ IMPORTANT: Before Starting Development
+
+**If you're testing authentication or user creation, you need ngrok running!**
+
+### Quick Checklist:
+
+- [ ] **Backend running:** `poetry run uvicorn main:app --reload`
+- [ ] **ngrok tunnel active:** `ngrok http 8000` (in separate terminal)
+- [ ] **Clerk webhook URL updated** to your current ngrok URL
+- [ ] **Environment variables set** (`.env` file configured)
+
+**Why?** Clerk webhooks need a public URL to reach your local backend. Without ngrok, users won't be created automatically via webhooks (though lazy user creation will still work).
+
+📖 **Full webhook setup guide:** See `docs/dev/1-3-WEBHOOK-SETUP-GUIDE.md`
+
 ## Quick Start
 
 ```bash
@@ -12,10 +27,23 @@ poetry install
 poetry run uvicorn main:app --reload
 ```
 
+**For webhook testing, also start ngrok in a separate terminal:**
+
+```bash
+# Temporary domain (expires in 2 hours)
+ngrok http 8000
+
+# OR use reserved domain (permanent - recommended!)
+ngrok http --domain=delight-dev.ngrok-free.app 8000
+# Get reserved domain from: https://dashboard.ngrok.com/cloud-edge/domains
+```
+
 Visit:
+
 - **API:** http://localhost:8000
 - **Swagger UI:** http://localhost:8000/docs
 - **ReDoc:** http://localhost:8000/redoc
+- **ngrok Dashboard:** http://localhost:4040 (when ngrok is running)
 
 ## Project Structure
 
@@ -53,6 +81,7 @@ poetry run uvicorn main:app --reload --port 8001
 ```
 
 **How Reload Works:**
+
 - Uvicorn watches Python files for changes
 - When you save a file, the server automatically restarts
 - API stays available during reload (brief interruption)
@@ -117,6 +146,7 @@ The `CLERK_JWKS_URL` is **required** for JWT signature verification. Without it,
 ### JWT Verification Failed: HTTP Error 404
 
 **Error Message:**
+
 ```
 PyJWKClientConnectionError: Fail to fetch data from the url, err: "HTTP Error 404: Not Found"
 ```
@@ -124,6 +154,7 @@ PyJWKClientConnectionError: Fail to fetch data from the url, err: "HTTP Error 40
 **Cause:** Missing or incorrect `CLERK_JWKS_URL` in your `.env` file.
 
 **Solution:**
+
 1. Follow the "Setting Up CLERK_JWKS_URL" section above
 2. Make sure the URL is your **instance-specific** JWKS endpoint
 3. Restart the backend server after adding the variable
@@ -131,6 +162,7 @@ PyJWKClientConnectionError: Fail to fetch data from the url, err: "HTTP Error 40
 ### Port Already in Use (Address Already in Use)
 
 **Error Message:**
+
 ```
 OSError: [Errno 48] Address already in use
 ```
@@ -140,6 +172,7 @@ OSError: [Errno 48] Address already in use
 **Solution:**
 
 **Option 1: Kill the existing process**
+
 ```bash
 # Find what's using port 8000
 lsof -i :8000  # Mac/Linux
@@ -151,6 +184,7 @@ taskkill /PID <PID> /F  # Windows
 ```
 
 **Option 2: Use a different port**
+
 ```bash
 poetry run uvicorn main:app --reload --port 8001
 ```
@@ -158,6 +192,7 @@ poetry run uvicorn main:app --reload --port 8001
 ### Database Connection Failed
 
 **Error Message:**
+
 ```
 sqlalchemy.exc.OperationalError: could not connect to server
 ```
@@ -165,6 +200,7 @@ sqlalchemy.exc.OperationalError: could not connect to server
 **Cause:** Invalid `DATABASE_URL` or database not accessible.
 
 **Solution:**
+
 1. **Check your `.env` file** has the correct `DATABASE_URL`
 2. **Verify Supabase connection string:**
    - Go to Supabase Dashboard → Project Settings → Database
@@ -178,6 +214,7 @@ sqlalchemy.exc.OperationalError: could not connect to server
 ### OpenAI API Key Invalid
 
 **Error Message:**
+
 ```
 openai.error.AuthenticationError: Incorrect API key provided
 ```
@@ -185,6 +222,7 @@ openai.error.AuthenticationError: Incorrect API key provided
 **Cause:** Missing or invalid `OPENAI_API_KEY`.
 
 **Solution:**
+
 1. Get your API key from https://platform.openai.com/api-keys
 2. Add to `.env` file:
    ```bash
@@ -196,6 +234,7 @@ openai.error.AuthenticationError: Incorrect API key provided
 ### Import Errors or Missing Dependencies
 
 **Error Message:**
+
 ```
 ModuleNotFoundError: No module named 'xxx'
 ```
@@ -203,6 +242,7 @@ ModuleNotFoundError: No module named 'xxx'
 **Cause:** Dependencies not installed or virtual environment not activated.
 
 **Solution:**
+
 ```bash
 # Reinstall dependencies
 poetry install
@@ -218,6 +258,7 @@ pwd  # Should show .../delight/packages/backend
 ### Database Migrations Out of Sync
 
 **Error Message:**
+
 ```
 alembic.util.exc.CommandError: Can't locate revision identified by 'xxx'
 ```
@@ -225,6 +266,7 @@ alembic.util.exc.CommandError: Can't locate revision identified by 'xxx'
 **Cause:** Local migration state doesn't match database state.
 
 **Solution:**
+
 ```bash
 # Check current migration status
 poetry run alembic current
@@ -243,4 +285,3 @@ poetry run alembic stamp head
 - **FastAPI Docs:** https://fastapi.tiangolo.com
 - **SQLAlchemy 2.0 Docs:** https://docs.sqlalchemy.org/en/20/
 - **Clerk Docs:** https://clerk.com/docs
-

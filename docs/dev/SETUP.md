@@ -86,6 +86,14 @@ cd ../..
    - Copy **"Publishable Key"** (starts with `pk_test_`)
    - Copy **"Secret Key"** (starts with `sk_test_`)
 
+3. **Set Up Webhooks (for local development)**
+   - ⚠️ **You'll need ngrok running** (see Step 7)
+   - After starting ngrok, go to **Webhooks** in Clerk dashboard
+   - Add endpoint: `https://YOUR_NGROK_URL/api/v1/webhooks/clerk`
+   - Subscribe to: `user.created`, `user.updated`
+   - Copy **Signing Secret** (starts with `whsec_`) → add to backend `.env` as `CLERK_WEBHOOK_SECRET`
+   - 📖 **Full guide:** See `docs/dev/1-3-WEBHOOK-SETUP-GUIDE.md`
+
 ### **Step 5: Set Up OpenAI API (2 min)**
 
 1. **Create Account & API Key**
@@ -127,6 +135,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ### **Step 7: Start Development Servers**
 
+**⚠️ IMPORTANT: For Authentication Testing, You Need ngrok!**
+
+If you're testing user signup or authentication, you need ngrok running to receive Clerk webhooks:
+
 **Terminal 1 - Backend:**
 
 ```bash
@@ -134,7 +146,16 @@ cd packages/backend
 poetry run uvicorn app.main:app --reload
 ```
 
-**Terminal 2 - Frontend:**
+**Terminal 2 - ngrok (REQUIRED for webhooks!):**
+
+```bash
+# Install ngrok first: https://ngrok.com/download
+ngrok http 8000
+# Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
+# Update Clerk webhook URL: https://YOUR_NGROK_URL/api/v1/webhooks/clerk
+```
+
+**Terminal 3 - Frontend:**
 
 ```bash
 cd packages/frontend
