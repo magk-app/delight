@@ -2,7 +2,7 @@
 
 **Story ID:** 2.2
 **Epic:** 2 - Companion & Memory System
-**Status:** drafted
+**Status:** ready-for-dev
 **Priority:** P0 (Core Memory Foundation)
 **Estimated Effort:** 12-16 hours (increased due to comprehensive requirements: goal-based search, case study testing, productivity structure, user priority system)
 **Assignee:** Claude Dev Agent
@@ -71,6 +71,12 @@ The hybrid search algorithm uses:
   - OpenAI API access (for embedding generation)
   - ARQ worker infrastructure (for background pruning job)
   - Redis connection (for ARQ job queue)
+
+- **Memory Architecture Strategy:**
+  - **Current**: pgvector-based implementation (hybrid search with semantic + time + frequency)
+  - **Evaluation Path**: Test accuracy with pgvector first, consider mem0 migration if needed (see Dev Notes)
+  - **Migration Triggers**: Task loss rate > 1%, personal memory accuracy < 90%, or need for automatic deduplication
+  - **Decision Document**: See `docs/epic-2/MEMORY-ARCHITECTURE-COMPARISON.md` for full analysis
 
 ### Technical Background from Epic 2 Design Documents
 
@@ -752,9 +758,15 @@ assert task_memory.embedding is not None
   - Time boost calculation
   - Frequency boost calculation
   - Final score ordering
-- [ ] **7.6** Mock OpenAI API for all tests (use `unittest.mock`)
-- [ ] **7.7** Use pytest fixtures for database sessions
-- [ ] **7.8** Target: 80%+ test coverage for `MemoryService`
+- [ ] **7.6** Test accuracy metrics:
+  - Task memory accuracy (target: 100% retrieval)
+  - Personal memory retention (target: 100% after 30 days)
+  - Recall@10 (target: > 90%)
+  - Precision@10 (target: > 80%)
+- [ ] **7.7** Mock OpenAI API for all tests (use `unittest.mock`)
+- [ ] **7.8** Use pytest fixtures for database sessions
+- [ ] **7.9** Target: 80%+ test coverage for `MemoryService`
+- [ ] **7.10** Log accuracy metrics to determine if mem0 migration needed
 
 ### Task 8: Integration Testing (AC: #1, #2, #3, #5, #9, #10)
 
@@ -768,14 +780,26 @@ assert task_memory.embedding is not None
   - Create project memories linked to goals
   - Query with goal-related keywords
   - Verify project tier memories prioritized
-- [ ] **8.4** Test case study scenarios (AC10):
+- [ ] **8.4** Test case study scenarios (AC10) - **CRITICAL FOR ACCURACY VALIDATION**:
   - Overwhelm scenario (schoolwork, catch up)
   - Family issues scenario (non-priority stressor)
   - Love interest scenario (romance category)
   - Isolation/loneliness scenario (emotional support)
   - Verify correct memory retrieval for each scenario
-- [ ] **8.5** Test with real database (use test database, not production)
-- [ ] **8.6** Test ARQ worker execution (manual trigger for testing)
+  - **Track metrics**: Recall@10, Precision@10, Task Loss Rate
+  - **Compare results**: Document accuracy vs. expected behavior
+- [ ] **8.5** Test task memory accuracy - **NO TASK LOSS**:
+  - Create 100 test tasks
+  - Query all tasks
+  - Verify 100% retrieval rate (task loss rate = 0%)
+  - If task loss > 1%, document for mem0 evaluation
+- [ ] **8.6** Test personal memory robustness:
+  - Create personal memories
+  - Verify 100% retention after 30 days simulation
+  - Test deduplication needs (document duplicate cases)
+- [ ] **8.7** Test with real database (use test database, not production)
+- [ ] **8.8** Test ARQ worker execution (manual trigger for testing)
+- [ ] **8.9** Generate accuracy report for mem0 evaluation decision
 
 ### Task 9: Goal-Based Search Implementation (AC: #9)
 
@@ -866,6 +890,11 @@ assert task_memory.embedding is not None
 - [ ] **14.8** Document ARQ worker setup in `docs/dev/SETUP.md`
 - [ ] **14.9** Add memory service to architecture documentation
 - [ ] **14.10** Document case study testing approach
+- [ ] **14.11** Document mem0 migration path:
+  - When to migrate (trigger conditions)
+  - How to migrate (personal/project to mem0, keep task in pgvector)
+  - Cost/benefit analysis
+  - Reference: `docs/epic-2/MEMORY-ARCHITECTURE-COMPARISON.md`
 
 ---
 
@@ -986,6 +1015,108 @@ AND created_at < (NOW() - INTERVAL '30 days');
 - Use batch delete (single SQL statement, not loop)
 - Index on `(memory_type, created_at)` for fast filtering
 - Run during off-peak hours (2:00 AM) to minimize impact
+
+### Memory Architecture Evaluation Strategy
+
+**From `docs/epic-2/MEMORY-ARCHITECTURE-COMPARISON.md`:**
+
+#### Current Implementation (pgvector)
+
+**Pros:**
+- ✅ Already implemented (Story 2.1-2.2 done)
+- ✅ Fast queries with HNSW index (<100ms)
+- ✅ Unified storage (PostgreSQL)
+- ✅ Low cost (no separate service)
+- ✅ Good for task memory (short-term)
+
+**Cons:**
+- ❌ No automatic deduplication
+- ❌ Manual relevance filtering
+- ⚠️ May need optimization for high accuracy
+
+#### Recommended Evaluation Path
+
+**Phase 1: Test Current System (This Story)**
+
+1. **Implement pgvector-based MemoryService** (Tasks 1-6)
+2. **Add comprehensive accuracy testing** (Tasks 7-8):
+   - Task memory accuracy: Target 100% retrieval (no task loss)
+   - Personal memory retention: Target 100% after 30 days
+   - Recall@10: Target > 90%
+   - Precision@10: Target > 80%
+3. **Run case study tests** (Task 13): Test with real user scenarios
+4. **Document accuracy metrics** (Task 8.9): Generate evaluation report
+
+**Phase 2: Evaluate Migration Need (After This Story)**
+
+**Migrate to mem0 if:**
+- Task loss rate > 1% (critical - can't lose tasks)
+- Personal memory accuracy < 90%
+- Need automatic deduplication (duplicates found in testing)
+- Want to reduce token usage (40-60% reduction)
+
+**Keep pgvector if:**
+- Accuracy meets targets (>90% recall, <1% task loss)
+- No significant deduplication needs
+- Cost is a concern
+- Current system works well
+
+#### Hybrid Architecture (If Migration Needed)
+
+**Strategy:** Use mem0 for Personal/Project, pgvector for Task
+
+```python
+# Personal/Project Memory: mem0 (high accuracy, deduplication)
+from mem0 import Memory
+
+mem0_client = Memory(
+    vector_store="qdrant",  # or "pinecone"
+    vector_store_config={...}
+)
+
+personal_memories = mem0_client.search(
+    query=query_text,
+    user_id=user_id,
+    memory_type="personal"
+)
+
+# Task Memory: pgvector (fast, temporary, already implemented)
+task_memories = memory_service.query_memories(
+    user_id=user_id,
+    query_text=query_text,
+    memory_types=[MemoryType.TASK]
+)
+```
+
+**Benefits of Hybrid:**
+- ✅ mem0's automatic deduplication for personal memories
+- ✅ mem0's self-improving relevance filtering
+- ✅ Lower cost (only Personal/Project in mem0, Task stays in pgvector)
+- ✅ Fast queries (both systems optimized)
+
+**Migration Effort:**
+- Estimated: 6-8 hours
+- Add mem0 client to MemoryService
+- Migrate existing Personal/Project memories
+- Update query logic to check both systems
+- Test accuracy improvement
+
+#### Key Decision Points
+
+**Decision 1: After Story 2.2 Completion**
+- Review accuracy metrics from Task 8.9 report
+- If metrics meet targets → Keep pgvector (no migration)
+- If metrics below targets → Plan mem0 migration
+
+**Decision 2: During Epic 2 Development**
+- Monitor task loss rate in Stories 2.3-2.5
+- If any tasks lost → Immediate mem0 evaluation
+- If duplicates found → Consider deduplication strategy
+
+**Decision 3: Before Production Launch**
+- Final accuracy validation with real users
+- Cost analysis (pgvector vs. mem0 + Qdrant)
+- Performance testing under load
 
 ### Learnings from Previous Story (2.1)
 
@@ -1122,11 +1253,16 @@ Story 2.5 (Chat UI)
 - **Task 4** (Pydantic Schemas): 30 minutes
 - **Task 5** (Configuration): 30 minutes
 - **Task 6** (Dependencies): 15 minutes
-- **Task 7** (Unit Tests): 2 hours
-- **Task 8** (Integration Tests): 1 hour
-- **Task 9** (Documentation): 1 hour
+- **Task 7** (Unit Tests + Accuracy Metrics): 2.5 hours
+- **Task 8** (Integration Tests + Case Studies): 2 hours
+- **Task 9** (Goal-Based Search): 1 hour
+- **Task 10** (Productivity Structure): 1 hour
+- **Task 11** (User Priority System): 1.5 hours
+- **Task 12** (Nuanced Emotion Support): 1 hour
+- **Task 13** (Case Study Testing Script): 1.5 hours
+- **Task 14** (Documentation + mem0 Migration Path): 1.5 hours
 
-**Total:** 10 hours (aligns with story estimate of 6-8 hours, with buffer)
+**Total:** 18.5 hours (reflects comprehensive requirements including accuracy testing and evaluation)
 
 ### Risk Mitigation
 
@@ -1461,8 +1597,70 @@ def adapt_priorities(base_weights, emotion, stress_level, energy_level):
 - Acts like psychologist + coach (understands user, adapts to context)
 - Dynamic and smart (not deterministic, adapts to user state)
 
+### Implementation Order (Strategic)
+
+**From `docs/epic-2/IMPLEMENTATION-STRATEGY.md`:**
+
+#### Recommended Phased Approach
+
+**Phase 1: Core Memory Service (This Story - Tasks 1-6)**
+- Build foundational MemoryService with pgvector
+- Embedding generation with OpenAI
+- Hybrid search implementation
+- Memory pruning worker
+- **Goal**: Get basic functionality working
+
+**Phase 2: Accuracy Testing (This Story - Tasks 7-8)**
+- Comprehensive unit tests
+- Integration tests with case studies
+- Accuracy metrics tracking
+- **Goal**: Validate accuracy meets requirements (>90% recall, <1% task loss)
+
+**Phase 3: Advanced Features (This Story - Tasks 9-13)**
+- Goal-based search (Task 9)
+- Productivity structure (Task 10)
+- User priority system (Task 11)
+- Nuanced emotion support (Task 12)
+- Case study testing script (Task 13)
+- **Goal**: Enable advanced AI companion features
+
+**Phase 4: Integration with LangGraph (Story 2.3)**
+- Eliza agent uses MemoryService for context retrieval
+- Test in LangGraph Studio Web (visual debugging)
+- Verify memory accuracy in live conversations
+- **Goal**: Memory works correctly with AI agent
+
+**Phase 5: Production Validation (Story 2.4-2.5)**
+- Monitor accuracy in production
+- Track task loss rate
+- Evaluate mem0 migration if needed
+- **Goal**: Ensure production-ready accuracy
+
+#### LangGraph Studio Integration Notes
+
+**Setup** (for Story 2.3):
+1. Install: `pip install langgraph-cli`
+2. Create `langgraph.json` config
+3. Run: `langgraph dev` → Opens http://localhost:8123
+4. Test agent with mock MemoryService first
+5. Add real MemoryService gradually
+
+**Testing Strategy:**
+- Visual debugging of agent flow
+- Test each node independently
+- Verify state transitions
+- Test with different inputs
+- Monitor memory query performance
+
+**Benefits:**
+- ✅ Catch memory issues before production
+- ✅ Debug agent logic visually
+- ✅ Test memory retrieval accuracy
+- ✅ Verify streaming works correctly
+
 ### Future Enhancements (Post-Story)
 
+**Memory System:**
 - [ ] Add memory deduplication (detect and merge similar memories)
 - [ ] Implement memory consolidation (summarize old memories)
 - [ ] Add memory importance scoring (prioritize retrieval beyond frequency)
@@ -1470,16 +1668,70 @@ def adapt_priorities(base_weights, emotion, stress_level, energy_level):
 - [ ] Add memory export/import for user data portability
 - [ ] Implement embedding caching (Redis cache by content hash)
 - [ ] Add memory analytics (track memory growth, access patterns)
+
+**AI/Emotion Features:**
 - [ ] LLM-based emotion context interpretation (beyond classifiers)
 - [ ] LLM-based universal factor weighting (dynamic task analysis)
 - [ ] Emotion trajectory tracking (emotion changes over time)
 - [ ] Context-aware emotion detection (consider conversation history)
 
+**Migration Considerations:**
+- [ ] Evaluate mem0 migration based on accuracy metrics
+- [ ] If migrating: Implement hybrid architecture (mem0 for Personal/Project)
+- [ ] Add deduplication layer if needed
+- [ ] Cost optimization (balance accuracy vs. cost)
+
 ---
 
-**Last Updated:** 2025-11-12 (Comprehensive update with user requirements)
-**Story Status:** drafted
-**Next Steps:** Run `story-context` workflow to generate technical context XML → mark `ready-for-dev`
+**Last Updated:** 2025-11-12 (Context generated, ready for implementation)
+**Story Status:** ready-for-dev
+**Context Reference:** `docs/stories/2-2-implement-memory-service-with-3-tier-architecture.context.xml`
+**Next Steps:** Implement story following tasks 1-14, test accuracy metrics, evaluate mem0 migration if needed
+
+---
+
+## Strategic Notes
+
+### Memory Architecture Decision Framework
+
+**This story implements pgvector-based memory service with comprehensive accuracy testing to enable data-driven decision on mem0 migration.**
+
+**Key Strategic Points:**
+
+1. **Start with pgvector** (already implemented, fast to iterate)
+2. **Test rigorously** (accuracy metrics in Tasks 7-8 are critical)
+3. **Evaluate after completion** (decision based on actual metrics, not assumptions)
+4. **Plan migration path** (hybrid architecture ready if needed)
+
+**Success Metrics** (from Tasks 7.6 and 8.9):
+- Task Loss Rate: < 1% (critical - can't lose tasks)
+- Personal Memory Retention: 100% (never lose personal memories)
+- Recall@10: > 90% (retrieve relevant memories)
+- Precision@10: > 80% (avoid irrelevant memories)
+
+**If metrics met** → Keep pgvector (simplicity, low cost)
+**If metrics not met** → Plan mem0 migration (higher accuracy, automatic deduplication)
+
+### Integration with Epic 2 Stories
+
+**Story 2.2 (This Story)** → Foundation
+- Provides: MemoryService with accuracy testing
+- Outputs: Accuracy metrics report for decision-making
+
+**Story 2.3 (Next)** → Agent Integration
+- Uses: MemoryService for context retrieval
+- Tests: Memory accuracy in LangGraph Studio
+- Validates: Real-world memory performance
+
+**Story 2.4-2.5** → Production Validation
+- Monitors: Task loss rate in production
+- Evaluates: Need for mem0 migration
+- Decides: Final memory architecture
+
+**References:**
+- Memory Architecture Comparison: `docs/epic-2/MEMORY-ARCHITECTURE-COMPARISON.md`
+- Implementation Strategy: `docs/epic-2/IMPLEMENTATION-STRATEGY.md`
+- LangGraph Studio Setup: `docs/epic-2/LANGGRAPH-STUDIO-SETUP.md`
 
 ## User Requirements Integration Summary
 
