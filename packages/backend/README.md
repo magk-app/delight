@@ -281,3 +281,51 @@ poetry run alembic stamp head
 - **FastAPI Docs:** https://fastapi.tiangolo.com
 - **SQLAlchemy 2.0 Docs:** https://docs.sqlalchemy.org/en/20/
 - **Clerk Docs:** https://clerk.com/docs
+
+## Deployment
+
+### Railway Deployment
+
+If you're deploying to Railway and experiencing issues (404s, 502s, CORS errors):
+
+1. **Read the comprehensive deployment checklist:** [RAILWAY-DEPLOYMENT-CHECKLIST.md](./RAILWAY-DEPLOYMENT-CHECKLIST.md)
+2. **Use the debug endpoint:** `https://your-railway-url/api/v1/health/debug`
+3. **Check all environment variables are set** (see checklist)
+4. **Verify CORS_ORIGINS includes your Vercel URL**
+
+**Most common Railway issues:**
+- **404 on companion endpoints** → Missing `OPENAI_API_KEY` or OpenAI package not installed
+- **JWT verification 404** → Missing or incorrect `CLERK_JWKS_URL`
+- **CORS errors** → Missing Vercel URL in `CORS_ORIGINS`
+- **502 errors** → Check Railway logs for Python tracebacks
+
+### Railway Environment Variables Checklist
+
+Make sure ALL of these are set in Railway Dashboard → Variables:
+
+**Required:**
+- `DATABASE_URL` - Supabase connection string
+- `CLERK_SECRET_KEY` - From Clerk Dashboard → API Keys
+- `CLERK_WEBHOOK_SECRET` - From Clerk Dashboard → Webhooks
+- `CLERK_JWKS_URL` - From Clerk Dashboard → API Keys → Advanced (⚠️ CRITICAL!)
+- `OPENAI_API_KEY` - From OpenAI Platform (⚠️ CRITICAL!)
+- `CORS_ORIGINS` - Include your Vercel URLs! (⚠️ CRITICAL!)
+  ```
+  http://localhost:3000,https://your-app.vercel.app,https://your-app-git-branch.vercel.app
+  ```
+
+**Optional:**
+- `ENVIRONMENT=production`
+- `REDIS_URL` - For background jobs
+- `SENTRY_DSN` - For error tracking
+
+### Quick Railway Diagnostic
+
+Once deployed, check this URL in your browser:
+
+```
+https://your-railway-url/api/v1/health/debug
+```
+
+This shows you exactly what's configured and what's missing.
+
