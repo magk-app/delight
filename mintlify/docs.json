@@ -19,97 +19,82 @@
     "light": "/favicon.ico",
     "dark": "/favicon.ico"
   },
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "href": "/introduction",
-        "pages": [
-          {
-            "group": "Get Started",
-            "pages": ["introduction", "quickstart"]
-          },
-          {
-            "group": "Architecture",
-            "pages": [
-              "architecture/overview",
-              "architecture/executive-summary",
-              "architecture/technology-stack",
-              "architecture/decision-records",
-              "architecture/data-architecture",
-              "architecture/api-contracts",
-              "architecture/security",
-              "architecture/deployment"
-            ]
-          },
-          {
-            "group": "Development",
-            "pages": [
-              "dev/setup",
-              "dev/bmad-guide",
-              "dev/quick-reference",
-              "dev/contributing"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Product",
-        "href": "/epics/overview",
-        "pages": [
-          {
-            "group": "Epics",
-            "pages": [
-              "epics/overview",
-              "epics/epic-1",
-              "epics/epic-2",
-              "epics/epic-3",
-              "epics/epic-4",
-              "epics/epic-5",
-              "epics/epic-6",
-              "epics/epic-7",
-              "epics/epic-8"
-            ]
-          },
-          {
-            "group": "User Guide",
-            "pages": ["users/getting-started"]
-          }
-        ]
-      },
-      {
-        "tab": "Operations",
-        "href": "/runbook/documentation",
-        "pages": [
-          {
-            "group": "Runbooks",
-            "pages": [
-              "runbook/documentation",
-              "runbook/deployment",
-              "runbook/troubleshooting"
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "href": "https://github.com/magk-app/delight"
-      }
-    ]
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/magk-app/delight"
+  "tabs": [
+    {
+      "name": "Documentation",
+      "url": "/"
+    },
+    {
+      "name": "Product",
+      "url": "epics"
+    },
+    {
+      "name": "Operations",
+      "url": "runbook"
     }
-  },
-  "integrations": {
-    "telemetry": {
-      "enabled": false
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": ["introduction", "quickstart"]
+    },
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/overview",
+        "architecture/executive-summary",
+        "architecture/technology-stack",
+        "architecture/decision-records",
+        "architecture/data-architecture",
+        "architecture/api-contracts",
+        "architecture/security",
+        "architecture/deployment"
+      ]
+    },
+    {
+      "group": "Development",
+      "pages": [
+        "dev/setup",
+        "dev/bmad-guide",
+        "dev/quick-reference",
+        "dev/contributing"
+      ]
+    },
+    {
+      "group": "Epics",
+      "pages": [
+        "epics/overview",
+        "epics/epic-1",
+        "epics/epic-2",
+        "epics/epic-3",
+        "epics/epic-4",
+        "epics/epic-5",
+        "epics/epic-6",
+        "epics/epic-7",
+        "epics/epic-8"
+      ]
+    },
+    {
+      "group": "User Guide",
+      "pages": ["users/getting-started"]
+    },
+    {
+      "group": "Runbooks",
+      "pages": [
+        "runbook/documentation",
+        "runbook/deployment",
+        "runbook/troubleshooting"
+      ]
     }
+  ],
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/magk-app/delight"
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/magk-app/delight"
   },
   "redirects": [
     {
@@ -117,5 +102,8 @@
       "destination": "/introduction",
       "permanent": false
     }
-  ]
+  ],
+  "api": {
+    "maintainOrder": true
+  }
 }
