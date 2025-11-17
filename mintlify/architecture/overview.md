@@ -18,15 +18,15 @@ Delight is a self-improvement companion platform that blends emotionally-aware A
 
 ## Technology Stack
 
-| Category | Technology | Version | Purpose |
-|----------|-----------|---------|---------|
-| Frontend Framework | Next.js | 15.x | React ecosystem, streaming support |
-| UI Library | React | 19.x | Latest React features, Server Components |
-| Backend Framework | FastAPI | Latest | Async-first, AI ecosystem integration |
-| Authentication | Clerk | Latest | Managed auth, OAuth |
-| AI Orchestration | LangGraph + LangChain | Latest | Stateful agents, multi-character support |
-| Database | Supabase (PostgreSQL) | PG 15+ | Managed DB with pgvector |
-| Vector Storage | PostgreSQL pgvector | 0.5+ | Unified storage, production-ready |
+| Category           | Technology            | Version | Purpose                                  |
+| ------------------ | --------------------- | ------- | ---------------------------------------- |
+| Frontend Framework | Next.js               | 15.x    | React ecosystem, streaming support       |
+| UI Library         | React                 | 19.x    | Latest React features, Server Components |
+| Backend Framework  | FastAPI               | Latest  | Async-first, AI ecosystem integration    |
+| Authentication     | Clerk                 | Latest  | Managed auth, OAuth                      |
+| AI Orchestration   | LangGraph + LangChain | Latest  | Stateful agents, multi-character support |
+| Database           | Supabase (PostgreSQL) | PG 15+  | Managed DB with pgvector                 |
+| Vector Storage     | PostgreSQL pgvector   | 0.5+    | Unified storage, production-ready        |
 
 ## System Architecture
 
@@ -49,18 +49,21 @@ Delight is a self-improvement companion platform that blends emotionally-aware A
 ## Core Components
 
 ### Frontend (Next.js)
+
 - App Router with Server Components
 - Streaming AI responses via SSE
 - Real-time world state updates via WebSocket
 - Clerk authentication integration
 
 ### Backend (FastAPI)
+
 - Async-first API design
 - LangGraph state machines for AI agents
 - Three-tier memory architecture (personal, project, task)
 - Background job processing with ARQ
 
 ### AI Layer
+
 - Multi-character system (Eliza companion + narrative characters)
 - Emotion-aware responses
 - Context-aware quest generation
@@ -68,7 +71,7 @@ Delight is a self-improvement companion platform that blends emotionally-aware A
 
 ## Design Principles
 
-1. **Cost Efficiency**: Target <$0.10/user/day operational cost
+1. **Cost Efficiency**: Target &lt;$0.10/user/day operational cost
 2. **Emotional Intelligence**: AI adapts to user's emotional state
 3. **Narrative Coherence**: Goals become part of a living story
 4. **Performance**: Streaming responses, optimized database queries
@@ -87,4 +90,3 @@ Delight is a self-improvement companion platform that blends emotionally-aware A
 ---
 
 For complete architecture documentation, see the [full architecture document](/architecture/overview) in the repository.
-

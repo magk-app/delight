@@ -67,7 +67,7 @@ Ready to dive in? Check out our [Quick Start Guide](/quickstart) to get up and r
 
 **For technical users:** Delight uses LangGraph for stateful multi-agent orchestration, a three-tier memory architecture (personal, project, task) powered by Chroma vector storage, and FastAPI + Next.js for a modern, responsive user experience.
 
-The system is designed for cost efficiency (<$0.10/user/day) while maintaining emotional intelligence through carefully crafted prompt engineering and context management.
+The system is designed for cost efficiency (&lt;$0.10/user/day) while maintaining emotional intelligence through carefully crafted prompt engineering and context management.
 
 ---
 
