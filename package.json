@@ -1,6 +1,6 @@
 {
   "name": "delight",
-  "version": "0.1.0",
+  "version": "0.2.5",
   "description": "AI-powered self-improvement companion platform",
   "private": true,
   "workspaces": [
@@ -18,12 +18,12 @@
     "test:backend": "cd packages/backend && poetry run pytest",
     "test:e2e": "pnpm --filter frontend test:e2e",
     "test:e2e:ui": "pnpm --filter frontend test:e2e:ui",
-    "docs:dev": "cd mintlify && mintlify dev",
-    "docs:lint": "cd mintlify && mintlify lint",
-    "docs:deploy": "cd mintlify && mintlify deploy"
+    "docs:dev": "cd mintlify && pnpm exec mint dev",
+    "docs:lint": "cd mintlify && pnpm exec mint broken-links",
+    "docs:deploy": "cd mintlify && pnpm exec mint deploy"
   },
   "dependencies": {
-    "mintlify": "^3.0.0"
+    "mint": "latest"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

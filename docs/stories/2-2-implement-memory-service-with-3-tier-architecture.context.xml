@@ -1,0 +1,506 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.2</storyId>
+    <title>Implement Memory Service with 3-Tier Architecture</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a memory service that manages personal, project, and task memories with automatic embedding generation and hybrid search</iWant>
+    <soThat>the AI companion can recall relevant context at the right abstraction level</soThat>
+    <tasks>
+### Task 1: Create Embedding Service (AC: #1, #6)
+- 1.1 Create `packages/backend/app/services/embedding_service.py`
+- 1.2 Implement `EmbeddingService` class with `generate_embedding(text: str) -> List[float]`
+- 1.3 Use OpenAI `text-embedding-3-small` model (1536 dimensions)
+- 1.4 Implement retry logic with exponential backoff (3 attempts)
+- 1.5 Add error handling: return `None` if all retries fail (log error)
+- 1.6 Add caching layer (optional): cache embeddings by content SHA-256 hash
+- 1.7 Add unit tests for embedding generation and error handling
+
+### Task 2: Create Memory Service Core Methods (AC: #1, #2, #3, #4)
+- 2.1 Create `packages/backend/app/services/memory_service.py`
+- 2.2 Implement `MemoryService.__init__(db: AsyncSession)` with OpenAI client initialization
+- 2.3 Implement `add_memory()` method
+- 2.4 Implement `query_memories()` method with hybrid search (semantic + time + frequency)
+- 2.5 Add helper method `_calculate_time_boost(days_since_access: int) -> float`
+- 2.6 Add helper method `_calculate_frequency_boost(access_count: int) -> float`
+- 2.7 Add helper method `_update_access_tracking(memories: List[Memory])` for batch updates
+
+### Task 3: Implement Memory Pruning (AC: #5, #7)
+- 3.1 Implement `prune_old_task_memories()` method in `MemoryService`
+- 3.2 Create `packages/backend/app/workers/memory_pruner.py`
+- 3.3 Implement ARQ worker function `prune_task_memories_job(ctx)`
+- 3.4 Configure ARQ worker settings with cron schedule (daily at 2:00 AM)
+- 3.5 Add retry configuration (3 attempts, exponential backoff)
+- 3.6 Test worker execution manually
+
+### Task 4-14: (See story file for complete task breakdown including Pydantic schemas, configuration, dependencies, testing, goal-based search, productivity structure, user priority system, emotion support, case study testing, and documentation)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+AC1: Memory Service Can Add Memories with Automatic Embedding Generation
+- Given: memory tables exist and OpenAI API key configured
+- When: call `memory_service.add_memory(user_id, memory_type, content, metadata)`
+- Then: memory created with embedding (1536 dimensions), metadata stored, timestamps set
+
+AC2: Memory Service Can Query Memories by Type (3-Tier Architecture)
+- Given: memories exist across all three tiers
+- When: call `memory_service.query_memories()` with memory_types filter
+- Then: only specified type(s) returned, or all types if no filter
+
+AC3: Memory Service Implements Hybrid Search (Semantic + Time + Frequency)
+- Given: memories with varying recency and access patterns
+- When: query memories
+- Then: results scored with base similarity * time_boost * frequency_boost, filtered by threshold (default 0.7)
+
+AC4: Memory Service Updates Access Tracking on Query
+- When: memories retrieved via `query_memories()`
+- Then: `accessed_at` updated to current time, `access_count` incremented
+
+AC5: Memory Service Can Prune Old Task Memories (30-Day Retention)
+- Given: task memories older than 30 days
+- When: call `prune_old_task_memories()`
+- Then: old task memories deleted, personal/project retained, count returned
+
+AC6: Embedding Service Handles Errors Gracefully
+- Given: OpenAI API unavailable
+- When: add memory
+- Then: retry 3 times with backoff, store without embedding if fails, log error, don't raise exception
+
+AC7: Background Worker Prunes Task Memories Daily
+- Given: ARQ worker configured
+- When: scheduled job runs (2:00 AM daily)
+- Then: `prune_old_task_memories()` called, count logged, failures retried
+
+AC8-14: (See story file for complete acceptance criteria including metadata support, goal-based search, case study testing, emotion detection, productivity structure, user priorities, and different embedding strategies)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+<!-- Epic 2 Tech Spec -->
+<doc>
+  <path>docs/tech-spec-epic-2.md</path>
+  <title>Epic 2 Technical Specification: Companion & Memory System</title>
+  <section>Memory Service Architecture (lines 140-152)</section>
+  <snippet>Complete service design with MemoryService class, EmbeddingService wrapper for OpenAI, background MemoryPruner worker, and hybrid search implementation with configurable thresholds.</snippet>
+</doc>
+
+<doc>
+  <path>docs/tech-spec-epic-2.md</path>
+  <title>Epic 2 Technical Specification</title>
+  <section>Hybrid Search Algorithm (lines 460-488)</section>
+  <snippet>Base score from cosine similarity, time boost = 1 + log(1 + days_since_access + 1)^-1, frequency boost = 1 + (log(access_count) * 0.1), final score = similarity * time_boost * frequency_boost.</snippet>
+</doc>
+
+<!-- Epic 2 Implementation Guide -->
+<doc>
+  <path>docs/epic-2/2-1-to-2-5-implementation-guide (draft).md</path>
+  <title>Epic 2 Implementation Guide</title>
+  <section>Story 2.2 Implementation Steps (lines 204-350)</section>
+  <snippet>Step-by-step guidance for service structure with async/await, embedding generation with error handling, vector similarity queries using pgvector operators, time decay and frequency boost calculations, and ARQ worker setup.</snippet>
+</doc>
+
+<!-- Memory Architecture Comparison -->
+<doc>
+  <path>docs/epic-2/MEMORY-ARCHITECTURE-COMPARISON.md</path>
+  <title>Memory Architecture Comparison</title>
+  <section>pgvector vs mem0 vs Graph-Based Analysis</section>
+  <snippet>Evaluation path: Test pgvector first (already implemented), consider mem0 migration if task loss >1% or accuracy <90%. Hybrid approach recommended: mem0 for Personal/Project (high accuracy, deduplication), pgvector for Task (fast, temporary).</snippet>
+</doc>
+
+<!-- Implementation Strategy -->
+<doc>
+  <path>docs/epic-2/IMPLEMENTATION-STRATEGY.md</path>
+  <title>Strategic Implementation Plan</title>
+  <section>Phased Approach with LangGraph Studio Integration</section>
+  <snippet>Phase 1: Core Memory Service (Tasks 1-6), Phase 2: Accuracy Testing (Tasks 7-8), Phase 3: Advanced Features (Tasks 9-13), Phase 4: Integration with LangGraph (Story 2.3), Phase 5: Production Validation. Includes LangGraph Studio setup for visual debugging.</snippet>
+</doc>
+
+<!-- How Eliza Should Respond -->
+<doc>
+  <path>docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md</path>
+  <title>How Eliza Should Respond (Design Document)</title>
+  <section>Stressor Log and 3-Tier Memory Principles</section>
+  <snippet>Memory service must support distinct stressor logging with emotion metadata, 3-tier strategic querying (Personal always queried top 5, Project queried on goal keywords, Task queried for recent context), and time-weighted relevance for contextual references.</snippet>
+</doc>
+
+<!-- Architecture Documentation -->
+<doc>
+  <path>docs/ARCHITECTURE.md</path>
+  <title>Delight Architecture</title>
+  <section>ADR-004: PostgreSQL pgvector for Vector Storage</section>
+  <snippet>Unified storage for vectors and structured data, production-ready, no separate service needed, ACID guarantees, excellent LangChain integration. HNSW index provides <100ms query performance.</snippet>
+</doc>
+
+<!-- Epics File -->
+<doc>
+  <path>docs/epics.md</path>
+  <title>Epic and Story Definitions</title>
+  <section>Story 2.2 Requirements (lines 342-377)</section>
+  <snippet>Implements 3-tier memory architecture (Personal/Project/Task) with automatic embedding generation using OpenAI text-embedding-3-small, hybrid search combining semantic similarity with time decay and access frequency, and background pruning of task memories after 30 days.</snippet>
+</doc>
+    </docs>
+
+    <code>
+<!-- Memory Models (Story 2.1) -->
+<code-artifact>
+  <path>packages/backend/app/models/memory.py</path>
+  <kind>model</kind>
+  <symbol>Memory, MemoryCollection, MemoryType</symbol>
+  <lines>complete file</lines>
+  <reason>Database models for memories with pgvector embedding column, metadata JSONB, and timestamps. Foundation for MemoryService implementation.</reason>
+</code-artifact>
+
+<!-- Database Session -->
+<code-artifact>
+  <path>packages/backend/app/db/session.py</path>
+  <kind>database</kind>
+  <symbol>get_db, engine</symbol>
+  <lines>complete file</lines>
+  <reason>Async database session management using SQLAlchemy 2.0. Required dependency for MemoryService initialization.</reason>
+</code-artifact>
+
+<!-- Configuration -->
+<code-artifact>
+  <path>packages/backend/app/core/config.py</path>
+  <kind>config</kind>
+  <symbol>Settings</symbol>
+  <lines>complete file</lines>
+  <reason>Application configuration including DATABASE_URL, environment settings. Needs update to add OPENAI_API_KEY, EMBEDDING_MODEL, and memory-related config.</reason>
+</code-artifact>
+
+<!-- Existing Clerk Service (Reference Pattern) -->
+<code-artifact>
+  <path>packages/backend/app/services/clerk_service.py</path>
+  <kind>service</kind>
+  <symbol>ClerkService</symbol>
+  <lines>complete file</lines>
+  <reason>Example service pattern with async methods, error handling, and external API integration. Good reference for MemoryService structure and error handling patterns.</reason>
+</code-artifact>
+
+<!-- Memory Schemas (Update Needed) -->
+<code-artifact>
+  <path>packages/backend/app/schemas/memory.py</path>
+  <kind>schema</kind>
+  <symbol>MemoryCreate, MemoryResponse</symbol>
+  <lines>complete file</lines>
+  <reason>Pydantic schemas for memory operations. Needs update to add MemoryQuery schema (query parameters) and MemoryWithScore schema (query results with hybrid scores).</reason>
+</code-artifact>
+
+<!-- Test Fixtures (Reference) -->
+<code-artifact>
+  <path>packages/backend/tests/conftest.py</path>
+  <kind>test-fixture</kind>
+  <symbol>async_session, test_user</symbol>
+  <lines>complete file</lines>
+  <reason>Pytest fixtures for database testing. Provides async_session fixture needed for MemoryService tests.</reason>
+</code-artifact>
+    </code>
+
+    <dependencies>
+      <python>
+        <!-- Core Dependencies -->
+        <package name="fastapi" version="^0.104.0" scope="production">Web framework</package>
+        <package name="sqlalchemy" version="^2.0.23" scope="production">ORM with async support</package>
+        <package name="asyncpg" version="^0.29.0" scope="production">PostgreSQL async driver</package>
+        <package name="alembic" version="^1.12.1" scope="production">Database migrations</package>
+        <package name="pydantic" version="^2.5.0" scope="production">Data validation</package>
+
+        <!-- New Dependencies for Story 2.2 -->
+        <package name="openai" version="^1.10.0" scope="production">OpenAI API for embedding generation (text-embedding-3-small)</package>
+
+        <!-- Background Jobs (Already Installed) -->
+        <package name="arq" version="^0.25.0" scope="production">Async Redis queue for background workers</package>
+        <package name="redis" version="^5.0.1" scope="production">Redis client for ARQ</package>
+
+        <!-- Testing -->
+        <package name="pytest" version="^7.4.3" scope="dev">Test framework</package>
+        <package name="pytest-asyncio" version="^0.21.1" scope="dev">Async test support</package>
+        <package name="pytest-cov" version="^4.1.0" scope="dev">Coverage reporting</package>
+        <package name="unittest.mock" version="builtin" scope="dev">Mock external APIs</package>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+<!-- Async Patterns -->
+<constraint>
+  <category>async-patterns</category>
+  <rule>All database operations MUST use async patterns with SQLAlchemy 2.0</rule>
+  <example>async with get_db() as db: service = MemoryService(db)</example>
+</constraint>
+
+<constraint>
+  <category>async-patterns</category>
+  <rule>Use async/await for OpenAI API calls (AsyncOpenAI client)</rule>
+  <example>await openai_client.embeddings.create(model="text-embedding-3-small", input=text)</example>
+</constraint>
+
+<!-- Error Handling -->
+<constraint>
+  <category>error-handling</category>
+  <rule>Embedding failures must NOT block memory creation - store memory without embedding (embedding=NULL) if OpenAI API fails after retries</rule>
+  <rationale>Conversation flow must continue even if embedding generation fails</rationale>
+</constraint>
+
+<constraint>
+  <category>error-handling</category>
+  <rule>Implement retry logic with exponential backoff (3 attempts: 1s, 2s, 4s delays) for OpenAI API calls</rule>
+</constraint>
+
+<constraint>
+  <category>error-handling</category>
+  <rule>Log all embedding generation errors with context: user_id, content preview (truncated to 100 chars), error_message</rule>
+</constraint>
+
+<!-- Data Retention -->
+<constraint>
+  <category>data-retention</category>
+  <rule>Task memories MUST be pruned after 30 days (automated via ARQ worker)</rule>
+  <rule>Personal and Project memories MUST NEVER be pruned (permanent retention)</rule>
+  <rationale>Task memories are short-term context, Personal/Project are long-term identity</rationale>
+</constraint>
+
+<!-- Memory Architecture -->
+<constraint>
+  <category>memory-architecture</category>
+  <rule>Use 3-tier memory architecture: Personal (identity), Project (goals), Task (short-term actions)</rule>
+  <rule>Hybrid search MUST combine semantic similarity (vector), time decay (recency), and access frequency</rule>
+  <rule>Filter by similarity_threshold (default 0.7) BEFORE applying time/frequency boosts</rule>
+</constraint>
+
+<!-- SQLAlchemy Patterns -->
+<constraint>
+  <category>sqlalchemy</category>
+  <rule>Use `memory.extra_data` internally for metadata (SQLAlchemy reserved keyword workaround), expose as `metadata` in Pydantic schemas</rule>
+  <source>Story 2.1 learnings</source>
+</constraint>
+
+<constraint>
+  <category>sqlalchemy</category>
+  <rule>Use pgvector `<=>` operator for cosine distance queries: `embedding <=> query_embedding::vector`</rule>
+  <rule>Order by distance ASC (lower distance = more similar)</rule>
+</constraint>
+
+<!-- Testing Requirements -->
+<constraint>
+  <category>testing</category>
+  <rule>Target 80%+ test coverage for MemoryService</rule>
+  <rule>Mock OpenAI API in all tests using unittest.mock</rule>
+  <rule>Test accuracy metrics: Task Loss Rate <1%, Personal Memory Retention 100%, Recall@10 >90%, Precision@10 >80%</rule>
+  <rule>Implement comprehensive case study tests (overwhelm, family, love, isolation scenarios)</rule>
+</constraint>
+
+<!-- Configuration -->
+<constraint>
+  <category>configuration</category>
+  <rule>Add to config.py: OPENAI_API_KEY, EMBEDDING_MODEL="text-embedding-3-small", EMBEDDING_DIMENSIONS=1536, MEMORY_SIMILARITY_THRESHOLD=0.7, MEMORY_PRUNE_RETENTION_DAYS=30</rule>
+  <rule>Update .env.example with OPENAI_API_KEY placeholder</rule>
+</constraint>
+  </constraints>
+
+  <interfaces>
+<!-- MemoryService Interface -->
+<interface>
+  <name>MemoryService</name>
+  <kind>service-class</kind>
+  <signature>
+class MemoryService:
+    def __init__(self, db: AsyncSession)
+
+    async def add_memory(
+        self,
+        user_id: UUID,
+        memory_type: MemoryType,
+        content: str,
+        metadata: Dict[str, Any] = None
+    ) -> Memory
+
+    async def query_memories(
+        self,
+        user_id: UUID,
+        query_text: str,
+        memory_types: Optional[List[MemoryType]] = None,
+        limit: int = 10,
+        similarity_threshold: float = 0.7
+    ) -> List[Memory]
+
+    async def prune_old_task_memories(self) -> int
+
+    # Helper methods
+    def _calculate_time_boost(self, days_since_access: int) -> float
+    def _calculate_frequency_boost(self, access_count: int) -> float
+    async def _update_access_tracking(self, memories: List[Memory]) -> None
+  </signature>
+  <path>packages/backend/app/services/memory_service.py</path>
+</interface>
+
+<!-- EmbeddingService Interface -->
+<interface>
+  <name>EmbeddingService</name>
+  <kind>service-class</kind>
+  <signature>
+class EmbeddingService:
+    def __init__(self, api_key: str, model: str = "text-embedding-3-small")
+
+    async def generate_embedding(self, text: str) -> Optional[List[float]]
+    # Returns None if all retries fail (logged)
+    # Implements 3 retry attempts with exponential backoff
+  </signature>
+  <path>packages/backend/app/services/embedding_service.py</path>
+</interface>
+
+<!-- ARQ Worker Interface -->
+<interface>
+  <name>MemoryPruner Worker</name>
+  <kind>arq-worker</kind>
+  <signature>
+async def prune_task_memories_job(ctx: Dict[str, Any]) -> int:
+    # Returns count of deleted memories
+    # Scheduled daily at 2:00 AM
+    # Retries 3 times on failure
+
+class WorkerSettings:
+    cron_jobs = [
+        cron(prune_task_memories_job, hour=2, minute=0)
+    ]
+  </signature>
+  <path>packages/backend/app/workers/memory_pruner.py</path>
+</interface>
+
+<!-- Pydantic Schemas -->
+<interface>
+  <name>MemoryQuery Schema</name>
+  <kind>pydantic-schema</kind>
+  <signature>
+class MemoryQuery(BaseModel):
+    query_text: str = Field(..., min_length=1, max_length=5000)
+    memory_types: Optional[List[MemoryType]] = None
+    limit: int = Field(default=10, ge=1, le=100)
+    similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+  </signature>
+  <path>packages/backend/app/schemas/memory.py</path>
+</interface>
+
+<interface>
+  <name>MemoryWithScore Schema</name>
+  <kind>pydantic-schema</kind>
+  <signature>
+class MemoryWithScore(MemoryResponse):
+    final_score: float
+    similarity_score: float
+    time_boost: float
+    frequency_boost: float
+  </signature>
+  <path>packages/backend/app/schemas/memory.py</path>
+</interface>
+
+<!-- OpenAI API Interface -->
+<interface>
+  <name>OpenAI Embeddings API</name>
+  <kind>external-api</kind>
+  <signature>
+await openai_client.embeddings.create(
+    model="text-embedding-3-small",
+    input=text,
+    encoding_format="float"
+)
+# Returns: {data: [{embedding: [float, ...]}], model: str, usage: {...}}
+# Dimensions: 1536
+# Cost: ~$0.02 per 1M tokens
+  </signature>
+  <path>External: OpenAI API</path>
+</interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing follows pytest patterns with async support (pytest-asyncio). All database tests use the `async_session` fixture from conftest.py. Mock external APIs (OpenAI) using unittest.mock to avoid real API calls. Target 80%+ coverage for services. Integration tests use test database (not production). ARQ worker tests use manual trigger for validation. Accuracy testing is CRITICAL: Track Task Loss Rate (<1%), Personal Memory Retention (100%), Recall@10 (>90%), Precision@10 (>80%). Case study scenarios (overwhelm, family, love, isolation) must validate real-world memory retrieval.
+    </standards>
+
+    <locations>
+      <location>packages/backend/tests/services/test_memory_service.py</location>
+      <location>packages/backend/tests/integration/test_memory_integration.py</location>
+      <location>packages/backend/tests/case_study/test_user_case_study.py</location>
+    </locations>
+
+    <ideas>
+<!-- Unit Tests for MemoryService -->
+<test-idea ac="AC1">
+  <name>test_add_memory_with_embedding_generation</name>
+  <description>Test that add_memory() creates memory with OpenAI embedding (1536 dimensions), stores metadata, sets timestamps</description>
+  <approach>Mock OpenAI API, call add_memory(), verify memory.embedding is not None, len(embedding) == 1536, metadata stored correctly</approach>
+</test-idea>
+
+<test-idea ac="AC1, AC6">
+  <name>test_add_memory_handles_openai_failure</name>
+  <description>Test that embedding failures don't block memory creation - memory stored without embedding after retries</description>
+  <approach>Mock OpenAI API to raise exception, verify memory created with embedding=NULL, error logged, no exception raised</approach>
+</test-idea>
+
+<test-idea ac="AC2">
+  <name>test_query_memories_filters_by_type</name>
+  <description>Test that query_memories() filters by memory_types (Personal/Project/Task)</description>
+  <approach>Create memories of all types, query with memory_types=[MemoryType.PERSONAL], verify only personal memories returned</approach>
+</test-idea>
+
+<test-idea ac="AC3">
+  <name>test_hybrid_search_scoring</name>
+  <description>Test that hybrid search combines similarity, time boost, and frequency boost correctly</description>
+  <approach>Create old and recent memories with different access counts, query, verify recent/frequent memories ranked higher even if similarity slightly lower</approach>
+</test-idea>
+
+<test-idea ac="AC4">
+  <name>test_access_tracking_updates</name>
+  <description>Test that query_memories() updates accessed_at timestamp and increments access_count</description>
+  <approach>Create memory, query after delay, refresh from DB, verify accessed_at > original, access_count incremented</approach>
+</test-idea>
+
+<test-idea ac="AC5">
+  <name>test_prune_old_task_memories</name>
+  <description>Test that prune_old_task_memories() deletes task memories >30 days, retains personal/project</description>
+  <approach>Create old task and personal memories (31 days ago), call prune, verify task deleted, personal retained</approach>
+</test-idea>
+
+<!-- Integration Tests -->
+<test-idea ac="AC1-AC5">
+  <name>test_end_to_end_memory_flow</name>
+  <description>Test complete flow: add memories across tiers, query with hybrid search, verify pruning</description>
+  <approach>Add personal/project/task memories, query each tier, verify correct results, test pruning worker</approach>
+</test-idea>
+
+<test-idea ac="AC9">
+  <name>test_goal_based_search</name>
+  <description>Test that goal-related queries prioritize project tier memories</description>
+  <approach>Create project memories with goal_id, query with "goal" keywords, verify project tier prioritized</approach>
+</test-idea>
+
+<!-- Case Study Tests (CRITICAL) -->
+<test-idea ac="AC10">
+  <name>test_case_study_scenarios</name>
+  <description>Test real user scenarios: overwhelm, family issues, love interest, isolation/loneliness</description>
+  <approach>Create memories for each scenario, query with emotional prompts, verify correct retrieval, track accuracy metrics</approach>
+</test-idea>
+
+<test-idea ac="AC10">
+  <name>test_task_memory_accuracy_no_loss</name>
+  <description>Test that 100 tasks can be stored and retrieved with 0% loss rate</description>
+  <approach>Create 100 test tasks, query all, verify 100% retrieval rate (critical: task loss <1%)</approach>
+</test-idea>
+
+<!-- Accuracy Metrics -->
+<test-idea ac="Multiple">
+  <name>test_accuracy_metrics</name>
+  <description>Test and log accuracy metrics for mem0 evaluation decision</description>
+  <approach>Measure Recall@10, Precision@10, Task Loss Rate, Personal Memory Retention. Log results for architecture decision.</approach>
+</test-idea>
+    </ideas>
+  </tests>
+</story-context>

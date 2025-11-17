@@ -4,6 +4,19 @@
 
 Last Updated: 2025-11-10
 
+### New in 2025-11-12 Rescan
+- [Project Overview](brainstorming/generated-docs/project-overview.md)
+- [Backend Architecture](brainstorming/generated-docs/architecture-backend.md)
+- [Frontend Architecture](brainstorming/generated-docs/architecture-frontend.md)
+- [Shared Types Architecture](brainstorming/generated-docs/architecture-shared.md)
+- [Backend API Contracts](brainstorming/generated-docs/api-contracts-backend.md)
+- [Backend Data Models](brainstorming/generated-docs/data-models-backend.md)
+- [Frontend API Surface](brainstorming/generated-docs/api-contracts-frontend.md)
+- [UI Component Inventory](brainstorming/generated-docs/component-inventory.md)
+- [Development Guide](brainstorming/generated-docs/development-guide.md)
+- [Deployment Overview](brainstorming/generated-docs/deployment-overview.md)
+- [Integration Architecture](brainstorming/generated-docs/integration-architecture.md)
+
 ---
 
 ## 🧭 **Navigation by Goal**

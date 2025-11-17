@@ -1,0 +1,111 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "theme": "mint",
+  "name": "Delight Documentation",
+  "description": "Emotionally intelligent AI companion that transforms overwhelming goals into achievable daily missions",
+  "favicon": "/favicon.ico",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#F8FAFC",
+    "dark": "#0F172A"
+  },
+  "background": {
+    "color": {
+      "light": "#FFFFFF",
+      "dark": "#0F172A"
+    }
+  },
+  "logo": {
+    "light": "/favicon.ico",
+    "dark": "/favicon.ico"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "pages": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/executive-summary",
+              "architecture/technology-stack",
+              "architecture/decision-records",
+              "architecture/data-architecture",
+              "architecture/api-contracts",
+              "architecture/security",
+              "architecture/deployment"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "dev/setup",
+              "dev/bmad-guide",
+              "dev/quick-reference",
+              "dev/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Product",
+        "pages": [
+          {
+            "group": "Epics",
+            "pages": [
+              "epics/overview",
+              "epics/epic-1",
+              "epics/epic-2",
+              "epics/epic-3",
+              "epics/epic-4",
+              "epics/epic-5",
+              "epics/epic-6",
+              "epics/epic-7",
+              "epics/epic-8"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": ["users/getting-started"]
+          }
+        ]
+      },
+      {
+        "tab": "Operations",
+        "pages": [
+          {
+            "group": "Runbooks",
+            "pages": [
+              "runbook/documentation",
+              "runbook/deployment",
+              "runbook/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/magk-app/delight"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/magk-app/delight"
+    }
+  },
+  "integrations": {
+    "telemetry": {
+      "enabled": false
+    }
+  }
+}
