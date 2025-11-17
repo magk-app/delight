@@ -4,7 +4,7 @@ Used for chat interactions, conversation history, and streaming responses.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -143,14 +143,14 @@ class ConversationHistoryResponse(BaseModel):
 class StreamTokenEvent(BaseModel):
     """SSE event for token streaming."""
 
-    type: str = Field(default="token", const=True)
+    type: Literal["token"] = "token"
     content: str = Field(..., description="Token content")
 
 
 class StreamCompleteEvent(BaseModel):
     """SSE event for stream completion."""
 
-    type: str = Field(default="complete", const=True)
+    type: Literal["complete"] = "complete"
     total_tokens: Optional[int] = Field(None, description="Total tokens used")
     cost: Optional[float] = Field(None, description="Cost in USD")
     model: Optional[str] = Field(None, description="Model used")
@@ -159,7 +159,7 @@ class StreamCompleteEvent(BaseModel):
 class StreamErrorEvent(BaseModel):
     """SSE event for streaming errors."""
 
-    type: str = Field(default="error", const=True)
+    type: Literal["error"] = "error"
     message: str = Field(..., description="Error message")
     code: Optional[str] = Field(None, description="Error code")
 

@@ -22,7 +22,7 @@ from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.security import get_current_user
+from app.core.clerk_auth import get_current_user
 from app.db.session import get_db
 from app.models.memory import Memory, MemoryType
 from app.models.user import User
