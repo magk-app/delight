@@ -1,53 +1,67 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
+  "$schema": "https://mintlify.com/docs.json",
   "name": "Delight Documentation",
   "favicon": "/favicon.ico",
+  "theme": "mint",
   "colors": {
     "primary": "#6366F1",
-    "light": "#818CF8",
-    "dark": "#4F46E5",
-    "anchors": {
-      "from": "#6366F1",
-      "to": "#818CF8"
+    "light": "#F8FAFC",
+    "dark": "#0F172A"
+  },
+  "logo": {
+    "light": "/favicon.ico",
+    "dark": "/favicon.ico"
+  },
+  "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Documentation",
+          "href": "/"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/magk-app/delight"
+        }
+      ]
+    },
+    "dropdowns": [
+      {
+        "dropdown": "Getting Started",
+        "icon": "rocket",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      },
+      {
+        "dropdown": "Development",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Setup",
+            "pages": ["dev/setup"]
+          },
+          {
+            "group": "Architecture",
+            "pages": ["architecture/overview"]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Get Started",
+      "href": "/quickstart"
     }
   },
-  "topbarLinks": [
-    {
-      "name": "GitHub",
-      "url": "https://github.com/magk-app/delight"
+  "footer": {
+    "socials": {
+      "github": "https://github.com/magk-app/delight"
     }
-  ],
-  "topbarCtaButton": {
-    "name": "Get Started",
-    "url": "/quickstart"
-  },
-  "anchors": [
-    {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://docs.delight.so"
-    },
-    {
-      "name": "GitHub",
-      "icon": "github",
-      "url": "https://github.com/magk-app/delight"
-    }
-  ],
-  "navigation": [
-    {
-      "group": "Get Started",
-      "pages": ["introduction", "quickstart"]
-    },
-    {
-      "group": "Architecture",
-      "pages": ["architecture/overview"]
-    },
-    {
-      "group": "Development",
-      "pages": ["dev/setup"]
-    }
-  ],
-  "footerSocials": {
-    "github": "https://github.com/magk-app/delight"
   }
 }
