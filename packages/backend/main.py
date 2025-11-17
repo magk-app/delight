@@ -3,6 +3,7 @@ Delight Backend API
 FastAPI application with health check endpoint and Swagger UI documentation.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -37,7 +38,6 @@ async def lifespan(app: FastAPI):
         print("✅ Database connections closed")
     except Exception as e:
         # Ignore cancellation errors during shutdown - they're expected when interrupting the server
-        import asyncio
         if isinstance(e, (asyncio.CancelledError, KeyboardInterrupt)):
             print("🛑 Server shutdown interrupted")
         else:
