@@ -1,9 +1,9 @@
 {
   "$schema": "https://mintlify.com/schema.json",
+  "theme": "mint",
   "name": "Delight Documentation",
   "description": "Emotionally intelligent AI companion that transforms overwhelming goals into achievable daily missions",
   "favicon": "/favicon.ico",
-  "theme": "mint",
   "colors": {
     "primary": "#6366F1",
     "light": "#F8FAFC",
@@ -19,91 +19,93 @@
     "light": "/favicon.ico",
     "dark": "/favicon.ico"
   },
-  "tabs": [
-    {
-      "name": "Documentation",
-      "url": "/"
-    },
-    {
-      "name": "Product",
-      "url": "epics"
-    },
-    {
-      "name": "Operations",
-      "url": "runbook"
-    }
-  ],
-  "navigation": [
-    {
-      "group": "Get Started",
-      "pages": ["introduction", "quickstart"]
-    },
-    {
-      "group": "Architecture",
-      "pages": [
-        "architecture/overview",
-        "architecture/executive-summary",
-        "architecture/technology-stack",
-        "architecture/decision-records",
-        "architecture/data-architecture",
-        "architecture/api-contracts",
-        "architecture/security",
-        "architecture/deployment"
-      ]
-    },
-    {
-      "group": "Development",
-      "pages": [
-        "dev/setup",
-        "dev/bmad-guide",
-        "dev/quick-reference",
-        "dev/contributing"
-      ]
-    },
-    {
-      "group": "Epics",
-      "pages": [
-        "epics/overview",
-        "epics/epic-1",
-        "epics/epic-2",
-        "epics/epic-3",
-        "epics/epic-4",
-        "epics/epic-5",
-        "epics/epic-6",
-        "epics/epic-7",
-        "epics/epic-8"
-      ]
-    },
-    {
-      "group": "User Guide",
-      "pages": ["users/getting-started"]
-    },
-    {
-      "group": "Runbooks",
-      "pages": [
-        "runbook/documentation",
-        "runbook/deployment",
-        "runbook/troubleshooting"
-      ]
-    }
-  ],
-  "topbarLinks": [
-    {
-      "name": "GitHub",
-      "url": "https://github.com/magk-app/delight"
-    }
-  ],
-  "footerSocials": {
-    "github": "https://github.com/magk-app/delight"
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "pages": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/executive-summary",
+              "architecture/technology-stack",
+              "architecture/decision-records",
+              "architecture/data-architecture",
+              "architecture/api-contracts",
+              "architecture/security",
+              "architecture/deployment"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "dev/setup",
+              "dev/bmad-guide",
+              "dev/quick-reference",
+              "dev/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Product",
+        "pages": [
+          {
+            "group": "Epics",
+            "pages": [
+              "epics/overview",
+              "epics/epic-1",
+              "epics/epic-2",
+              "epics/epic-3",
+              "epics/epic-4",
+              "epics/epic-5",
+              "epics/epic-6",
+              "epics/epic-7",
+              "epics/epic-8"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": ["users/getting-started"]
+          }
+        ]
+      },
+      {
+        "tab": "Operations",
+        "pages": [
+          {
+            "group": "Runbooks",
+            "pages": [
+              "runbook/documentation",
+              "runbook/deployment",
+              "runbook/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
   },
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/introduction",
-      "permanent": false
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/magk-app/delight"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/magk-app/delight"
     }
-  ],
-  "api": {
-    "maintainOrder": true
+  },
+  "integrations": {
+    "telemetry": {
+      "enabled": false
+    }
   }
 }
