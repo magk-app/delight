@@ -23,6 +23,7 @@
     "tabs": [
       {
         "tab": "Documentation",
+        "href": "/introduction",
         "pages": [
           {
             "group": "Get Started",
@@ -54,6 +55,7 @@
       },
       {
         "tab": "Product",
+        "href": "/epics/overview",
         "pages": [
           {
             "group": "Epics",
@@ -77,6 +79,7 @@
       },
       {
         "tab": "Operations",
+        "href": "/runbook/documentation",
         "pages": [
           {
             "group": "Runbooks",
@@ -107,5 +110,12 @@
     "telemetry": {
       "enabled": false
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/introduction",
+      "permanent": false
+    }
+  ]
 }
