@@ -18,49 +18,115 @@ This directory contains the Mintlify configuration and documentation pages for D
 
 3. **View your docs**: Open http://localhost:3000 in your browser
 
-### Windows Users: Username with Spaces Issue
+### 🚨 Windows Users: Critical Path Space Bug
 
-If you encounter a `SyntaxError: Invalid or unexpected token` error on Windows, this is likely because your Windows username contains spaces (e.g., "Jack Luo"). Here are three solutions:
+**If you see this error on Windows:**
+```
+C:\Users\Jack:1
+ ^^
+SyntaxError: Invalid or unexpected token
+```
 
-**Option 1: Use npx (Recommended - No Installation Needed)**
+**Root Cause**: The Mintlify CLI has a bug where it **cannot run** on Windows when your username contains a space (e.g., "Jack Luo" → `C:\Users\Jack Luo\`).
 
-Instead of using the globally installed mint CLI, use npx which bypasses the path issue:
+**Status**: This is an upstream bug in the `mint` package. See `WINDOWS-FIX-COMPLETE.md` for full analysis and `GITHUB-ISSUE-FOR-MINTLIFY.md` for the bug report.
+
+---
+
+### ✅ WORKING SOLUTION: Use WSL (Recommended)
+
+**This is the only reliable solution that works consistently.**
+
+#### Step 1: Install WSL (if not already installed)
+
+```powershell
+# In PowerShell (run as Administrator)
+wsl --install
+
+# Restart your computer if prompted
+```
+
+#### Step 2: Open WSL Terminal
+
+- Windows 11: Open "Ubuntu" from Start Menu
+- Windows 10: Open "Ubuntu" or "WSL" from Start Menu
+- Or use Windows Terminal → select Ubuntu/Linux profile
+
+#### Step 3: Navigate to Your Project
 
 ```bash
-# From the mintlify directory
+# Windows drives are mounted at /mnt/c/, /mnt/d/, etc.
+cd /mnt/c/Users/Jack\ Luo/Desktop/\(local\)\ github\ software/delight
+```
+
+**Important**: Escape the space in your username with `\` (backslash)
+
+#### Step 4: Run Mintlify
+
+```bash
+# Option A: Use pnpm scripts (from project root)
+pnpm docs:dev
+
+# Option B: Run directly (from mintlify directory)
+cd mintlify
+npx --yes mint@latest dev
+```
+
+#### Step 5: Open Browser
+
+Navigate to **http://localhost:3000**
+
+---
+
+### 📋 Alternative Solutions (Not Recommended)
+
+**These may NOT work due to the mint CLI bug:**
+
+<details>
+<summary>❌ Option: Use npx on Windows (DOES NOT WORK)</summary>
+
+```bash
+# This fails with the same error because the bug is in mint itself
+cd mintlify
 npx mint dev
-
-# Or from the repo root
-cd mintlify && npx mint dev
+# ❌ Still fails with SyntaxError
 ```
 
-**Option 2: Use WSL (Windows Subsystem for Linux)**
+</details>
 
-1. Install WSL: `wsl --install` in PowerShell (admin)
-2. Open your WSL terminal (Ubuntu/Debian)
-3. Navigate to your project: `cd /mnt/c/Users/Jack\ Luo/Desktop/delight`
-4. Run: `pnpm docs:dev`
+<details>
+<summary>⚠️ Option: Change npm Global Prefix (Advanced)</summary>
 
-**Option 3: Change npm Global Prefix**
-
-Change where npm installs global packages to a path without spaces:
+Only attempt this if you understand Windows PATH configuration:
 
 ```bash
-# Create a directory for global packages
 mkdir C:\npm-global
-
-# Configure npm to use it
 npm config set prefix C:\npm-global
-
-# Add to PATH: C:\npm-global (System Environment Variables)
-
-# Reinstall mint
+# Add C:\npm-global to System Environment Variables → PATH
 pnpm add -g mint
-
-# Now pnpm docs:dev should work
 ```
 
-**Verification**: After applying any solution, run `pnpm docs:dev` and verify the server starts at http://localhost:3000
+**Note**: This may still fail due to the mint CLI bug.
+</details>
+
+---
+
+### ✅ Verification
+
+After setup, confirm it works:
+
+```bash
+# From WSL
+cd /mnt/c/Users/Jack\ Luo/Desktop/\(local\)\ github\ software/delight
+pnpm docs:dev
+```
+
+**Expected output**:
+```
+✔ Local: http://localhost:3000
+```
+
+Then open your browser to http://localhost:3000 and verify the docs load.
 
 ## Available Commands
 

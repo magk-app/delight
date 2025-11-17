@@ -1,5 +1,5 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "$schema": "https://mintlify.com/schema.json",
   "name": "Delight Documentation",
   "favicon": "/favicon.ico",
   "theme": "mint",
@@ -15,10 +15,6 @@
   "navigation": {
     "global": {
       "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "/"
-        },
         {
           "anchor": "GitHub",
           "href": "https://github.com/magk-app/delight"
@@ -51,13 +47,6 @@
         ]
       }
     ]
-  },
-  "navbar": {
-    "primary": {
-      "type": "button",
-      "label": "Get Started",
-      "href": "/quickstart"
-    }
   },
   "footer": {
     "socials": {
