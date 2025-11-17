@@ -3,6 +3,7 @@ node_modules/
 .pnp/
 .pnp.js
 .yarn/
+package-lock.json  # pnpm project - use pnpm-lock.yaml instead
 
 # Python
 __pycache__/
