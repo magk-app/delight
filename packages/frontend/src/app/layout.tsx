@@ -1,17 +1,7 @@
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google";
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
+import { MainNav } from "@/components/navigation/main-nav";
 import "./globals.css";
-
-// const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: "Delight - AI-Powered Self-Improvement Companion",
   description:
@@ -32,26 +22,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className="font-sans" suppressHydrationWarning>
-          <header className="fixed top-0 right-0 p-4 z-50">
-            <SignedOut>
-              <div className="flex gap-2">
-                <SignInButton mode="modal">
-                  <button className="px-4 py-2 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors">
-                    Sign In
-                  </button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <button className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
-                    Sign Up
-                  </button>
-                </SignUpButton>
-              </div>
-            </SignedOut>
-            <SignedIn>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
-          </header>
-          {children}
+          <MainNav />
+          <div className="pt-16">{children}</div>
         </body>
       </html>
     </ClerkProvider>
