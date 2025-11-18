@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import {
   ClerkProvider,
   SignInButton,
@@ -9,8 +8,6 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Delight - AI-Powered Self-Improvement Companion",
@@ -31,7 +28,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={inter.className} suppressHydrationWarning>
+        <body className="font-sans" suppressHydrationWarning>
           <header className="fixed top-0 right-0 p-4 z-50">
             <SignedOut>
               <div className="flex gap-2">
