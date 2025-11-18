@@ -13,12 +13,12 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 24% 16%;
 
-    /* Delight Brand Colors - Warm amber/gold for progress and wins */
-    --primary: 30 100% 63%;
+    /* Primary - Warm amber/gold (from UX spec) */
+    --primary: 27 91% 55%; /* #F79F1F */
     --primary-foreground: 0 0% 100%;
 
-    /* Soft purple for Eliza presence and wisdom */
-    --secondary: 272 72% 65%;
+    /* Secondary - Soft purple (from UX spec) */
+    --secondary: 262 52% 60%; /* #A55EEA */
     --secondary-foreground: 0 0% 100%;
 
     --muted: 210 17% 93%;
@@ -79,5 +79,29 @@
   body {
     @apply bg-background text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 }
