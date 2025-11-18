@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="config-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>⚙️ Configuration Panel</h1>
+        <p class="subtitle">Configure models, search parameters, and system behavior</p>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="loadConfig()">
+                🔄 Reload
+            </button>
+            <button class="btn btn-success" onclick="saveConfig()">
+                💾 Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="config-status" class="alert" style="display: none;"></div>
+
+    <!-- Configuration Tabs -->
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('models')">🤖 Models</button>
+        <button class="tab-button" onclick="switchTab('search')">🔍 Search</button>
+        <button class="tab-button" onclick="switchTab('extraction')">📝 Fact Extraction</button>
+        <button class="tab-button" onclick="switchTab('advanced')">⚡ Advanced</button>
+    </div>
+
+    <!-- Models Tab -->
+    <div id="models-tab" class="tab-content active">
+        <div class="config-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💬 Chat Model</h2>
+                    <span class="badge badge-info">Default for conversations</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="chat-model-select">Model:</label>
+                        <select id="chat-model-select" class="select-input">
+                            <option value="gpt-4o-mini">GPT-4o Mini (Fast & Cheap)</option>
+                            <option value="gpt-4o">GPT-4o (Balanced)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                        <p class="help-text">Used for: Fact extraction, categorization, general chat</p>
+                    </div>
+                    <div class="model-info">
+                        <div class="info-row">
+                            <span>💰 Cost:</span>
+                            <span id="chat-model-cost">~$0.15 / 1M tokens</span>
+                        </div>
+                        <div class="info-row">
+                            <span>⚡ Speed:</span>
+                            <span id="chat-model-speed">Very Fast</span>
+                        </div>
+                        <div class="info-row">
+                            <span>🎯 Quality:</span>
+                            <span id="chat-model-quality">Good</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🧠 Reasoning Model</h2>
+                    <span class="badge badge-warning">For complex tasks</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="reasoning-model-select">Model:</label>
+                        <select id="reasoning-model-select" class="select-input">
+                            <option value="o1-preview">O1 Preview (Best Reasoning)</option>
+                            <option value="o1-mini">O1 Mini</option>
+                            <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        </select>
+                        <p class="help-text">Used for: Complex planning, multi-step workflows, deep analysis</p>
+                    </div>
+                    <div class="model-info">
+                        <div class="info-row">
+                            <span>💰 Cost:</span>
+                            <span id="reasoning-model-cost">~$15.00 / 1M tokens</span>
+                        </div>
+                        <div class="info-row">
+                            <span>⚡ Speed:</span>
+                            <span id="reasoning-model-speed">Slower</span>
+                        </div>
+                        <div class="info-row">
+                            <span>🎯 Quality:</span>
+                            <span id="reasoning-model-quality">Excellent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>✨ High-Quality Model</h2>
+                    <span class="badge badge-success">Premium outputs</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="expensive-model-select">Model:</label>
+                        <select id="expensive-model-select" class="select-input">
+                            <option value="gpt-4o">GPT-4o (Recommended)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="o1-preview">O1 Preview</option>
+                        </select>
+                        <p class="help-text">Used for: Final outputs, creative writing, important summaries</p>
+                    </div>
+                    <div class="model-info">
+                        <div class="info-row">
+                            <span>💰 Cost:</span>
+                            <span id="expensive-model-cost">~$2.50 / 1M tokens</span>
+                        </div>
+                        <div class="info-row">
+                            <span>⚡ Speed:</span>
+                            <span id="expensive-model-speed">Fast</span>
+                        </div>
+                        <div class="info-row">
+                            <span>🎯 Quality:</span>
+                            <span id="expensive-model-quality">Very High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🎯 Embedding Model</h2>
+                    <span class="badge badge-primary">Vector search</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="embedding-model-select">Model:</label>
+                        <select id="embedding-model-select" class="select-input">
+                            <option value="text-embedding-3-small">Text Embedding 3 Small (Recommended)</option>
+                            <option value="text-embedding-3-large">Text Embedding 3 Large</option>
+                            <option value="text-embedding-ada-002">Ada 002 (Legacy)</option>
+                        </select>
+                        <p class="help-text">Used for: Semantic search, similarity matching, memory embeddings</p>
+                    </div>
+                    <div class="model-info">
+                        <div class="info-row">
+                            <span>💰 Cost:</span>
+                            <span id="embedding-model-cost">~$0.02 / 1M tokens</span>
+                        </div>
+                        <div class="info-row">
+                            <span>📏 Dimensions:</span>
+                            <span id="embedding-dimensions">1536</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Comparison -->
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2>📊 Model Comparison</h2>
+            </div>
+            <div class="card-body">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Speed</th>
+                            <th>Cost (Input)</th>
+                            <th>Cost (Output)</th>
+                            <th>Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>gpt-4o-mini</strong></td>
+                            <td><span class="badge badge-success">Very Fast</span></td>
+                            <td>$0.15 / 1M</td>
+                            <td>$0.60 / 1M</td>
+                            <td>General chat, fact extraction</td>
+                        </tr>
+                        <tr>
+                            <td><strong>gpt-4o</strong></td>
+                            <td><span class="badge badge-info">Fast</span></td>
+                            <td>$2.50 / 1M</td>
+                            <td>$10.00 / 1M</td>
+                            <td>High-quality outputs, balanced</td>
+                        </tr>
+                        <tr>
+                            <td><strong>o1-preview</strong></td>
+                            <td><span class="badge badge-warning">Slower</span></td>
+                            <td>$15.00 / 1M</td>
+                            <td>$60.00 / 1M</td>
+                            <td>Complex reasoning, planning</td>
+                        </tr>
+                        <tr>
+                            <td><strong>o1-mini</strong></td>
+                            <td><span class="badge badge-info">Medium</span></td>
+                            <td>$3.00 / 1M</td>
+                            <td>$12.00 / 1M</td>
+                            <td>STEM, coding tasks</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Tab -->
+    <div id="search-tab" class="tab-content">
+        <div class="config-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>🎯 Similarity Threshold</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="similarity-threshold">Minimum Similarity (0.0 - 1.0):</label>
+                        <div class="range-input-group">
+                            <input type="range" id="similarity-threshold" min="0" max="1" step="0.05" value="0.7"
+                                   oninput="document.getElementById('similarity-value').textContent = this.value">
+                            <span id="similarity-value" class="range-value">0.7</span>
+                        </div>
+                        <p class="help-text">Higher = more strict matching. Lower = more results.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Search Limits</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="default-search-limit">Default Limit:</label>
+                        <input type="number" id="default-search-limit" class="form-input" min="1" max="100" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="max-search-limit">Maximum Limit:</label>
+                        <input type="number" id="max-search-limit" class="form-input" min="1" max="500" value="100" disabled>
+                        <p class="help-text">Hard limit for API requests</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔀 Hybrid Search Weights</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="vector-weight">Vector Search Weight:</label>
+                        <div class="range-input-group">
+                            <input type="range" id="vector-weight" min="0" max="1" step="0.1" value="0.7"
+                                   oninput="updateHybridWeights(this.value)">
+                            <span id="vector-weight-value" class="range-value">0.7</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Keyword Search Weight:</label>
+                        <div class="range-input-group">
+                            <input type="range" id="keyword-weight" min="0" max="1" step="0.1" value="0.3" disabled>
+                            <span id="keyword-weight-value" class="range-value">0.3</span>
+                        </div>
+                        <p class="help-text">Automatically calculated: 1 - vector weight</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌐 Graph Traversal</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="graph-max-depth">Maximum Depth:</label>
+                        <input type="number" id="graph-max-depth" class="form-input" min="1" max="10" value="3">
+                        <p class="help-text">How many relationship hops to follow</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fact Extraction Tab -->
+    <div id="extraction-tab" class="tab-content">
+        <div class="config-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📝 Extraction Limits</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="max-facts">Max Facts Per Message:</label>
+                        <input type="number" id="max-facts" class="form-input" min="1" max="50" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="min-fact-length">Minimum Fact Length (chars):</label>
+                        <input type="number" id="min-fact-length" class="form-input" min="5" max="100" value="10">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏷️ Categorization</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="auto-categorize" checked>
+                            <label for="auto-categorize">Auto-Categorize Facts</label>
+                        </div>
+                        <p class="help-text">Automatically assign categories using LLM</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="max-categories">Max Categories Per Fact:</label>
+                        <input type="number" id="max-categories" class="form-input" min="1" max="5" value="3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Tab -->
+    <div id="advanced-tab" class="tab-content">
+        <div class="config-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💾 Storage</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">Backend:</span>
+                            <span class="info-value">JSON File Storage</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Location:</span>
+                            <span class="info-value">experiments/data/memories.json</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>⚡ Performance</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="max-parallel-tasks">Max Parallel Tasks:</label>
+                        <input type="number" id="max-parallel-tasks" class="form-input" min="1" max="10" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="max-sequential-depth">Max Sequential Depth:</label>
+                        <input type="number" id="max-sequential-depth" class="form-input" min="1" max="20" value="10">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔒 Safety</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="read-only-mode">
+                            <label for="read-only-mode">Read-Only Mode</label>
+                        </div>
+                        <p class="help-text">Prevent database writes for testing</p>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enable-cost-tracking" checked>
+                            <label for="enable-cost-tracking">Enable Cost Tracking</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="warn-expensive-ops" checked>
+                            <label for="warn-expensive-ops">Warn Before Expensive Operations</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/config.js"></script>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1>🧪 Experimental Agent Dashboard</h1>
+        <p class="subtitle">Real-time analytics, memory visualization, and model configuration</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🧠</div>
+            <div class="stat-content">
+                <h3 id="total-memories">-</h3>
+                <p>Total Memories</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <h3 id="total-cost">$0.00</h3>
+                <p>Token Cost (24h)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h3 id="total-tokens">-</h3>
+                <p>Tokens Used (24h)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <h3 id="total-embeddings">-</h3>
+                <p>Embeddings Generated</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Memory Distribution -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📊 Memory Distribution by Type</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="memory-type-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🏷️ Top Categories</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="category-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Token Usage Over Time -->
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2>💸 Token Usage Over Time</h2>
+                <div class="card-controls">
+                    <select id="time-range" class="select-input">
+                        <option value="24">Last 24 Hours</option>
+                        <option value="168">Last Week</option>
+                        <option value="720">Last 30 Days</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="token-usage-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Model Usage Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🤖 Model Usage & Costs</h2>
+            </div>
+            <div class="card-body">
+                <div id="model-usage-table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Tokens</th>
+                                <th>Cost</th>
+                                <th>Requests</th>
+                            </tr>
+                        </thead>
+                        <tbody id="model-usage-tbody">
+                            <tr>
+                                <td colspan="4" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h2>⏱️ Recent Activity</h2>
+            </div>
+            <div class="card-body">
+                <div id="recent-activity" class="activity-list">
+                    <p class="text-muted">Loading recent activity...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Memory Graph Preview -->
+        <div class="card card-full">
+            <div class="card-header">
+                <h2>🌐 Knowledge Graph Preview</h2>
+                <a href="/memories" class="btn btn-sm">View Full Graph →</a>
+            </div>
+            <div class="card-body">
+                <div id="graph-preview" style="height: 400px;">
+                    <!-- Graph will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h2>⚡ Quick Actions</h2>
+            </div>
+            <div class="card-body">
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-block" onclick="testSearch()">
+                        🔍 Test Search
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="window.location.href='/config'">
+                        ⚙️ Configure Models
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="exportData()">
+                        📥 Export Data
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="refreshAllData()">
+                        🔄 Refresh All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="card">
+            <div class="card-header">
+                <h2>ℹ️ System Info</h2>
+            </div>
+            <div class="card-body">
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">Storage:</span>
+                        <span class="info-value" id="storage-type">JSON</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Chat Model:</span>
+                        <span class="info-value" id="chat-model">gpt-4o-mini</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Embedding Model:</span>
+                        <span class="info-value" id="embedding-model">text-embedding-3-small</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Version:</span>
+                        <span class="info-value">0.1.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="search-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🔍 Test Search</h2>
+            <button class="modal-close" onclick="closeSearchModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="search-query">Search Query:</label>
+                <input type="text" id="search-query" class="form-input" placeholder="What are my programming preferences?" />
+            </div>
+            <div class="form-group">
+                <label for="search-strategy">Search Strategy:</label>
+                <select id="search-strategy" class="select-input">
+                    <option value="auto">Auto (Recommended)</option>
+                    <option value="semantic">Semantic (Vector)</option>
+                    <option value="keyword">Keyword (BM25)</option>
+                    <option value="categorical">Categorical</option>
+                    <option value="temporal">Temporal</option>
+                    <option value="hybrid">Hybrid</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary btn-block" onclick="executeSearch()">
+                    Search
+                </button>
+            </div>
+            <div id="search-results" class="search-results">
+                <!-- Results will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}
