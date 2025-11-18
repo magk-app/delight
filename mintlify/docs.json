@@ -82,7 +82,7 @@
       "anchors": [
         {
           "anchor": "GitHub",
-          "href": "https://github.com/your-org/delight",
+          "href": "https://github.com/magk-app/delight",
           "icon": "github"
         }
       ]
@@ -96,13 +96,13 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@delight.com"
+        "href": "mailto:jack@hexahacks.com"
       }
     ]
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/your-org/delight"
+      "github": "https://github.com/magk-app/delight"
     }
   }
 }

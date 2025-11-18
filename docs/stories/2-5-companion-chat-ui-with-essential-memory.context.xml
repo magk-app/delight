@@ -1,0 +1,449 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.5</storyId>
+    <title>Companion Chat UI with Essential Memory (Vertical Slice)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-5-companion-chat-ui-with-essential-memory.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Delight user</asA>
+    <iWant>to chat with Eliza and see her remember context from previous messages</iWant>
+    <soThat>I can have meaningful conversations where she understands my situation and provides contextual support</soThat>
+    <tasks>
+      <task id="1" name="Create Chat API Endpoints" acceptance_criteria="1,2,6" estimated_time="2 hours">
+        <subtask id="1.1">Create packages/backend/app/api/v1/companion.py</subtask>
+        <subtask id="1.2">Implement POST /api/v1/companion/chat endpoint with conversation creation and user message storage</subtask>
+        <subtask id="1.3">Implement GET /api/v1/companion/stream/{conversation_id} endpoint with memory query, OpenAI streaming, and SSE events</subtask>
+        <subtask id="1.4">Implement GET /api/v1/companion/history endpoint for conversation history</subtask>
+        <subtask id="1.5">Add Pydantic schemas in app/schemas/companion.py (ChatRequest, ChatResponse, ConversationHistoryResponse)</subtask>
+        <subtask id="1.6">Register router in app/api/v1/__init__.py</subtask>
+      </task>
+      <task id="2" name="Implement Essential Memory Operations (Inline)" acceptance_criteria="4,5,6" estimated_time="2.5 hours">
+        <subtask id="2.0">Import Story 2.1 models/schemas (Memory, MemoryCollection, MemoryType, MemoryCreate, MemoryResponse) - DO NOT recreate classes</subtask>
+        <subtask id="2.1">Create inline helper functions: _generate_embedding(), _store_memory(), _query_memories()</subtask>
+        <subtask id="2.2">Implement memory storage logic in stream_response() - store user and assistant messages</subtask>
+        <subtask id="2.3">Implement memory retrieval in stream_response() - query before generating response</subtask>
+        <subtask id="2.4">Add simple heuristics for memory type detection (_detect_memory_type)</subtask>
+      </task>
+      <task id="3" name="Implement Simple Eliza Agent" acceptance_criteria="6" estimated_time="1.5 hours">
+        <subtask id="3.1">Create packages/backend/app/agents/simple_eliza.py</subtask>
+        <subtask id="3.2">Implement SimpleElizaAgent class with generate_response() and _build_system_prompt() methods</subtask>
+        <subtask id="3.3">Integrate agent into stream_response() endpoint</subtask>
+        <subtask id="3.4">Add error handling for OpenAI API failures</subtask>
+      </task>
+      <task id="4" name="Implement SSE Streaming" acceptance_criteria="2" estimated_time="1 hour">
+        <subtask id="4.1">Install SSE dependencies (already have fastapi with streaming support)</subtask>
+        <subtask id="4.2">Implement SSE response in stream_response() using StreamingResponse with event_generator</subtask>
+        <subtask id="4.3">Test SSE streaming with curl</subtask>
+      </task>
+      <task id="5" name="Create Chat UI Components" acceptance_criteria="1,2,3,7" estimated_time="3 hours">
+        <subtask id="5.1">Create packages/frontend/src/app/companion/page.tsx</subtask>
+        <subtask id="5.2">Create packages/frontend/src/components/companion/CompanionChat.tsx</subtask>
+        <subtask id="5.3">Create packages/frontend/src/components/companion/MessageList.tsx with auto-scroll</subtask>
+        <subtask id="5.4">Create packages/frontend/src/components/companion/Message.tsx with user/assistant styling</subtask>
+        <subtask id="5.5">Create packages/frontend/src/components/companion/MessageInput.tsx with auto-resize and Enter to send</subtask>
+        <subtask id="5.6">Create packages/frontend/src/components/companion/LoadingIndicator.tsx with typing dots animation</subtask>
+      </task>
+      <task id="6" name="Implement useChat Hook with SSE" acceptance_criteria="2,3" estimated_time="2 hours">
+        <subtask id="6.1">Create packages/frontend/src/lib/hooks/useChat.ts with SSE EventSource integration</subtask>
+        <subtask id="6.2">Add error handling for SSE disconnections</subtask>
+        <subtask id="6.3">Add auto-reconnect logic (optional enhancement)</subtask>
+        <subtask id="6.4">Test SSE streaming in browser DevTools</subtask>
+      </task>
+      <task id="7" name="Add Framer Motion Animations" acceptance_criteria="2,7" estimated_time="1 hour">
+        <subtask id="7.1">Install Framer Motion: pnpm add framer-motion</subtask>
+        <subtask id="7.2">Add message animations in Message.tsx (fade in from bottom)</subtask>
+        <subtask id="7.3">Add breathing effect to loading indicator</subtask>
+        <subtask id="7.4">Test animations on different devices</subtask>
+      </task>
+      <task id="8" name="Mobile Responsive Styling" acceptance_criteria="7" estimated_time="1 hour">
+        <subtask id="8.1">Add responsive CSS to chat components</subtask>
+        <subtask id="8.2">Ensure input field stays visible on mobile keyboard open</subtask>
+        <subtask id="8.3">Test on mobile viewport (375px width)</subtask>
+        <subtask id="8.4">Test touch interactions (scroll, tap)</subtask>
+        <subtask id="8.5">Adjust font sizes for mobile readability</subtask>
+      </task>
+      <task id="9" name="Accessibility" acceptance_criteria="8" estimated_time="1 hour">
+        <subtask id="9.1">Add ARIA labels to interactive elements</subtask>
+        <subtask id="9.2">Add screen reader announcements for new messages (role="log", aria-live="polite")</subtask>
+        <subtask id="9.3">Ensure keyboard navigation works (Tab, Enter, Escape)</subtask>
+        <subtask id="9.4">Test with screen reader (NVDA/VoiceOver)</subtask>
+        <subtask id="9.5">Verify focus indicators visible</subtask>
+      </task>
+      <task id="10" name="Integration Testing" acceptance_criteria="All" estimated_time="2 hours">
+        <subtask id="10.1">Create packages/backend/tests/integration/test_companion_chat.py</subtask>
+        <subtask id="10.2">Create packages/frontend/tests/e2e/companion-chat.spec.ts</subtask>
+        <subtask id="10.3">Test all scenarios end-to-end (venting, goal, recall)</subtask>
+        <subtask id="10.4">Test error scenarios (OpenAI failure, SSE disconnection, network errors)</subtask>
+      </task>
+      <task id="11" name="Documentation" acceptance_criteria="All" estimated_time="1 hour">
+        <subtask id="11.1">Add docstrings to all backend functions</subtask>
+        <subtask id="11.2">Document inline memory operations (note: will extract to service in Story 2.2)</subtask>
+        <subtask id="11.3">Add JSDoc comments to frontend components</subtask>
+        <subtask id="11.4">Update docs/dev/SETUP.md with companion chat setup</subtask>
+        <subtask id="11.5">Create docs/stories/2-5-TESTING-GUIDE.md with manual testing steps</subtask>
+        <subtask id="11.6">Document memory storage patterns discovered</subtask>
+      </task>
+      <task id="12" name="Encode Memory Hierarchy Metadata" acceptance_criteria="9" estimated_time="1.5 hours">
+        <subtask id="12.1">Add _classify_emotion_severity() helper (mild_annoyance &lt;0.4, persistent_stressor 0.4-0.7, compounding_event ≥0.7)</subtask>
+        <subtask id="12.2">Enrich project metadata before saving memories (goal_id, goal_title, goal_scope)</subtask>
+        <subtask id="12.3">Capture universal factor weights + task difficulty</subtask>
+        <subtask id="12.4">Extend backend + Playwright tests to assert enriched metadata is written</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Chat UI Displays and Accepts Messages">
+      Given I am authenticated and viewing /companion page
+      When I type a message and press Enter or click Send
+      Then message appears immediately, input clears, loading indicator shows, message marked as "user", timestamp displays, send button disabled during loading
+      [Source: docs/tech-spec-epic-2.md lines 704-715, docs/epics.md lines 308-310]
+    </criterion>
+    <criterion id="AC2" title="SSE Streaming Displays Tokens in Real-Time">
+      Given I sent a message and backend is responding
+      When tokens stream via SSE
+      Then Eliza's message appears token-by-token, smooth scrolling, loading indicator hides on first token, complete message marked with timestamp when done, connection errors show user-friendly message
+      [Source: docs/tech-spec-epic-2.md lines 339-347, docs/epics.md lines 311-312]
+    </criterion>
+    <criterion id="AC3" title="Conversation Persists Across Page Refreshes">
+      Given I had a conversation with Eliza
+      When I refresh the page or navigate away and back
+      Then full conversation history loads, messages display in chronological order, user/assistant labels correct, timestamps preserved, conversation continues from same context
+      [Source: docs/tech-spec-epic-2.md lines 197-206]
+    </criterion>
+    <criterion id="AC4" title="Memory Storage - Venting Scenario">
+      Given I vent about stress or problems
+      When I send message: "I'm overwhelmed with my schoolwork because I have to catch up"
+      Then message stored in conversations table, memory created in memories table with memory_type="personal", embedding=1536-dim vector, metadata includes stressor info, Eliza responds empathetically, memory retrievable in next conversation
+      [Source: docs/tech-spec-epic-2.md lines 659-687, docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md]
+    </criterion>
+    <criterion id="AC5" title="Memory Storage - Task/Goal Scenario">
+      Given I discuss tasks or goals
+      When I send message: "I want to work on my goal to graduate early"
+      Then memory created with memory_type="project", metadata includes goal info, Eliza responds supportively, memory retrievable when discussing goals later
+      [Source: docs/tech-spec-epic-2.md lines 659-687, docs/epics.md lines 313-315]
+    </criterion>
+    <criterion id="AC6" title="Memory Retrieval - Context Recall">
+      Given I had previous conversations stored as memories
+      When I send a new message related to past topics
+      Then backend queries memories via vector similarity search, top 5 relevant memories retrieved, memories included in Eliza's context window, Eliza's response references past context
+      [Source: docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md, docs/tech-spec-epic-2.md lines 423-445]
+    </criterion>
+    <criterion id="AC7" title="Mobile Responsive Design">
+      Given I view the chat on mobile device (&lt;768px width)
+      When I interact with the chat
+      Then chat takes full screen, input field always visible at bottom, messages readable without zooming, send button easily tappable (&gt;44px touch target), keyboard doesn't obscure input field, scrolling smooth on touch
+      [Source: docs/tech-spec-epic-2.md lines 704-715]
+    </criterion>
+    <criterion id="AC8" title="Accessible Keyboard Navigation">
+      Given I use keyboard navigation (no mouse)
+      When I interact with the chat
+      Then Tab key moves focus through UI elements, Enter key sends message from input field, Escape key cancels message composition, screen reader announces new messages, ARIA labels present for all interactive elements, focus indicators visible
+      [Source: docs/tech-spec-epic-2.md lines 704-715]
+    </criterion>
+    <criterion id="AC9" title="Memory Hierarchy Captures Emotions, Goals, and Tasks">
+      Given I vent about a mild annoyance, reference a persistent stressor, and log both a big goal and a quick task in the same session
+      When inline memory helpers persist personal/project/task memories
+      Then the saved metadata must include: emotion block (severity, dominant, scores, intensity, triggers), project block (goal_id, goal_title, goal_scope), task block (task_id, task_priority, task_deadline, task_difficulty, universal_factors weights summing to ≈1.0)
+      [Source: docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md lines 465-540; docs/tech-spec-epic-2.md lines 217-223; docs/epics.md lines 660-706]
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic Technical Specification: Companion &amp; Memory System</title>
+        <section>Implementation Strategy: Vertical Slice Approach</section>
+        <snippet>Story 2.5 (vertical slice) implements working chat with essential memory operations inline before extracting to proper service in Story 2.2. This validates memory patterns, search quality, and UX flow immediately in browser.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic Technical Specification: Companion &amp; Memory System</title>
+        <section>System Architecture - Data Flow</section>
+        <snippet>Chat flow: User Message → Clerk Auth → Chat API → Eliza Agent (LangGraph) → recall_context (query 3-tier memory via vector search) → reason with LLM → respond via SSE streaming → store_memory (save to task tier)</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Product Epics</title>
+        <section>Epic 2: Companion &amp; Memory System - Story 2.5</section>
+        <snippet>Build companion chat UI with SSE streaming. Implement essential memory operations inline (store conversations as memories, query with semantic search). All test scenarios working (venting, tasks, updates). Validates experience before committing to complex architecture.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-1-set-up-postgresql-pgvector-and-memory-schema.md</path>
+        <title>Story 2.1: Set Up PostgreSQL pgvector and Memory Schema</title>
+        <section>Database Foundation</section>
+        <snippet>CRITICAL: Memory model uses extra_data attribute (not metadata) due to SQLAlchemy reserved keyword. Database column is still named 'metadata'. HNSW index created with m=16, ef_construction=64, using cosine distance for 1536-dim OpenAI embeddings.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-2-implement-memory-service-with-3-tier-architecture.md</path>
+        <title>Story 2.2: Implement Memory Service with 3-Tier Architecture</title>
+        <section>Memory Hierarchy Metadata</section>
+        <snippet>Emotion severity ladder maps intensity to categories: mild_annoyance (&lt;0.4), persistent_stressor (0.4-0.7), compounding_event (≥0.7). Project metadata includes goal_scope (big_goal vs small_goal). Task metadata includes universal_factors weights and task_difficulty for productivity reasoning.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-3-integrate-clerk-authentication-system.md</path>
+        <title>Story 1.3: Integrate Clerk Authentication System</title>
+        <section>Authentication Patterns</section>
+        <snippet>Frontend uses useAuth().getToken() to obtain session tokens. Backend uses get_current_user() dependency with JWT verification. All API endpoints must include Authorization: Bearer header. Middleware validates tokens using PyJWKClient with Clerk's JWKS endpoint.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epic-2/1. How Eliza Should Respond (The Walkthrough).md</path>
+        <title>How Eliza Should Respond - The Walkthrough</title>
+        <section>Test Scenarios</section>
+        <snippet>Venting: "I'm overwhelmed with schoolwork" → store as personal memory. Creating Task: "I want to work on my goal" → store as project/task memory. Asking Questions: "What did I say about stress?" → retrieve memories. Memory Recall: Second message references first message context.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ARCHITECTURE.md</path>
+        <title>Technical Architecture</title>
+        <section>Development Constraints</section>
+        <snippet>Async SQLAlchemy 2.0 patterns required for all database operations. Next.js App Router with Clerk middleware for auth. Error handling using HTTPException for API errors. Naming conventions: snake_case (Python), camelCase (TypeScript), PascalCase (components/classes).</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>packages/backend/app/models/memory.py</path>
+        <kind>model</kind>
+        <symbol>Memory, MemoryType, MemoryCollection</symbol>
+        <lines>1-202</lines>
+        <reason>Core memory models from Story 2.1. CRITICAL: Use extra_data attribute (not metadata) due to SQLAlchemy reserved keyword. Includes MemoryType enum (PERSONAL, PROJECT, TASK) and embedding validation.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/schemas/memory.py</path>
+        <kind>schema</kind>
+        <symbol>MemoryCreate, MemoryResponse, MemoryWithDistance, MemoryQuery, MemorySimilarityQuery</symbol>
+        <lines>1-233</lines>
+        <reason>Pydantic schemas for memory operations. Use these schemas for API request/response validation. Note: extra_data field uses alias="metadata" for JSON serialization.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/core/clerk_auth.py</path>
+        <kind>dependency</kind>
+        <symbol>get_current_user, get_clerk_jwks_client</symbol>
+        <lines>1-100</lines>
+        <reason>Clerk authentication dependency from Story 1.3. Use get_current_user() in companion API endpoints to validate sessions and load authenticated users. Implements JWT signature verification with PyJWKClient.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/app/api/v1/__init__.py</path>
+        <kind>router</kind>
+        <symbol>api_router</symbol>
+        <lines>full file</lines>
+        <reason>API router registration. Must register new companion router here after creating companion.py endpoint file.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/tests/conftest.py</path>
+        <kind>test_fixture</kind>
+        <symbol>pytest fixtures</symbol>
+        <lines>full file</lines>
+        <reason>Test fixtures for database session, test client, and test users. Use these fixtures in integration tests for companion chat endpoints.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/backend/tests/helpers/auth.py</path>
+        <kind>test_helper</kind>
+        <symbol>create_test_user, get_auth_headers</symbol>
+        <lines>full file</lines>
+        <reason>Authentication test helpers from Story 1.3. Use these helpers to create authenticated test requests for companion chat integration tests.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/frontend/src/middleware.ts</path>
+        <kind>middleware</kind>
+        <symbol>clerkMiddleware</symbol>
+        <lines>full file</lines>
+        <reason>Clerk middleware for Next.js App Router. Companion chat page at /companion must be protected by this middleware. Uses CLERK_SECRET_KEY for server-side session validation.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <backend>
+        <dependency name="fastapi" version=">=0.109.0">Core web framework with streaming support</dependency>
+        <dependency name="sqlalchemy" version=">=2.0.25" extras="asyncio">Async ORM for database operations</dependency>
+        <dependency name="asyncpg" version=">=0.29.0">PostgreSQL async driver</dependency>
+        <dependency name="pgvector" version=">=0.2.4">PostgreSQL vector extension integration</dependency>
+        <dependency name="pydantic" version=">=2.5.0">Data validation and serialization</dependency>
+        <dependency name="clerk-backend-sdk" version=">=0.3.0">Clerk authentication integration</dependency>
+        <dependency name="langchain" version=">=0.1.0">LLM integration framework</dependency>
+        <dependency name="langgraph" version=">=0.0.20">Stateful agent orchestration (for Story 2.3, not this story)</dependency>
+        <dependency name="openai" version="implied">OpenAI API client for embeddings and chat (GPT-4o-mini, text-embedding-3-small)</dependency>
+        <dependency name="pytest" version=">=7.4.0">Testing framework</dependency>
+        <dependency name="pytest-asyncio" version=">=0.23.0">Async test support</dependency>
+        <dependency name="httpx" version=">=0.26.0">HTTP client for testing</dependency>
+      </backend>
+      <frontend>
+        <dependency name="next" version="^15.0.0">React framework with App Router</dependency>
+        <dependency name="react" version="^19.0.0">UI library</dependency>
+        <dependency name="@clerk/nextjs" version="^5.0.0">Clerk authentication for Next.js</dependency>
+        <dependency name="framer-motion" version="^11.0.0">Animation library for message animations</dependency>
+        <dependency name="tailwindcss" version="^3.4.0">Utility-first CSS framework</dependency>
+        <dependency name="@playwright/test" version="^1.40.0">E2E testing framework</dependency>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>CRITICAL: Use extra_data attribute (not metadata) when working with Memory model due to SQLAlchemy reserved keyword. Database column is named 'metadata' for API compatibility.</constraint>
+    <constraint>All database operations must use async patterns with SQLAlchemy 2.0 (AsyncSession, async with, await db.execute())</constraint>
+    <constraint>Authentication: Reuse get_current_user() dependency from Story 1.3. Frontend uses useAuth().getToken() to obtain tokens. Pass tokens via Authorization: Bearer header.</constraint>
+    <constraint>Memory operations are INLINE in companion.py for this story. Story 2.2 will extract to proper service. Do not create separate memory service file yet.</constraint>
+    <constraint>Simple Eliza agent without LangGraph for this story. Use basic OpenAI streaming with system prompt. Story 2.3 will replace with full LangGraph agent.</constraint>
+    <constraint>SSE streaming format: {"type": "token", "content": "..."} for tokens, {"type": "complete"} when done, {"type": "error", "message": "..."} for errors</constraint>
+    <constraint>Memory type detection uses simple heuristics (keywords: overwhelmed/stressed → PERSONAL, goal/plan → PROJECT, default → TASK). Story 2.3 will improve with LLM-based classification.</constraint>
+    <constraint>Vector search uses basic cosine distance similarity, no hybrid search yet. Story 2.2 will add time decay and frequency boost.</constraint>
+    <constraint>Retrieve top 5 memories by default for context window. May need tuning based on Story 2.5 learnings.</constraint>
+    <constraint>OpenAI models: GPT-4o-mini for chat responses (cost-effective), text-embedding-3-small for 1536-dim embeddings</constraint>
+    <constraint>Mobile responsive required: chat must work on &lt;768px screens with touch interactions</constraint>
+    <constraint>Accessibility required: ARIA labels, keyboard navigation, screen reader support</constraint>
+    <constraint>Naming conventions: snake_case (Python backend), camelCase (TypeScript/React), PascalCase (components/classes)</constraint>
+    <constraint>Error handling: HTTPException for API errors, user-friendly error messages for frontend</constraint>
+    <constraint>Testing: pytest for backend integration tests, Playwright for frontend E2E tests. All test scenarios must pass (venting, goal, recall).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/companion/chat</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: {"message": string, "conversation_id": UUID (optional)}
+        Response: {"conversation_id": UUID, "status": "processing"}
+        Headers: Authorization: Bearer {token}
+      </signature>
+      <path>packages/backend/app/api/v1/companion.py</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/companion/stream/{conversation_id}</name>
+      <kind>SSE streaming endpoint</kind>
+      <signature>
+        Stream: data: {"type": "token", "content": string} | {"type": "complete"} | {"type": "error", "message": string}
+        Headers: Authorization: Bearer {token}
+      </signature>
+      <path>packages/backend/app/api/v1/companion.py</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/companion/history</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Response: {"conversations": [{"id": UUID, "messages": [{"role": string, "content": string, "timestamp": datetime}]}]}
+        Headers: Authorization: Bearer {token}
+      </signature>
+      <path>packages/backend/app/api/v1/companion.py</path>
+    </interface>
+    <interface>
+      <name>get_current_user(request, db)</name>
+      <kind>FastAPI dependency</kind>
+      <signature>
+        Args: request: Request, db: AsyncSession
+        Returns: User (authenticated user from database)
+        Raises: HTTPException(401) if token invalid, HTTPException(403) if missing header
+      </signature>
+      <path>packages/backend/app/core/clerk_auth.py</path>
+    </interface>
+    <interface>
+      <name>Memory model</name>
+      <kind>SQLAlchemy model</kind>
+      <signature>
+        Fields: id (UUID), user_id (UUID), memory_type (MemoryType enum), content (Text), embedding (Vector 1536), extra_data (JSONB), created_at, accessed_at
+        Methods: None (data class)
+        NOTE: Use extra_data attribute, not metadata
+      </signature>
+      <path>packages/backend/app/models/memory.py</path>
+    </interface>
+    <interface>
+      <name>MemoryCreate schema</name>
+      <kind>Pydantic schema</kind>
+      <signature>
+        Fields: memory_type: MemoryType, content: str, extra_data: Dict[str, Any] (alias="metadata")
+        Use for: Creating new memories in API endpoints
+      </signature>
+      <path>packages/backend/app/schemas/memory.py</path>
+    </interface>
+    <interface>
+      <name>useChat() hook</name>
+      <kind>React hook</kind>
+      <signature>
+        Returns: {messages: Message[], isLoading: boolean, sendMessage: (content: string) => Promise&lt;void&gt;, error: string | null}
+        Uses: EventSource for SSE streaming, useAuth().getToken() for authentication
+      </signature>
+      <path>packages/frontend/src/lib/hooks/useChat.ts</path>
+    </interface>
+    <interface>
+      <name>OpenAI Streaming API</name>
+      <kind>External API</kind>
+      <signature>
+        Model: gpt-4o-mini
+        Stream: AsyncIterator&lt;ChatCompletionChunk&gt;
+        Returns: Token-by-token response via async generator
+      </signature>
+      <path>External OpenAI API</path>
+    </interface>
+    <interface>
+      <name>OpenAI Embeddings API</name>
+      <kind>External API</kind>
+      <signature>
+        Model: text-embedding-3-small
+        Input: text (string)
+        Output: embedding (List[float] with 1536 dimensions)
+      </signature>
+      <path>External OpenAI API</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing uses pytest with pytest-asyncio for async tests. Test structure: tests/unit/ for function tests, tests/integration/ for API + DB tests. Fixtures in conftest.py provide database session, test client, and authenticated test users. Integration tests must use async test client (httpx.AsyncClient) and validate database state after API calls.
+
+      Frontend testing uses Playwright for E2E tests. Test structure: tests/e2e/ for complete user flows. Tests must validate UI state, SSE streaming behavior, and conversation persistence. Use data-testid attributes for reliable element selection.
+
+      All acceptance criteria must have corresponding tests. Target ≥70% backend code coverage. Test error scenarios: OpenAI API failures, SSE disconnections, network errors, auth failures.
+    </standards>
+
+    <locations>
+      packages/backend/tests/integration/test_companion_chat.py
+      packages/backend/tests/unit/ (if needed for helper functions)
+      packages/frontend/tests/e2e/companion-chat.spec.ts
+      packages/frontend/tests/support/helpers/ (test utilities)
+    </locations>
+
+    <ideas>
+      <test_idea ac_id="AC1">
+        Test POST /companion/chat endpoint creates conversation and stores user message. Verify optimistic UI update in frontend (message appears before response).
+      </test_idea>
+      <test_idea ac_id="AC2">
+        Test SSE streaming displays tokens token-by-token. Mock OpenAI response, verify frontend accumulates tokens correctly. Test loading indicator visibility.
+      </test_idea>
+      <test_idea ac_id="AC3">
+        Test conversation persistence: Create conversation, refresh browser (page.reload()), verify history loads from GET /companion/history endpoint.
+      </test_idea>
+      <test_idea ac_id="AC4">
+        Test venting scenario: Send "I'm overwhelmed with schoolwork", verify Memory created with memory_type=PERSONAL, extra_data includes stressor metadata, embedding is 1536-dim vector.
+      </test_idea>
+      <test_idea ac_id="AC5">
+        Test goal scenario: Send "I want to work on my goal to graduate early", verify Memory created with memory_type=PROJECT, extra_data includes goal metadata.
+      </test_idea>
+      <test_idea ac_id="AC6">
+        Test memory retrieval: Send message 1 "stressed about class registration", wait for memory creation, send message 2 "feeling overwhelmed", verify backend queries memories (check logs), verify Eliza response references "class registration".
+      </test_idea>
+      <test_idea ac_id="AC7">
+        Test mobile responsive: Set viewport to 375x667 (iPhone SE), verify chat fills screen, input visible, send button ≥44px touch target, scrolling smooth.
+      </test_idea>
+      <test_idea ac_id="AC8">
+        Test keyboard navigation: Use page.keyboard.press('Tab') to navigate, verify focus moves through elements, press Enter to send message, verify ARIA labels present.
+      </test_idea>
+      <test_idea ac_id="AC9">
+        Test memory hierarchy metadata: Send venting + goal + task messages in one session, verify extra_data includes emotion.severity, project.goal_scope, task.task_priority, task.universal_factors.
+      </test_idea>
+      <test_idea>
+        Error scenario: Mock OpenAI API failure, verify frontend displays user-friendly error message, verify retry logic works.
+      </test_idea>
+      <test_idea>
+        Error scenario: Simulate SSE disconnection (close EventSource during streaming), verify frontend shows "Connection lost" message, verify auto-reconnect attempts.
+      </test_idea>
+      <test_idea>
+        Performance test: Measure memory query latency (target &lt;100ms p95), measure first token latency (target &lt;1s p95), verify HNSW index is used (check query plan).
+      </test_idea>
+    </ideas>
+  </tests>
+</story-context>
