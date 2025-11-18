@@ -12,7 +12,8 @@ export default function WaitlistPage() {
               Join the Delight waitlist
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Be among the first to experience an AI companion that truly understands your journey
+              Be among the first to experience an AI companion that truly
+              understands your journey
             </p>
           </div>
         </div>
@@ -30,8 +31,10 @@ export default function WaitlistPage() {
                     What to expect
                   </h2>
                   <p className="text-muted-foreground leading-relaxed">
-                    When you join our waitlist, you're not just signing up for updates—you're expressing interest
-                    in helping shape a tool that could genuinely change how you approach your goals.
+                    When you join our waitlist, you&apos;re not just signing up
+                    for updates—you&apos;re expressing interest in helping shape
+                    a tool that could genuinely change how you approach your
+                    goals.
                   </p>
                 </div>
 
@@ -47,8 +50,9 @@ export default function WaitlistPage() {
                         Early access to the beta
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Waitlist members get first access when we open up pilot cohorts. You'll be using Delight
-                        before the general public, helping us refine the experience.
+                        Waitlist members get first access when we open up pilot
+                        cohorts. You&apos;ll be using Delight before the general
+                        public, helping us refine the experience.
                       </p>
                     </div>
                   </div>
@@ -64,8 +68,9 @@ export default function WaitlistPage() {
                         Thoughtful, infrequent updates
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        We'll send you meaningful progress updates when we hit major milestones. No daily spam.
-                        No sales pressure. Just honest communication about where we are.
+                        We&apos;ll send you meaningful progress updates when we
+                        hit major milestones. No daily spam. No sales pressure.
+                        Just honest communication about where we are.
                       </p>
                     </div>
                   </div>
@@ -81,31 +86,46 @@ export default function WaitlistPage() {
                         Shape the product direction
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Your feedback will directly influence features, priorities, and design decisions.
-                        We're building this for people like you—not for abstract personas.
+                        Your feedback will directly influence features,
+                        priorities, and design decisions. We&apos;re building
+                        this for people like you—not for abstract personas.
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-muted/50 border border-border rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-3">Who's the best fit for early access?</h3>
+                  <h3 className="font-semibold text-foreground mb-3">
+                    Who&apos;s the best fit for early access?
+                  </h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Ambitious people who routinely set big goals but struggle with consistency</span>
+                      <span>
+                        Ambitious people who routinely set big goals but
+                        struggle with consistency
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Founders, students, or creators juggling multiple priorities</span>
+                      <span>
+                        Founders, students, or creators juggling multiple
+                        priorities
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>People willing to give honest feedback, even when it's critical</span>
+                      <span>
+                        People willing to give honest feedback, even when
+                        it&apos;s critical
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Anyone who believes productivity tools should understand emotion, not ignore it</span>
+                      <span>
+                        Anyone who believes productivity tools should understand
+                        emotion, not ignore it
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -126,7 +146,7 @@ export default function WaitlistPage() {
                   {/* Google Form Embed */}
                   <div className="rounded-xl overflow-hidden border border-border">
                     <iframe
-                      src="https://docs.google.com/forms/d/e/1FAIpQLSfxR6QVqKkxWXvZPAZJ3j8qkQZK_Xa1QC0iUJWYW6gVX7m8Wg/viewform?embedded=true"
+                      src="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform?embedded=true"
                       width="100%"
                       height="800"
                       frameBorder="0"
@@ -140,9 +160,9 @@ export default function WaitlistPage() {
 
                   <div className="mt-6">
                     <p className="text-xs text-muted-foreground text-center">
-                      Can't see the form?{" "}
+                      Can&apos;t see the form?{" "}
                       <a
-                        href="https://forms.gle/uouMuAKw4p2BqHw77"
+                        href="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
@@ -166,8 +186,10 @@ export default function WaitlistPage() {
                     When will the beta start?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    We're targeting early pilot cohorts in Q1 2026. The exact timing depends on core loop stability
-                    and memory system performance. Waitlist members will get at least 2 weeks notice before their cohort starts.
+                    We&apos;re targeting early pilot cohorts in Q1 2026. The
+                    exact timing depends on core loop stability and memory
+                    system performance. Waitlist members will get at least 2
+                    weeks notice before their cohort starts.
                   </p>
                 </div>
 
@@ -176,8 +198,10 @@ export default function WaitlistPage() {
                     How often will you email me?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Very rarely. Expect 1-2 emails per month at most, and only when there's something meaningful to share—
-                    like beta access opening, major feature launches, or requests for specific feedback. You can unsubscribe anytime.
+                    Very rarely. Expect 1-2 emails per month at most, and only
+                    when there&apos;s something meaningful to share— like beta
+                    access opening, major feature launches, or requests for
+                    specific feedback. You can unsubscribe anytime.
                   </p>
                 </div>
 
@@ -186,19 +210,23 @@ export default function WaitlistPage() {
                     Will early access be free?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Yes. Pilot cohort members will have free access during the beta period. We're not asking you to pay
-                    for an unfinished product—we're asking you to invest time giving us feedback. That's valuable enough.
+                    Yes. Pilot cohort members will have free access during the
+                    beta period. We&apos;re not asking you to pay for an
+                    unfinished product—we&apos;re asking you to invest time
+                    giving us feedback. That&apos;s valuable enough.
                   </p>
                 </div>
 
                 <div className="border border-border rounded-xl p-6">
                   <h3 className="font-semibold text-foreground mb-2">
-                    What if Delight doesn't work for me?
+                    What if Delight doesn&apos;t work for me?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    That's important data. If the core loop doesn't resonate, if the narrative feels gimmicky, if the AI
-                    misunderstands you—we want to know. Critical feedback is more valuable than polite praise. Help us build
-                    something that actually works.
+                    That&apos;s important data. If the core loop doesn&apos;t
+                    resonate, if the narrative feels gimmicky, if the AI
+                    misunderstands you—we want to know. Critical feedback is
+                    more valuable than polite praise. Help us build something
+                    that actually works.
                   </p>
                 </div>
               </div>
