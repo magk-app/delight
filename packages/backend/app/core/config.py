@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # Authentication Configuration (Clerk)
     CLERK_SECRET_KEY: str  # Required: Session token verification
     CLERK_WEBHOOK_SECRET: str  # Required: Webhook signature validation
+    CLERK_FRONTEND_API: Optional[str] = None  # Optional: For JWKS URL (e.g., "your-app.clerk.accounts.dev")
 
     # Application Configuration
     ENVIRONMENT: str = "development"

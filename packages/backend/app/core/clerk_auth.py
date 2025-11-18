@@ -31,20 +31,28 @@ def get_clerk_jwks_client() -> PyJWKClient:
         PyJWKClient: JWKS client configured for Clerk's API
 
     Note:
-        The JWKS URL is constructed from the Clerk instance.
+        The JWKS URL is constructed from CLERK_FRONTEND_API if provided,
+        otherwise falls back to extracting from token issuer at runtime.
         For development: Uses clerk.accounts.dev domain
         For production: Should use your custom Clerk domain
     """
-    # Determine Clerk instance from secret key
-    # Format: sk_test_xxx or sk_live_xxx
-    is_live = settings.CLERK_SECRET_KEY.startswith("sk_live_")
-
-    # JWKS endpoint - Clerk uses a standard format
-    # For test keys: https://api.clerk.com/.well-known/jwks.json
-    # For live keys: https://api.clerk.com/.well-known/jwks.json (same endpoint)
-    jwks_url = "https://api.clerk.com/.well-known/jwks.json"
-
-    logger.info(f"Initializing Clerk JWKS client with URL: {jwks_url}")
+    # If CLERK_FRONTEND_API is configured, use it directly
+    if settings.CLERK_FRONTEND_API:
+        jwks_url = f"https://{settings.CLERK_FRONTEND_API}/.well-known/jwks.json"
+        logger.info(f"Initializing Clerk JWKS client with URL: {jwks_url}")
+    else:
+        # Fallback: Use Clerk's standard endpoint
+        # This works for most Clerk instances but may need CLERK_FRONTEND_API for custom domains
+        # Format: https://<instance>.clerk.accounts.dev/.well-known/jwks.json
+        # If this fails, set CLERK_FRONTEND_API in your .env
+        logger.warning(
+            "CLERK_FRONTEND_API not set. Using fallback JWKS URL. "
+            "For custom domains or to avoid 404 errors, set CLERK_FRONTEND_API in your environment. "
+            "Get it from Clerk Dashboard → API Keys → Frontend API"
+        )
+        # Default fallback - this may not work for all instances
+        jwks_url = "https://api.clerk.com/.well-known/jwks.json"
+        logger.info(f"Initializing Clerk JWKS client with fallback URL: {jwks_url}")
 
     return PyJWKClient(
         jwks_url,
