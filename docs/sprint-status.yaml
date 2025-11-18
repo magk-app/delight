@@ -75,13 +75,13 @@ development_status:
 
   # Epic 3: Goal & Mission Management
   epic-3: backlog
-  3-1-create-goal-data-models-and-crud-apis: backlog
-  3-2-implement-collaborative-goal-decomposition-with-eliza: backlog
-  3-3-build-mission-quest-system-with-priority-triads: backlog
-  3-4-implement-mission-execution-flow-with-timer: backlog
-  3-5-add-mission-session-notes-and-reflection: backlog
-  3-6-implement-adaptive-quest-generation-worker-future: backlog
-  3-7-add-collaborative-goals-and-guild-missions-future: backlog
+  3-1-create-goal-data-models-and-crud-apis: drafted # ✅ CREATED 2025-11-18: Comprehensive story with CRUD APIs, database schema, validation
+  3-2-implement-collaborative-goal-decomposition-with-eliza: drafted # ✅ CREATED 2025-11-18: Eliza agent integration for goal breakdown
+  3-3-build-mission-quest-system-with-priority-triads: drafted # ✅ CREATED 2025-11-18: Priority algorithm, triad selection, mission pool
+  3-4-implement-mission-execution-flow-with-timer: drafted # ✅ CREATED 2025-11-18: Gentle timer, completion celebration, session tracking
+  3-5-add-mission-session-notes-and-reflection: drafted # ✅ CREATED 2025-11-18: Note-taking, task memory integration
+  3-6-implement-adaptive-quest-generation-worker-future: drafted # ✅ CREATED 2025-11-18: ARQ worker for automated quest generation (Future)
+  3-7-add-collaborative-goals-and-guild-missions-future: drafted # ✅ CREATED 2025-11-18: Multiplayer goals and guild missions (Future)
   epic-3-retrospective: optional
 
   # Epic 4: Narrative Engine
