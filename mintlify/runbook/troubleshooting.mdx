@@ -1,0 +1,592 @@
+---
+title: Troubleshooting Guide
+description: 'Common issues and solutions for Delight platform'
+---
+
+# Troubleshooting Guide
+
+Common issues and solutions for the Delight platform.
+
+## Quick Diagnostic Commands
+
+Run these commands to quickly diagnose issues:
+
+```bash
+# Check backend health
+curl http://localhost:8000/health
+
+# Check frontend
+curl http://localhost:3000
+
+# Test database connection
+cd packages/backend
+poetry run python -c "from app.db.session import engine; import asyncio; asyncio.run(engine.connect())"
+
+# Check Redis connection
+redis-cli ping
+```
+
+## Development Issues
+
+### Port Already in Use
+
+**Symptoms:**
+- "Address already in use" error
+- Cannot start dev server
+
+**Solutions:**
+
+<Tabs>
+  <Tab title="Find and Kill Process">
+    ```bash
+    # Mac/Linux
+    lsof -i :8000  # Find process using port 8000
+    kill -9 <PID>  # Kill the process
+
+    # Windows
+    netstat -ano | findstr :8000
+    taskkill /PID <PID> /F
+    ```
+  </Tab>
+  <Tab title="Use Different Port">
+    ```bash
+    # Backend
+    cd packages/backend
+    poetry run uvicorn main:app --reload --port 8001
+
+    # Frontend (update .env.local)
+    NEXT_PUBLIC_API_URL=http://localhost:8001
+    ```
+  </Tab>
+</Tabs>
+
+### Dependencies Not Installing
+
+**Symptoms:**
+- `pnpm install` fails
+- `poetry install` fails
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Clear cache and retry">
+    ```bash
+    # Frontend
+    rm -rf node_modules pnpm-lock.yaml
+    pnpm install
+
+    # Backend
+    cd packages/backend
+    poetry cache clear pypi --all
+    rm poetry.lock
+    poetry install
+    ```
+  </Accordion>
+
+  <Accordion title="Check Node.js/Python version">
+    ```bash
+    # Check versions
+    node --version  # Should be 18+
+    python --version  # Should be 3.11+
+
+    # Use version managers
+    nvm use 18  # Node Version Manager
+    pyenv local 3.11  # Python Version Manager
+    ```
+  </Accordion>
+
+  <Accordion title="Network/proxy issues">
+    ```bash
+    # Configure npm proxy
+    npm config set proxy http://proxy.example.com:8080
+    npm config set https-proxy http://proxy.example.com:8080
+
+    # Configure pip proxy
+    export HTTP_PROXY=http://proxy.example.com:8080
+    export HTTPS_PROXY=http://proxy.example.com:8080
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Database Issues
+
+### Connection Errors
+
+**Symptoms:**
+- "Could not connect to database"
+- "Connection refused"
+- Timeout errors
+
+**Solutions:**
+
+<Steps>
+  <Step title="Verify DATABASE_URL">
+    Check that DATABASE_URL is correct:
+
+    ```bash
+    echo $DATABASE_URL
+    # Should be: postgresql+asyncpg://user:pass@host:port/db
+    ```
+
+    Common mistakes:
+    - Missing `+asyncpg` driver
+    - Wrong password/username
+    - Incorrect host/port
+    - Database name typo
+  </Step>
+
+  <Step title="Test connection">
+    ```bash
+    cd packages/backend
+    poetry run python scripts/test_db_connection.py
+    ```
+  </Step>
+
+  <Step title="Check Supabase">
+    1. Go to Supabase dashboard
+    2. Check if database is running
+    3. Verify connection pooler settings
+    4. Check if IP is whitelisted (if applicable)
+  </Step>
+
+  <Step title="Check network">
+    ```bash
+    # Test if host is reachable
+    ping db.xxxx.supabase.co
+
+    # Test if port is open
+    telnet db.xxxx.supabase.co 5432
+    ```
+  </Step>
+</Steps>
+
+### Migration Issues
+
+**Symptoms:**
+- "Migration failed"
+- "Revision not found"
+- "Target database is not up to date"
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Check migration status">
+    ```bash
+    cd packages/backend
+    poetry run alembic current  # Show current revision
+    poetry run alembic history  # Show all revisions
+    ```
+  </Accordion>
+
+  <Accordion title="Models not detected in autogenerate">
+    **Cause:** Models not imported in `app/models/__init__.py`
+
+    **Solution:**
+    ```python
+    # app/models/__init__.py
+    from app.models.user import User
+    from app.models.mission import Mission
+    from app.models.character import Character
+    # Import ALL models here
+    ```
+
+    Then regenerate:
+    ```bash
+    poetry run alembic revision -m "description" --autogenerate
+    ```
+  </Accordion>
+
+  <Accordion title="Migration conflicts">
+    ```bash
+    # If you have conflicts, merge them
+    poetry run alembic merge <revision1> <revision2> -m "merge migrations"
+
+    # Or reset to clean state (development only!)
+    poetry run alembic downgrade base
+    poetry run alembic upgrade head
+    ```
+  </Accordion>
+
+  <Accordion title="pgvector extension not found">
+    **Error:** `extension "vector" does not exist`
+
+    **Solution:**
+    1. Go to Supabase dashboard
+    2. Navigate to Database → Extensions
+    3. Enable "vector" extension
+    4. Re-run migrations
+  </Accordion>
+</AccordionGroup>
+
+## Authentication Issues
+
+### Clerk Not Working
+
+**Symptoms:**
+- Redirect loops
+- "Invalid publishable key"
+- Sign-in not working
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Verify environment variables">
+    **Frontend:**
+    ```bash
+    # Check .env.local
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...  # Must start with NEXT_PUBLIC_
+    CLERK_SECRET_KEY=sk_test_...
+    ```
+
+    **Backend:**
+    ```bash
+    # Check .env
+    CLERK_SECRET_KEY=sk_test_...  # Same as frontend
+    CLERK_WEBHOOK_SECRET=whsec_...
+    ```
+  </Accordion>
+
+  <Accordion title="Check middleware configuration">
+    Verify `packages/frontend/middleware.ts` exists:
+
+    ```typescript
+    import { clerkMiddleware } from "@clerk/nextjs/server";
+
+    export default clerkMiddleware();
+
+    export const config = {
+      matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Verify Clerk dashboard settings">
+    1. Go to Clerk dashboard
+    2. Check allowed callback URLs
+    3. Verify environment (development vs production)
+    4. Check API keys match your .env files
+  </Accordion>
+</AccordionGroup>
+
+### Session/Token Issues
+
+**Symptoms:**
+- "Unauthorized" errors
+- Token expired
+- Invalid session
+
+**Solutions:**
+
+```bash
+# Clear browser cookies/localStorage
+# In browser console:
+localStorage.clear()
+sessionStorage.clear()
+
+# Restart dev server
+# Sometimes session state gets corrupted during development
+```
+
+## API Issues
+
+### CORS Errors
+
+**Symptoms:**
+- "CORS policy" error in browser console
+- "Access-Control-Allow-Origin" missing
+
+**Solutions:**
+
+<Steps>
+  <Step title="Check backend CORS config">
+    Verify `packages/backend/app/main.py`:
+
+    ```python
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    ```
+  </Step>
+
+  <Step title="Check CORS_ORIGINS env var">
+    ```bash
+    # In packages/backend/.env
+    CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    ```
+  </Step>
+
+  <Step title="Clear browser cache">
+    Sometimes CORS errors are cached. Try:
+    - Hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
+    - Incognito/private mode
+    - Clear browser cache
+  </Step>
+</Steps>
+
+### API Not Responding
+
+**Symptoms:**
+- 500 Internal Server Error
+- Timeout errors
+- No response
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Check backend logs">
+    ```bash
+    cd packages/backend
+    # Logs should appear in terminal where you ran uvicorn
+    # Look for error stack traces
+    ```
+  </Accordion>
+
+  <Accordion title="Verify backend is running">
+    ```bash
+    curl http://localhost:8000/health
+
+    # Should return:
+    # {"status": "healthy"}
+    ```
+  </Accordion>
+
+  <Accordion title="Check for Python errors">
+    Common issues:
+    - Missing imports
+    - Syntax errors
+    - Type errors (if using mypy)
+
+    ```bash
+    # Run type checker
+    poetry run mypy app
+
+    # Run linter
+    poetry run ruff check .
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## AI/LLM Issues
+
+### OpenAI API Errors
+
+**Symptoms:**
+- "Invalid API key"
+- Rate limit errors
+- Timeout errors
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Verify API key">
+    ```bash
+    # Check environment variable
+    echo $OPENAI_API_KEY
+
+    # Should start with sk-
+
+    # Test API key directly
+    curl https://api.openai.com/v1/models \
+      -H "Authorization: Bearer $OPENAI_API_KEY"
+    ```
+  </Accordion>
+
+  <Accordion title="Rate limiting">
+    **Error:** "Rate limit exceeded"
+
+    **Solutions:**
+    - Wait a few minutes and retry
+    - Upgrade OpenAI tier
+    - Implement request queuing
+    - Add exponential backoff
+  </Accordion>
+
+  <Accordion title="Timeout errors">
+    ```python
+    # Increase timeout in OpenAI client
+    from openai import AsyncOpenAI
+
+    client = AsyncOpenAI(
+        api_key=settings.OPENAI_API_KEY,
+        timeout=60.0  # Increase timeout
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### LangGraph Issues
+
+**Symptoms:**
+- Agent not responding
+- State not persisting
+- Memory errors
+
+**Solutions:**
+
+Check logs for specific errors and verify:
+- PostgreSQL connection (for checkpointing)
+- Memory service is working
+- Agent configuration is correct
+
+## Frontend Issues
+
+### Build Failures
+
+**Symptoms:**
+- TypeScript errors
+- Build fails
+- "Module not found"
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Type errors">
+    ```bash
+    cd packages/frontend
+    npm run type-check
+
+    # Fix errors shown
+    # Common issues:
+    # - Missing types for dependencies
+    # - Incorrect prop types
+    # - Missing null checks
+    ```
+  </Accordion>
+
+  <Accordion title="Module not found">
+    ```bash
+    # Clear Next.js cache
+    rm -rf .next
+
+    # Reinstall dependencies
+    rm -rf node_modules
+    pnpm install
+
+    # Rebuild
+    npm run build
+    ```
+  </Accordion>
+
+  <Accordion title="Environment variables not working">
+    Remember:
+    - Client-side vars must start with `NEXT_PUBLIC_`
+    - Server-side vars don't need prefix
+    - Restart dev server after changing .env.local
+  </Accordion>
+</AccordionGroup>
+
+### Hydration Errors
+
+**Symptoms:**
+- "Hydration failed" in console
+- Content flashing
+- Mismatched HTML
+
+**Solutions:**
+
+```typescript
+// Use useEffect for client-only code
+import { useEffect, useState } from 'react';
+
+const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  setMounted(true);
+}, []);
+
+if (!mounted) return null;
+
+// Or use dynamic imports with ssr: false
+import dynamic from 'next/dynamic';
+
+const ClientComponent = dynamic(
+  () => import('./ClientComponent'),
+  { ssr: false }
+);
+```
+
+## Performance Issues
+
+### Slow API Responses
+
+<AccordionGroup>
+  <Accordion title="Database query optimization">
+    ```python
+    # Add indexes
+    from sqlalchemy import Index
+
+    Index('idx_user_id_created', Mission.user_id, Mission.created_at)
+
+    # Use eager loading to avoid N+1 queries
+    from sqlalchemy.orm import selectinload
+
+    result = await db.execute(
+        select(Mission).options(selectinload(Mission.user))
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Enable caching">
+    ```python
+    # Add Redis caching for expensive operations
+    from app.core.cache import cache
+
+    @cache(ttl=300)  # 5 minutes
+    async def get_user_stats(user_id: str):
+        # Expensive computation
+        return stats
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### High Memory Usage
+
+```bash
+# Check memory usage
+docker stats  # If using Docker
+htop  # Linux
+Activity Monitor  # Mac
+
+# Backend optimization
+# - Reduce batch sizes
+# - Close database connections properly
+# - Clear unused variables
+```
+
+## Getting Help
+
+If you can't resolve the issue:
+
+1. **Check logs** - Most issues show errors in logs
+2. **Search docs** - Search this documentation
+3. **GitHub Issues** - Check existing issues
+4. **Ask team** - Reach out in team chat
+5. **Create issue** - Document the problem for future reference
+
+### Information to Include
+
+When reporting an issue:
+
+<Checks>
+  <Check>Error message (full stack trace)</Check>
+  <Check>Steps to reproduce</Check>
+  <Check>Expected vs actual behavior</Check>
+  <Check>Environment (OS, Node version, Python version)</Check>
+  <Check>Recent changes made</Check>
+  <Check>Logs (sanitize sensitive data)</Check>
+</Checks>
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2025-11-17
+**Maintained By:** Delight Team

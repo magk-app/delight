@@ -1,0 +1,74 @@
+---
+title: Deployment Architecture
+description: Infrastructure setup for experimental and production environments
+icon: cloud
+---
+
+## Experimental Version
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="layout">
+    **Vercel** - Optimized for Next.js deployments
+  </Card>
+  <Card title="Backend" icon="server">
+    **Railway or Fly.io** - Docker container orchestration
+  </Card>
+  <Card title="Database" icon="database">
+    **Railway PostgreSQL or Supabase**
+    - pgvector extension included
+    - Managed backups and scaling
+  </Card>
+  <Card title="Cache Layer" icon="zap">
+    **Upstash** - Serverless Redis
+  </Card>
+  <Card title="File Storage" icon="folder">
+    **S3-compatible** - AWS S3 or MinIO
+  </Card>
+  <Card title="Monitoring" icon="eye">
+    Basic monitoring and logging infrastructure
+  </Card>
+</CardGroup>
+
+<Info>
+Experimental version prioritizes quick deployment and cost-effective infrastructure while maintaining production-grade components.
+</Info>
+
+## Production Version
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="layout">
+    **Vercel** - Global edge network with automatic CDN
+  </Card>
+  <Card title="Backend" icon="server">
+    **AWS ECS/Fargate or Fly.io** - Auto-scaling container orchestration
+  </Card>
+  <Card title="Database" icon="database">
+    **AWS RDS PostgreSQL**
+    - pgvector extension enabled
+    - Managed backups and high availability
+    - Multi-AZ failover
+  </Card>
+  <Card title="Cache Layer" icon="zap">
+    **AWS ElastiCache or Upstash** - High-performance Redis
+  </Card>
+  <Card title="File Storage" icon="folder">
+    **AWS S3** - Enterprise-grade object storage with versioning
+  </Card>
+  <Card title="Monitoring" icon="eye">
+    **Sentry** - Error tracking, performance monitoring, session replay
+    **CloudWatch** - Infrastructure and application metrics
+  </Card>
+</CardGroup>
+
+<Warning title="Production Considerations">
+  Production deployments include:
+  - Auto-scaling and load balancing
+  - Multi-region failover capabilities
+  - Enhanced monitoring and alerting
+  - Regular backup and disaster recovery testing
+  - DDoS protection and WAF rules
+</Warning>
+
+---
+
+**Last Updated:** 2025-11-17

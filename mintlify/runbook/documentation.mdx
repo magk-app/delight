@@ -1,0 +1,360 @@
+---
+title: Documentation Runbook
+description: "Operational guide for managing and maintaining documentation"
+---
+
+# Documentation Runbook
+
+This runbook provides operational procedures for managing and maintaining the Delight documentation system.
+
+## Overview
+
+Delight documentation is maintained using Mintlify, with source files in the `/mintlify` directory.
+
+## Documentation Structure
+
+```
+mintlify/
+├── docs.json              # Navigation configuration
+├── introduction.mdx       # Landing page
+├── quickstart.mdx         # Quick start guide
+├── architecture/          # Architecture documentation
+├── dev/                   # Development guides
+├── epics/                 # Product epics
+├── runbook/              # This runbook
+└── users/                # User guides
+```
+
+## Updating Documentation
+
+### Adding a New Page
+
+<Steps>
+  <Step title="Create the MDX file">
+    Create a new `.mdx` file in the appropriate directory:
+
+    ```bash
+    # Example: New architecture document
+    touch mintlify/architecture/new-topic.mdx
+    ```
+
+  </Step>
+
+  <Step title="Add frontmatter">
+    Every MDX file must have frontmatter:
+
+    ```mdx
+    ---
+    title: 'Your Page Title'
+    description: 'Brief description of the page'
+    ---
+
+    # Your Page Title
+
+    Content goes here...
+    ```
+
+  </Step>
+
+  <Step title="Update docs.json">
+    Add the page to the navigation in `mintlify/docs.json`:
+
+    ```json
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/overview",
+        "architecture/new-topic"  // Add without .mdx extension
+      ]
+    }
+    ```
+
+  </Step>
+
+  <Step title="Test locally">
+    ```bash
+    cd mintlify
+    npx mintlify@latest dev
+    ```
+
+    Verify the page appears in navigation and renders correctly.
+
+  </Step>
+</Steps>
+
+### Updating Existing Pages
+
+<Steps>
+  <Step title="Locate the file">
+    Find the MDX file you want to update in the `mintlify/` directory.
+  </Step>
+
+{" "}
+
+<Step title="Make your changes">
+  Edit the file using Markdown and Mintlify components.
+</Step>
+
+{" "}
+
+<Step title="Test locally">
+  ```bash cd mintlify npx mintlify@latest dev ```
+</Step>
+
+  <Step title="Commit changes">
+    ```bash
+    git add mintlify/
+    git commit -m "docs: update [topic]"
+    git push
+    ```
+  </Step>
+</Steps>
+
+## Mintlify Components
+
+Mintlify provides rich components for better documentation:
+
+### Card Components
+
+```mdx
+<CardGroup cols={2}>
+  <Card title="Feature 1" icon="rocket">
+    Description of feature 1
+  </Card>
+  <Card title="Feature 2" icon="shield">
+    Description of feature 2
+  </Card>
+</CardGroup>
+```
+
+### Callouts
+
+```mdx
+<Info>Informational message</Info>
+
+<Warning>Warning message</Warning>
+
+<Tip>Helpful tip</Tip>
+
+<Note>Important note</Note>
+```
+
+### Code Groups
+
+````mdx
+&lt;CodeGroup&gt;
+
+```python Python
+def hello():
+    print("Hello, world!")
+```
+````
+
+```typescript TypeScript
+function hello() {
+  console.log("Hello, world!");
+}
+```
+
+&lt;/CodeGroup&gt;
+
+````
+
+### Steps
+
+```mdx
+<Steps>
+  <Step title="First Step">
+    Instructions for step 1
+  </Step>
+  <Step title="Second Step">
+    Instructions for step 2
+  </Step>
+</Steps>
+````
+
+### Checks
+
+```mdx
+<Checks>
+  <Check>First requirement</Check>
+  <Check>Second requirement</Check>
+  <Check>Third requirement</Check>
+</Checks>
+```
+
+### Accordions
+
+```mdx
+<AccordionGroup>
+  <Accordion title="Question 1">Answer to question 1</Accordion>
+  <Accordion title="Question 2">Answer to question 2</Accordion>
+</AccordionGroup>
+```
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+
+### Starting the Dev Server
+
+```bash
+cd mintlify
+npx mintlify@latest dev
+```
+
+This starts the Mintlify dev server at http://localhost:3000
+
+### Troubleshooting Local Dev
+
+<AccordionGroup>
+  <Accordion title="Page not found errors">
+    **Causes:**
+    - File is `.md` instead of `.mdx`
+    - Path in `docs.json` doesn't match file location
+    - Navigation structure uses `pages` instead of `groups` under tabs
+
+    **Solutions:**
+    - Ensure all files are `.mdx`
+    - Verify paths in `docs.json` match actual files (without `.mdx` extension)
+    - Use `tabs → groups → pages` structure
+
+  </Accordion>
+
+  <Accordion title="Components not rendering">
+    **Causes:**
+    - Missing opening or closing tags
+    - Invalid component syntax
+
+    **Solutions:**
+    - Check component syntax in Mintlify docs
+    - Ensure all tags are properly closed
+    - Use proper capitalization (e.g., `<Card>` not `<card>`)
+
+  </Accordion>
+
+  <Accordion title="Code blocks not highlighting">
+    **Causes:**
+    - Missing language identifier
+    - Invalid language name
+
+    **Solutions:**
+    ```mdx
+    \`\`\`python
+    # Correct - language specified
+    def hello():
+        pass
+    \`\`\`
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+## Deployment
+
+### Production Deployment
+
+Documentation is automatically deployed when changes are pushed to the main branch.
+
+**Deployment Process:**
+
+1. Mintlify detects changes to `mintlify/` directory
+2. Builds the documentation site
+3. Deploys to production URL
+
+**Deployment Status:**
+
+- Check the Mintlify dashboard for build status
+- Build logs available in the dashboard
+
+### Custom Domain
+
+If using a custom domain:
+
+1. Configure in Mintlify dashboard
+2. Add CNAME record in DNS settings
+3. Wait for DNS propagation (~24 hours)
+
+## Maintenance Tasks
+
+### Weekly Tasks
+
+<Checks>
+  <Check>Review and fix any broken links</Check>
+  <Check>Update version numbers and dates</Check>
+  <Check>Check for outdated screenshots or examples</Check>
+</Checks>
+
+### Monthly Tasks
+
+<Checks>
+  <Check>Review analytics for popular/unpopular pages</Check>
+  <Check>Update architecture diagrams if needed</Check>
+  <Check>Verify all code examples still work</Check>
+  <Check>Update dependencies in examples</Check>
+</Checks>
+
+### After Major Releases
+
+<Checks>
+  <Check>Update version numbers throughout docs</Check>
+  <Check>Add migration guides if needed</Check>
+  <Check>Update screenshots and examples</Check>
+  <Check>Create release notes page</Check>
+</Checks>
+
+## Best Practices
+
+### Writing Style
+
+- **Be concise** - Get to the point quickly
+- **Use examples** - Show, don't just tell
+- **Be consistent** - Follow established patterns
+- **Test everything** - Verify all commands and code work
+
+### Organization
+
+- **Group related content** - Use logical directory structure
+- **Cross-link liberally** - Help users discover related content
+- **Keep navigation shallow** - Avoid deep nesting
+- **Use descriptive titles** - Make titles searchable
+
+### Technical Writing
+
+- **Use active voice** - "Click the button" not "The button should be clicked"
+- **Be specific** - "Run `npm install`" not "Install dependencies"
+- **Include context** - Explain why, not just how
+- **Handle errors** - Document common errors and solutions
+
+## Search Optimization
+
+Mintlify provides built-in search. To improve discoverability:
+
+- Use clear, descriptive titles
+- Write detailed descriptions in frontmatter
+- Include keywords naturally in content
+- Use headings that match search terms
+
+## Analytics
+
+Track documentation usage to improve content:
+
+- **Page views** - Identify popular content
+- **Search queries** - Find gaps in documentation
+- **User feedback** - Collect thumbs up/down on pages
+- **Exit pages** - Identify confusing content
+
+## Support
+
+- **Mintlify Docs:** https://mintlify.com/docs
+- **Mintlify Support:** support@mintlify.com
+- **GitHub Issues:** Report documentation bugs
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2025-11-17
+**Maintained By:** Delight Team

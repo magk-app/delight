@@ -1,0 +1,259 @@
+---
+title: Executive Summary
+description: 'High-level architecture overview for stakeholders'
+---
+
+# Executive Summary
+
+Delight is a self-improvement companion platform that blends emotionally-aware AI coaching with narrative world-building. The architecture is designed to support a **living narrative engine** where real-world goal achievement drives personalized story progression, multi-character AI interactions, and adaptive quest systems.
+
+## Cost Model
+
+The system prioritizes **premium AI experience** with a target operational cost of **\$0.50/user/day**
+
+**Pricing Strategy:**
+- \$1/day base subscription
+- Pay-as-you-go for premium features
+- Free tier for basic features
+
+<Info>
+**Actual Cost:** ~\$0.03/user/day using GPT-4o-mini for standard operations
+</Info>
+
+## Key Architectural Approach
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="browser">
+    **Next.js 15 + React 19**
+
+    Modern, performant UI with streaming support for real-time AI interactions
+  </Card>
+
+  <Card title="Backend" icon="server">
+    **FastAPI**
+
+    Async-first API layer optimized for AI orchestration and real-time responses
+  </Card>
+
+  <Card title="AI Layer" icon="brain">
+    **LangGraph + LangChain**
+
+    Stateful multi-agent character system with contextual memory
+  </Card>
+
+  <Card title="Memory" icon="database">
+    **PostgreSQL + pgvector**
+
+    Unified vector + structured storage for semantic search
+  </Card>
+</CardGroup>
+
+## Real-Time Communication
+
+### Hybrid Approach
+
+**Server-Sent Events (SSE) + HTTP:**
+- AI streaming responses
+- User actions and CRUD operations
+- Optimistic UI updates
+
+**WebSocket (Future):**
+- World state updates
+- Character-initiated interactions
+- Real-time notifications
+
+## Novel Patterns
+
+The Delight architecture introduces several innovative patterns:
+
+### 1. Living Narrative Engine
+
+Real-world goal achievement directly influences the story world:
+- Completed missions unlock narrative events
+- Progress changes world state
+- Character relationships evolve with user actions
+
+### 2. Character-Initiated Interactions
+
+AI companions proactively reach out:
+- Scheduled check-ins based on user patterns
+- Contextual nudges when user is off-track
+- Celebratory messages for achievements
+
+### 3. Pre-Planned Hidden Quest System
+
+Narrative arcs designed in advance:
+- Quest chains unlock based on progress
+- Hidden quests discovered through exploration
+- Personalized story branches
+
+## Technology Decisions
+
+### Why Next.js 15?
+
+- **Server Components** - Reduced JavaScript bundle
+- **Streaming** - Progressive UI rendering
+- **App Router** - Modern routing with layouts
+- **React 19** - Latest hooks and features
+
+### Why FastAPI?
+
+- **Async-Native** - Perfect for AI orchestration
+- **Type Safety** - Pydantic validation
+- **Performance** - Comparable to Node.js
+- **OpenAPI** - Automatic API documentation
+
+### Why LangGraph?
+
+- **Stateful Agents** - Maintain conversation context
+- **Multi-Agent** - Character-based system
+- **Observability** - Built-in debugging
+- **Flexibility** - Customizable workflows
+
+### Why PostgreSQL + pgvector?
+
+- **Unified Storage** - Vectors + structured data
+- **Production-Ready** - ACID guarantees
+- **Cost-Effective** - No separate vector DB
+- **LangChain Integration** - First-class support
+
+## System Characteristics
+
+### Performance Targets
+
+<Checks>
+  <Check>AI response time: &lt;2s first token</Check>
+  <Check>API latency: &lt;100ms (p95)</Check>
+  <Check>Page load: &lt;1s (p95)</Check>
+  <Check>Database queries: &lt;50ms (p95)</Check>
+</Checks>
+
+### Scalability
+
+**Current:**
+- Single backend instance
+- PostgreSQL with connection pooling
+- Redis for job queuing
+
+**Future (>10K users):**
+- Horizontal backend scaling
+- Read replicas for database
+- CDN for static assets
+- WebSocket service separation
+
+### Reliability
+
+**Targets:**
+- 99.9% uptime (8.76 hours/year downtime)
+- Zero data loss
+- Graceful degradation
+
+**Strategies:**
+- Database backups (hourly via Supabase)
+- Error tracking (Sentry)
+- Health checks and monitoring
+- Circuit breakers for external APIs
+
+## Security Posture
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key">
+    **Clerk**
+
+    Managed auth with OAuth, 2FA, magic links
+  </Card>
+
+  <Card title="Authorization" icon="user-lock">
+    **Role-Based Access**
+
+    User data isolation, API key management
+  </Card>
+
+  <Card title="Data Protection" icon="shield">
+    **Encryption**
+
+    TLS in transit, encrypted at rest
+  </Card>
+
+  <Card title="Compliance" icon="certificate">
+    **SOC 2**
+
+    Via Clerk and Supabase providers
+  </Card>
+</CardGroup>
+
+## Development Workflow
+
+**BMAD Methodology:**
+1. **Business** - Define requirements
+2. **Managed** - Track progress
+3. **Agile** - Iterative development
+4. **Development** - Build and test
+
+**Key Practices:**
+- Story-driven development
+- Comprehensive testing
+- Continuous deployment
+- Documentation as code
+
+## For Stakeholders
+
+### Product Managers
+
+The architecture supports rapid feature iteration while maintaining quality:
+- Clear epic → story → task breakdown
+- Automated testing prevents regressions
+- Managed services reduce ops overhead
+
+### Investors
+
+Built on proven, cost-effective technologies:
+- Modern stack attracts top talent
+- Managed services minimize infrastructure costs
+- Scalable architecture supports growth
+
+### Technical Leads
+
+Production-ready from day one:
+- Type safety across stack
+- Comprehensive error handling
+- Monitoring and observability
+- Security best practices
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Technology Stack"
+    icon="layer-group"
+    href="/architecture/technology-stack"
+  >
+    Detailed technology choices
+  </Card>
+  <Card
+    title="Decision Records"
+    icon="book"
+    href="/architecture/decision-records"
+  >
+    Architecture Decision Records (ADRs)
+  </Card>
+  <Card
+    title="Data Architecture"
+    icon="database"
+    href="/architecture/data-architecture"
+  >
+    Database schema and data flow
+  </Card>
+  <Card
+    title="Security"
+    icon="lock"
+    href="/architecture/security"
+  >
+    Security architecture details
+  </Card>
+</CardGroup>
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2025-11-10

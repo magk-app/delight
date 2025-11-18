@@ -1,0 +1,844 @@
+---
+title: "Epic 8 - Evidence & Reflection"
+description: "Enable proof uploads and achievement validation with reflection"
+---
+
+# Epic 8: Evidence & Reflection
+
+## Epic Goal
+
+Enable users to upload evidence of accomplishments (photos, artifacts) and reflect on their journey, building toward AI-validated achievements and shared galleries.
+
+## Priority & Scope
+
+<Checks items={[
+  "Post-MVP (foundation in MVP)",
+  "6 stories with 3 MVP + 3 future features",
+  "Estimated 3-4 weeks of development",
+  "Transforms invisible accomplishments into tangible proof"
+]} />
+
+## Architecture Components
+
+- **S3 Storage**: File upload and cloud storage
+- **Upload Service**: Presigned URLs and direct S3 uploads
+- **File Validation**: Type, size, and virus scanning
+- **Gallery System**: Evidence browsing and filtering
+- **AI Validation**: Image analysis for proof verification
+- **Social Sharing**: Pod and public galleries
+
+## Core Concepts
+
+### Evidence Types
+
+- **Photos**: Workout completed, project finished, meal prepared
+- **Documents**: Certificates, receipts, written reflections
+- **Screenshots**: Progress in apps, messages, timelines
+- **Links**: Article read, course completed, resource shared
+
+### Reflection Framework
+
+Reflections capture the emotional and learning aspects of accomplishments:
+- "What did you learn?"
+- "How did you feel?"
+- "What made this harder/easier?"
+- Optional mood/emotion tracking
+- Storage as personal-tier memories
+
+## Stories
+
+### Story 8.1: Set Up S3 File Storage Infrastructure
+
+Configure cloud storage for user uploads.
+
+<Card title="Story Type" icon="database">
+  Infrastructure Setup
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "S3-compatible storage configured (AWS S3, MinIO, etc.)",
+  "Presigned URLs for secure uploads",
+  "File type validation (images, PDFs)",
+  "Size limits enforced (10MB per file MVP)",
+  "Files organized in bucket structure",
+  "Metadata stored in database"
+]} />
+
+**Storage Configuration:**
+```python
+# backend/app/services/storage_service.py
+
+class StorageService:
+    def __init__(self):
+        self.s3_client = boto3.client('s3')
+        self.bucket_name = "delight-evidence"
+        self.region = "us-west-2"
+
+    async def generate_presigned_url(
+        self,
+        user_id: UUID,
+        mission_id: UUID,
+        filename: str,
+        file_type: str
+    ) -> str:
+        """Generate secure presigned URL for client upload"""
+        s3_key = f"{user_id}/{mission_id}/{filename}"
+        url = self.s3_client.generate_presigned_post(
+            Bucket=self.bucket_name,
+            Key=s3_key,
+            Expires=3600,  # 1 hour
+            Conditions=[
+                ["content-length-range", 0, 10_000_000],  # 10MB max
+                ["starts-with", "$Content-Type", "image/"],
+            ]
+        )
+        return url
+```
+
+**File Organization:**
+```
+s3://delight-evidence/
+├── {user_id}/
+│   ├── {mission_id}/
+│   │   ├── photo_1.jpg
+│   │   ├── screenshot.png
+│   │   └── certificate.pdf
+│   └── {mission_id}/
+│       └── ...
+```
+
+**File Validation:**
+```python
+ALLOWED_TYPES = {
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/webp': ['.webp'],
+    'application/pdf': ['.pdf'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+}
+
+MAX_FILE_SIZE = 10_000_000  # 10MB for MVP
+
+async def validate_file(
+    file: UploadFile,
+    allowed_types: List[str] = None
+) -> bool:
+    """Validate file type, size, and scan for malware"""
+    # Type check
+    if file.content_type not in (allowed_types or ALLOWED_TYPES.keys()):
+        raise InvalidFileType()
+
+    # Size check
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise FileTooLarge()
+
+    # Virus scan (optional for MVP, required for production)
+    # Use ClamAV or similar service
+
+    return True
+```
+
+**Database Schema:**
+```sql
+-- evidence_uploads table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+mission_id UUID FK -> missions.id (nullable)
+s3_key VARCHAR
+file_type VARCHAR  -- 'image', 'document', etc.
+original_filename VARCHAR
+file_size INT
+upload_status ENUM('pending', 'complete', 'failed')
+visibility ENUM('private', 'pod', 'public')
+uploaded_at TIMESTAMP WITH TIME ZONE
+ai_validation JSONB (nullable)
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Environment Setup:**
+```bash
+# AWS S3
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_S3_BUCKET=delight-evidence
+AWS_REGION=us-west-2
+
+# Or MinIO for local dev
+MINIO_ENDPOINT=localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=delight-evidence
+```
+
+**Prerequisites:**
+- Story 1.2 (database schema)
+
+---
+
+### Story 8.2: Implement Evidence Upload Flow (MVP)
+
+Create user-friendly upload interface and API.
+
+<Card title="Story Type" icon="upload">
+  File Upload & API
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Upload from device (camera roll or file system)",
+  "Preview before uploading",
+  "Optional caption/note with upload",
+  "Progress bar during upload",
+  "Error handling and retry options",
+  "Success confirmation",
+  "Linked to mission in database"
+]} />
+
+**Upload Process:**
+
+1. **Request Presigned URL**
+   ```bash
+   POST /api/v1/evidence/request-upload
+   {
+     "mission_id": "uuid",
+     "filename": "workout_photo.jpg",
+     "file_type": "image/jpeg"
+   }
+
+   Response:
+   {
+     "presigned_url": "https://s3.../...",
+     "upload_id": "uuid",
+     "fields": {...}
+   }
+   ```
+
+2. **Upload Directly to S3** (Client-side, using presigned URL)
+
+3. **Confirm Upload**
+   ```bash
+   POST /api/v1/evidence/confirm
+   {
+     "upload_id": "uuid",
+     "caption": "Morning run complete!",
+     "mission_id": "uuid"
+   }
+   ```
+
+**Frontend Upload Component:**
+```tsx
+// frontend/src/components/EvidenceUploader.tsx
+
+export function EvidenceUploader({ missionId }: Props) {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>("");
+  const [caption, setCaption] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      setFile(f);
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setPreview(e.target?.result as string);
+      reader.readAsDataURL(f);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setUploading(true);
+
+    try {
+      // 1. Request presigned URL
+      const presignedResponse = await fetch("/api/v1/evidence/request-upload", {
+        method: "POST",
+        body: JSON.stringify({
+          mission_id: missionId,
+          filename: file.name,
+          file_type: file.type
+        })
+      });
+
+      const { presigned_url, upload_id } = await presignedResponse.json();
+
+      // 2. Upload to S3
+      const uploadResponse = await fetch(presigned_url, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type }
+      });
+
+      if (!uploadResponse.ok) throw new Error("Upload failed");
+
+      // 3. Confirm with backend
+      await fetch("/api/v1/evidence/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          upload_id,
+          caption,
+          mission_id: missionId
+        })
+      });
+
+      // Success!
+      toast.success("Evidence uploaded!");
+      setFile(null);
+      setCaption("");
+    } catch (error) {
+      toast.error("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Drag-and-drop area */}
+      <div className="border-2 border-dashed rounded-lg p-8 cursor-pointer">
+        <input
+          type="file"
+          onChange={handleFileSelect}
+          accept="image/*,.pdf"
+          className="hidden"
+          id="file-input"
+        />
+        <label htmlFor="file-input" className="text-center">
+          <p className="text-gray-600">Drag files here or click to select</p>
+        </label>
+      </div>
+
+      {/* Preview */}
+      {preview && (
+        <img src={preview} alt="Preview" className="w-full h-48 object-cover rounded" />
+      )}
+
+      {/* Caption */}
+      <textarea
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        placeholder="Add a note or caption (optional)"
+        className="w-full p-2 border rounded"
+      />
+
+      {/* Progress and upload button */}
+      <button
+        onClick={handleUpload}
+        disabled={!file || uploading}
+        className="w-full bg-blue-500 text-white py-2 rounded"
+      >
+        {uploading ? "Uploading..." : "Upload Evidence"}
+      </button>
+    </div>
+  );
+}
+```
+
+**Features:**
+- Drag-and-drop support
+- Click to browse files
+- Image preview before upload
+- Progress bar during upload
+- Auto-compression for images (future)
+- Mobile camera access on iOS/Android
+
+**Prerequisites:**
+- Story 8.1 (S3 storage)
+- Story 3.4 (mission completion)
+
+---
+
+### Story 8.3: Create Evidence Gallery and Mission History
+
+Build browsable evidence collection.
+
+<Card title="Story Type" icon="gallery">
+  Gallery UI
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Grid of evidence thumbnails",
+  "Filter by goal, date range, category",
+  "Sort by date, mission, goal",
+  "Click to view full-size with details",
+  "Add/edit captions retroactively",
+  "Delete evidence (soft delete)",
+  "Download originals"
+]} />
+
+**Gallery Interface:**
+
+**Features:**
+- Responsive grid (3-4 columns on desktop, 1-2 on mobile)
+- Lazy-loading thumbnails
+- Lightbox modal for full-size view
+- Metadata displayed (date, mission, category)
+- Sharing indicators (private, pod, public)
+
+**Filters:**
+- **By Goal**: Dropdown of user's goals
+- **By Category**: Health, craft, growth, connection
+- **By Date**: Date range picker
+- **By Visibility**: Private, pod, public
+
+**Sorting:**
+- Newest first (default)
+- Oldest first
+- By mission completion date
+- By goal
+- By category
+
+**Detail View:**
+```json
+{
+  "id": "uuid",
+  "thumbnail": "https://s3/.../thumbnail.jpg",
+  "full_image": "https://s3/.../full.jpg",
+  "caption": "Morning 5K run",
+  "mission": {
+    "id": "uuid",
+    "title": "Morning Run",
+    "completed_at": "2025-11-17"
+  },
+  "goal": {
+    "id": "uuid",
+    "title": "Build running habit"
+  },
+  "category": "health",
+  "uploaded_at": "2025-11-17T08:30:00Z",
+  "visibility": "private",
+  "actions": ["download", "share", "delete", "edit_caption"]
+}
+```
+
+**Components:**
+- `EvidenceGallery.tsx` - Main gallery view
+- `EvidenceGrid.tsx` - Grid display
+- `EvidenceLightbox.tsx` - Full-size modal
+- `FilterBar.tsx` - Filter and sort controls
+- `EvidenceCard.tsx` - Individual thumbnail
+
+**Timeline Integration:**
+- Evidence appears on goal progress timelines (Story 5.4)
+- Visual milestone markers for evidence-backed achievements
+- "Evidence attached" badge on mission history
+
+**API Endpoint:**
+```bash
+GET /api/v1/evidence
+?goal_id=uuid
+&category=health
+&date_from=2025-01-01
+&date_to=2025-11-17
+&visibility=private
+&sort=date_desc
+&page=1
+&limit=20
+
+Response:
+{
+  "evidence": [...],
+  "total": 47,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+**Prerequisites:**
+- Story 8.2 (evidence upload)
+
+---
+
+### Story 8.4: Add Reflection Prompts Post-Mission (MVP)
+
+Capture learnings and emotional responses.
+
+<Card title="Story Type" icon="heart">
+  Reflection & Learning
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Optional reflection prompts appear after mission completion",
+  "Users can skip reflection",
+  "Free-form text responses",
+  "Mood emoji selection",
+  "Reflections stored with mission session",
+  "Added to personal-tier memory",
+  "Visible in mission history"
+]} />
+
+**Reflection Prompts:**
+
+Choose 1-2 of these randomly or let user choose:
+- "What did you learn from this mission?"
+- "How do you feel about completing this?"
+- "What made this easier or harder than expected?"
+- "What's one thing you'd do differently next time?"
+- "How does this bring you closer to your goal?"
+- "What are you most proud of about this?"
+
+**Mood Selection:**
+- 😊 Happy/Accomplished
+- 😌 Calm/Peaceful
+- 💪 Energized/Powerful
+- 🤔 Thoughtful/Learning
+- 😅 Mixed/Complex
+
+**Reflection Modal:**
+```tsx
+// frontend/src/components/MissionReflectionModal.tsx
+
+export function ReflectionModal({ missionId, onComplete }: Props) {
+  const [reflection, setReflection] = useState("");
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [skipped, setSkipped] = useState(false);
+
+  const moods = [
+    { emoji: "😊", label: "Happy", value: "happy" },
+    { emoji: "😌", label: "Calm", value: "calm" },
+    { emoji: "💪", label: "Energized", value: "energized" },
+    { emoji: "🤔", label: "Thoughtful", value: "thoughtful" },
+    { emoji: "😅", label: "Mixed", value: "mixed" }
+  ];
+
+  const handleSubmit = async () => {
+    await fetch("/api/v1/missions/sessions/reflect", {
+      method: "POST",
+      body: JSON.stringify({
+        mission_id: missionId,
+        reflection,
+        mood
+      })
+    });
+
+    onComplete();
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Moment of Reflection</h2>
+
+      {/* Optional prompt */}
+      <div className="text-gray-600">
+        "What did you learn from this mission?"
+      </div>
+
+      {/* Reflection text */}
+      <textarea
+        value={reflection}
+        onChange={(e) => setReflection(e.target.value)}
+        placeholder="Share your thoughts... (optional)"
+        className="w-full h-32 p-3 border rounded"
+      />
+
+      {/* Mood selection */}
+      <div className="space-y-2">
+        <p className="font-semibold">How are you feeling?</p>
+        <div className="flex gap-4">
+          {moods.map((m) => (
+            <button
+              key={m.value}
+              onClick={() => setMood(m.value as Mood)}
+              className={`text-4xl p-2 rounded transition ${
+                mood === m.value ? "bg-blue-100" : ""
+              }`}
+            >
+              {m.emoji}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => setSkipped(true)}
+          className="flex-1 text-gray-500 hover:text-gray-700"
+        >
+          Skip
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="flex-1 bg-blue-500 text-white py-2 rounded"
+        >
+          Save Reflection
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Storage:**
+```sql
+-- Add to mission_sessions table
+reflection TEXT
+mood ENUM('happy', 'calm', 'energized', 'thoughtful', 'mixed') (nullable)
+reflection_saved_at TIMESTAMP WITH TIME ZONE (nullable)
+```
+
+**Memory Integration:**
+After mission completion, if reflection provided:
+```python
+memory_content = f"Reflection on {mission.title}: {reflection}"
+if mood:
+    memory_content += f" (Feeling: {mood})"
+
+await memory_service.add_memory(
+    content=memory_content,
+    memory_type="personal",
+    metadata={
+        "mission_id": mission.id,
+        "mood": mood,
+        "created_from": "mission_reflection"
+    }
+)
+```
+
+**Prerequisites:**
+- Story 3.4 (mission completion)
+- Story 2.2 (memory service)
+
+---
+
+### Story 8.5: Implement AI Validation of Evidence (Future)
+
+Use vision API to recognize and validate proof.
+
+<Card title="Story Type" icon="magic">
+  Future Feature - AI Validation
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "AI analyzes images for relevance to mission",
+  "Detects quality and authenticity indicators",
+  "Identifies specific accomplishments from screenshots",
+  "Badge: 'AI-Verified' on validated evidence",
+  "Bonus Essence for verified evidence",
+  "Flags suspicious uploads for review"
+]} />
+
+**Validation Process:**
+
+1. **Image Analysis**
+   ```python
+   # Use OpenAI Vision API
+   response = client.chat.completions.create(
+       model="gpt-4-vision-preview",
+       messages=[
+           {
+               "role": "user",
+               "content": [
+                   {
+                       "type": "image_url",
+                       "image_url": {
+                           "url": image_url,
+                           "detail": "high"
+                       }
+                   },
+                   {
+                       "type": "text",
+                       "text": f"Does this image show evidence of completing: {mission.title}? " +
+                               f"Context: {mission.description}. " +
+                               f"Respond with: 1) Yes/No, 2) Confidence (0-100%), 3) Explanation"
+                   }
+               ]
+           }
+       ]
+   )
+   ```
+
+2. **Validation Storage**
+   ```sql
+   -- Add to evidence_uploads
+   ai_validation JSONB
+   {
+     "is_relevant": true,
+     "confidence": 87,
+     "explanation": "Image shows person in running gear at finish line",
+     "validated_at": "2025-11-17T08:45:00Z",
+     "model": "gpt-4-vision"
+   }
+   ```
+
+3. **Verification Badge**
+   - ✓ AI-Verified badge appears on validated evidence
+   - Green checkmark on gallery thumbnails
+   - "Verified by AI" label in detail view
+
+4. **Bonus Rewards**
+   - +25 Essence for verified evidence on hidden quests
+   - Special achievement: "Trust the Process" (10 verified evidences)
+
+**Quality Checks:**
+- Screenshot validation (confirms readable text)
+- Photo quality (brightness, focus)
+- Plausibility (aligned with mission type)
+- Fraud detection (image manipulation detection, future)
+
+**User-Friendly Approach:**
+- ✅ Verification is optional (doesn't block uploads)
+- ✅ Failed verification doesn't punish users
+- ✅ False negatives OK (better than false positives)
+- ❌ No shame or rejection messages
+
+**Prerequisites:**
+- Story 8.2 (evidence upload)
+
+---
+
+### Story 8.6: Create Shared Achievement Galleries (Future)
+
+Enable public and pod-based sharing.
+
+<Card title="Story Type" icon="share">
+  Future Feature - Social Sharing
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Mark evidence as shareable (pod/public)",
+  "Pod gallery shows pod members' evidence",
+  "Public gallery (moderated)",
+  "React with encouragement emoji",
+  "Optional comments on shared evidence",
+  "Shareable to social media",
+  "Privacy controls respected"
+]} />
+
+**Visibility Options:**
+- **Private** (default): Only you can see
+- **Pod**: Your accountability pod members see
+- **Public**: Anyone can see (after moderation)
+
+**Gallery Views:**
+
+**Pod Gallery:**
+- Evidence from all pod members
+- Shows "from [name]" or "from anonymous"
+- Filter by member
+- React with emoji: 👏, 🎉, 💪, ✨, 🔥
+
+**Public Gallery:**
+- Community achievements
+- Moderated for appropriateness
+- Randomized to encourage discovery
+- Trending section (most engaged)
+- Search by mission type or category
+
+**Sharing to Social:**
+```json
+{
+  "title": "I just completed my morning 5K run!",
+  "image_url": "https://cdn.delight/evidence/...",
+  "description": "Working toward my health goals with Delight",
+  "url": "https://delight.app/achievements/uuid"
+}
+```
+
+**Moderation:**
+- Manual review queue for public submissions
+- Auto-flag based on guidelines
+- Report button for community moderation
+- 48-hour approval window
+
+**Schema:**
+```sql
+-- shared_evidence table
+id UUID PRIMARY KEY
+evidence_id UUID FK -> evidence_uploads.id
+shared_scope ENUM('pod', 'public')
+shared_at TIMESTAMP WITH TIME ZONE
+moderation_status ENUM('pending', 'approved', 'rejected')
+moderation_reviewed_at TIMESTAMP WITH TIME ZONE (nullable)
+view_count INT
+reaction_count INT
+```
+
+**Prerequisites:**
+- Story 8.3 (evidence gallery)
+- Future pod/multiplayer system
+
+---
+
+## Epic Dependencies
+
+**Requires:**
+- Epic 1 (Foundation)
+- Epic 3 (Goal & Missions)
+- Epic 5 (Progress tracking for evidence context)
+
+**Enables:**
+- Future social features
+- Achievement economy expansion
+
+## Success Criteria
+
+When Epic 8 is complete:
+
+<Checks items={[
+  "Users can upload evidence for any mission",
+  "Uploads are secure and organized",
+  "Gallery is beautiful and browsable",
+  "Reflections capture emotional learning",
+  "Evidence integrates with goal timelines",
+  "AI validation provides confidence scoring",
+  "Sharing builds community and motivation"
+]} />
+
+## Evidence Philosophy
+
+Evidence transforms invisible work into tangible proof:
+- **Visibility**: See what you've actually done
+- **Celebration**: Share accomplishments
+- **Learning**: Reflections cement insights
+- **Motivation**: Photos and memories inspire consistency
+- **Community**: Seeing others' progress motivates action
+
+## Cost Estimation
+
+- **S3 storage**: ~$0.023/GB/month (~$0.0001/user/day)
+- **OpenAI Vision API (validation)**: ~$0.01/image
+- **Total**: ~$0.001/user/day
+
+## Evidence Roadmap
+
+**MVP (Stories 8.1-8.4):**
+- File uploads with S3
+- Gallery browsing and filtering
+- Reflection capture
+- Memory integration
+
+**Phase 2 (Stories 8.5-8.6):**
+- AI validation with vision API
+- Pod and public galleries
+- Social sharing
+- Achievement badges
+
+## Next Steps
+
+With all 8 epics complete, Delight has a complete ecosystem:
+- Foundation and authentication (Epic 1)
+- Emotionally aware AI companion (Epic 2)
+- Goal management and missions (Epic 3)
+- Living narrative world (Epic 4)
+- Progress visualization (Epic 5)
+- World zones and real-time updates (Epic 6)
+- Retention and re-engagement (Epic 7)
+- Evidence and reflection (Epic 8)
+
+This creates a platform where users can ambitious goals, work systematically through adaptive missions, celebrate progress, and see their journey woven into a compelling narrative.

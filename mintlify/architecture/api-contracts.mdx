@@ -1,0 +1,425 @@
+---
+title: API Contracts
+description: REST API endpoint specifications, request/response formats, and integration examples for the Delight platform.
+---
+
+## Companion Chat
+
+Stream token-by-token responses from AI companions with emotional context.
+
+### Request
+
+**POST** `/api/v1/companion/chat`
+
+```json
+{
+  "message": "How are you today?",
+  "context": {
+    "current_mission_id": 123,
+    "emotional_state": "stressed"
+  }
+}
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `message` | string | User message to send to companion |
+| `context.current_mission_id` | number | Optional: Current mission ID for context |
+| `context.emotional_state` | string | Optional: User's emotional state for personalization |
+
+### Response (Server-Sent Events)
+
+The response streams as Server-Sent Events (SSE), with each token arriving individually:
+
+```
+data: {"type": "token", "content": "I"}
+data: {"type": "token", "content": " 'm"}
+data: {"type": "token", "content": " here"}
+data: {"type": "complete", "message_id": "abc123"}
+```
+
+#### Response Events
+
+| Event Type | Content | Description |
+|-----------|---------|-------------|
+| `token` | string | Single token of response text |
+| `complete` | object | Final event with `message_id` |
+
+<Info>
+Use EventSource API in the frontend to handle streaming responses:
+```javascript
+const eventSource = new EventSource('/api/v1/companion/chat?message=Hello');
+eventSource.onmessage = (e) => {
+  const data = JSON.parse(e.data);
+  if (data.type === 'token') {
+    // Append token to UI
+  } else if (data.type === 'complete') {
+    eventSource.close();
+  }
+};
+```
+</Info>
+
+---
+
+## Missions
+
+Manage user missions (goals/tasks) with CRUD operations.
+
+### List Missions
+
+**GET** `/api/v1/missions?status=active`
+
+Query active, pending, or completed missions.
+
+#### Query Parameters
+
+| Parameter | Type | Values | Description |
+|-----------|------|--------|-------------|
+| `status` | string | `active`, `pending`, `completed` | Filter by mission status |
+| `attribute_type` | string | `Growth`, `Health`, `Craft`, `Connection` | Filter by attribute type |
+| `limit` | number | 1-100 | Results per page (default: 20) |
+| `offset` | number | ≥ 0 | Pagination offset (default: 0) |
+
+### Response
+
+```json
+{
+  "missions": [
+    {
+      "id": 123,
+      "title": "Morning Arena Session",
+      "description": "Practice combat techniques in the training arena",
+      "duration_minutes": 20,
+      "essence_reward": 15,
+      "attribute_type": "Health",
+      "status": "active",
+      "created_at": "2025-11-09T08:00:00Z",
+      "completed_at": null
+    }
+  ],
+  "total": 5,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+#### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | number | Mission ID |
+| `title` | string | Mission title |
+| `description` | string | Full mission description |
+| `duration_minutes` | number | Expected completion time |
+| `essence_reward` | number | Essence points earned |
+| `attribute_type` | string | Associated attribute |
+| `status` | string | Current status |
+| `created_at` | ISO8601 | Creation timestamp |
+| `completed_at` | ISO8601 \| null | Completion timestamp |
+
+### Start Mission
+
+**POST** `/api/v1/missions/start`
+
+Begin a mission and update its status to "active".
+
+```json
+{
+  "mission_id": 123
+}
+```
+
+#### Request
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `mission_id` | number | Yes | ID of mission to start |
+
+#### Response (200 OK)
+
+```json
+{
+  "id": 123,
+  "status": "active",
+  "started_at": "2025-11-09T14:30:00Z"
+}
+```
+
+---
+
+## World State
+
+Get current world state including zone availability and character presence.
+
+### Get World State
+
+**GET** `/api/v1/world/state`
+
+Retrieve current state of all zones and characters.
+
+#### Response
+
+```json
+{
+  "current_time": "2025-11-09T14:30:00Z",
+  "zones": {
+    "arena": {
+      "available": true,
+      "closes_at": "21:00"
+    },
+    "observatory": {
+      "available": true,
+      "opens_at": "00:00",
+      "closes_at": "23:59"
+    },
+    "commons": {
+      "available": false,
+      "opens_at": "12:00"
+    }
+  },
+  "characters_present": ["Eliza", "Lyra"]
+}
+```
+
+#### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `current_time` | ISO8601 | Server time (UTC) |
+| `zones` | object | Map of zone states |
+| `zones[zone].available` | boolean | Whether zone is currently open |
+| `zones[zone].opens_at` | time | Zone opening time (HH:MM) |
+| `zones[zone].closes_at` | time | Zone closing time (HH:MM) |
+| `characters_present` | string[] | Names of characters currently available |
+
+<Warning>
+World state updates via WebSocket for real-time availability changes. HTTP GET provides current snapshot; subscribe to WebSocket for reactive updates.
+</Warning>
+
+---
+
+## WebSocket: World State Streams
+
+Subscribe to real-time world state updates.
+
+### Connection
+
+**WS** `/api/v1/ws/world/state`
+
+```javascript
+// Frontend example
+const ws = new WebSocket('ws://localhost:8000/api/v1/ws/world/state');
+
+ws.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+  if (update.type === 'zone_status_change') {
+    console.log(`${update.zone} is now ${update.available ? 'open' : 'closed'}`);
+  }
+  if (update.type === 'character_arrival') {
+    console.log(`${update.character} has arrived`);
+  }
+};
+```
+
+### Message Types
+
+#### Zone Status Change
+
+Fired when a zone opens or closes.
+
+```json
+{
+  "type": "zone_status_change",
+  "zone": "arena",
+  "available": true,
+  "timestamp": "2025-11-09T12:00:00Z"
+}
+```
+
+#### Character Arrival
+
+Fired when a character becomes available.
+
+```json
+{
+  "type": "character_arrival",
+  "character": "Eliza",
+  "timestamp": "2025-11-09T12:30:00Z"
+}
+```
+
+#### Character Departure
+
+Fired when a character becomes unavailable.
+
+```json
+{
+  "type": "character_departure",
+  "character": "Thorne",
+  "timestamp": "2025-11-09T18:00:00Z"
+}
+```
+
+---
+
+## Error Responses
+
+All endpoints return consistent error responses.
+
+### 400 Bad Request
+
+```json
+{
+  "detail": "Invalid request parameters",
+  "errors": {
+    "mission_id": "Must be a positive integer"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "detail": "Authentication required"
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+  "detail": "You don't have permission to access this resource"
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "detail": "Mission not found"
+}
+```
+
+### 500 Server Error
+
+```json
+{
+  "detail": "Internal server error",
+  "request_id": "req_xyz123"
+}
+```
+
+<Info>
+All error responses include a `request_id` for debugging. Include this ID when reporting issues.
+</Info>
+
+---
+
+## API Documentation
+
+Interactive API documentation is available at:
+
+- **Swagger UI:** `http://localhost:8000/docs`
+- **ReDoc:** `http://localhost:8000/redoc`
+
+These provide live testing capabilities for all endpoints.
+
+---
+
+## Authentication
+
+All endpoints (except public health checks) require Clerk authentication:
+
+```javascript
+// Frontend: Include authorization header
+const response = await fetch('/api/v1/missions', {
+  headers: {
+    'Authorization': `Bearer ${clerkToken}`
+  }
+});
+```
+
+Backend validates the token using Clerk's SDK:
+
+```python
+from app.core.security import verify_clerk_token
+
+@router.get("/missions")
+async def get_missions(token: str = Depends(verify_clerk_token)):
+    # token contains verified clerk_user_id
+    ...
+```
+
+---
+
+## Rate Limiting
+
+API endpoints are rate-limited to prevent abuse:
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `/api/v1/companion/chat` | 100 | 1 minute |
+| `/api/v1/missions` | 300 | 1 minute |
+| `/api/v1/world/state` | 600 | 1 minute |
+
+Rate limit info is included in response headers:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1699608600
+```
+
+---
+
+## Pagination
+
+List endpoints support cursor-based pagination:
+
+```bash
+# Get first 20 results
+GET /api/v1/missions?limit=20&offset=0
+
+# Get next page
+GET /api/v1/missions?limit=20&offset=20
+```
+
+Response includes pagination metadata:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "total": 150,
+    "limit": 20,
+    "offset": 20,
+    "has_more": true
+  }
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Architecture" href="/architecture/data-architecture" icon="database">
+    Understand the data models behind these API endpoints.
+  </Card>
+
+  <Card title="Technology Stack" href="/architecture/technology-stack" icon="cube">
+    Learn about FastAPI, Uvicorn, and the integration layers.
+  </Card>
+
+  <Card title="Decision Records" href="/architecture/decision-records" icon="list-check">
+    Review ADR-005 for rationale on SSE, WebSocket, and HTTP choices.
+  </Card>
+
+  <Card title="Back to Architecture" href="/architecture" icon="arrow-left">
+    Return to the main architecture documentation.
+  </Card>
+</CardGroup>

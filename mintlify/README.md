@@ -1,26 +1,62 @@
-# Mintlify Documentation Setup
+# Mintlify Documentation
 
-This directory contains the Mintlify configuration and documentation pages for Delight.
+This directory contains the Mintlify documentation for the Delight platform.
+
+## Structure
+
+```
+mintlify/
+├── docs.json              # Navigation configuration
+├── introduction.mdx       # Landing page
+├── quickstart.mdx         # Quick start guide
+├── architecture/          # Architecture documentation (8 pages)
+├── dev/                   # Development guides (4 pages)
+├── epics/                 # Product epics (9 pages)
+├── runbook/              # Operational runbooks (3 pages)
+├── users/                # User guides (1 page)
+├── logo/                 # Logo and favicon files
+└── public/               # Public assets
+```
+
+**Total:** 27 MDX pages + 1 JSON config
 
 ## Quick Start
 
-1. **Install dependencies** (if not already installed):
+### Install Dependencies
 
-   ```bash
-   pnpm install
-   ```
+```bash
+# From project root
+pnpm install
+```
 
-2. **Start the Mintlify dev server**:
+### Start Dev Server
 
-   ```bash
-   pnpm docs:dev
-   ```
+**⚠️ Windows Users: See [Windows Setup](#-windows-users-critical-path-space-bug) below first!**
 
-3. **View your docs**: Open http://localhost:3000 in your browser
+```bash
+# Option 1: Use pnpm script (recommended)
+pnpm docs:dev
 
-### 🚨 Windows Users: Critical Path Space Bug
+# Option 2: Run directly
+cd mintlify
+npx --yes mint@latest dev
+```
+
+This starts the documentation at **http://localhost:3000**
+
+### Verify All Pages Load
+
+After starting the dev server, check:
+
+- ✅ All tabs appear (Documentation, Product, Operations)
+- ✅ All groups expand correctly
+- ✅ No "page not found" errors
+- ✅ All navigation links work
+
+## 🚨 Windows Users: Critical Path Space Bug
 
 **If you see this error on Windows:**
+
 ```
 C:\Users\Jack:1
  ^^
@@ -30,8 +66,6 @@ SyntaxError: Invalid or unexpected token
 **Root Cause**: The Mintlify CLI has a bug where it **cannot run** on Windows when your username contains a space (e.g., "Jack Luo" → `C:\Users\Jack Luo\`).
 
 **Status**: This is an upstream bug in the `mint` package. See `WINDOWS-FIX-COMPLETE.md` for full analysis and `GITHUB-ISSUE-FOR-MINTLIFY.md` for the bug report.
-
----
 
 ### ✅ WORKING SOLUTION: Use WSL (Recommended)
 
@@ -76,11 +110,7 @@ npx --yes mint@latest dev
 
 Navigate to **http://localhost:3000**
 
----
-
 ### 📋 Alternative Solutions (Not Recommended)
-
-**These may NOT work due to the mint CLI bug:**
 
 <details>
 <summary>❌ Option: Use npx on Windows (DOES NOT WORK)</summary>
@@ -107,26 +137,45 @@ pnpm add -g mint
 ```
 
 **Note**: This may still fail due to the mint CLI bug.
+
 </details>
 
----
+## Key Fix Applied
 
-### ✅ Verification
+This implementation fixes the Mintlify "page not found" issues by:
 
-After setup, confirm it works:
+✅ **Correct Navigation Structure**
 
-```bash
-# From WSL
-cd /mnt/c/Users/Jack\ Luo/Desktop/\(local\)\ github\ software/delight
-pnpm docs:dev
-```
+- Uses `tabs → groups → pages` hierarchy (not `tabs → pages`)
+- This was the primary cause of page not found errors
 
-**Expected output**:
-```
-✔ Local: http://localhost:3000
-```
+✅ **Proper File Extensions**
 
-Then open your browser to http://localhost:3000 and verify the docs load.
+- All files are `.mdx` (Mintlify requirement)
+- No `.md` files that Mintlify can't find
+
+✅ **Correct docs.json**
+
+- Page references don't include `.mdx` extension
+- Uses latest schema: `https://mintlify.com/docs.json`
+- Proper structure matches working examples
+
+## Navigation Structure
+
+### Documentation Tab
+
+- **Get Started** - Introduction, Quickstart
+- **Architecture** - 8 architecture pages
+- **Development** - 4 development guides
+
+### Product Tab
+
+- **Epics** - 9 epic pages (overview + epic-1 through epic-8)
+- **User Guide** - Getting started guide
+
+### Operations Tab
+
+- **Runbooks** - Documentation, deployment, troubleshooting
 
 ## Available Commands
 
@@ -134,27 +183,55 @@ Then open your browser to http://localhost:3000 and verify the docs load.
 - `pnpm docs:lint` - Lint the documentation for errors
 - `pnpm docs:deploy` - Deploy documentation to Mintlify Cloud (requires API key)
 
-## Project Structure
+## Deployment
 
-```
-mintlify/
-├── docs.json              # Mintlify configuration (renamed from mint.json in Feb 2025)
-├── favicon.ico            # Site favicon (see below)
-├── images/                # Documentation images
-│   └── .gitkeep
-├── introduction.md        # Landing page
-├── quickstart.md          # Quick start guide
-├── architecture/          # Architecture documentation
-│   └── overview.md
-└── dev/                   # Development guides
-    └── setup.md
-```
+Documentation is automatically deployed when changes are pushed to main branch.
+
+**To deploy:**
+
+1. Make changes to MDX files
+2. Test locally with `pnpm docs:dev`
+3. Commit and push to repository
+4. Mintlify automatically rebuilds and deploys
 
 ## Adding New Pages
 
-1. Create a new `.md` file in the appropriate directory
-2. Add the page to `docs.json` navigation under the relevant group
-3. The page will automatically appear in the sidebar
+<details>
+<summary>Step-by-step guide</summary>
+
+1. **Create the MDX file**
+
+   ```bash
+   touch mintlify/section/new-page.mdx
+   ```
+
+2. **Add frontmatter**
+
+   ```mdx
+   ---
+   title: "Your Page Title"
+   description: "Brief description"
+   ---
+
+   # Your Content
+   ```
+
+3. **Update docs.json**
+   Add to the appropriate group:
+
+   ```json
+   {
+     "group": "Section Name",
+     "pages": ["section/existing-page", "section/new-page"]
+   }
+   ```
+
+4. **Test locally**
+   ```bash
+   pnpm docs:dev
+   ```
+
+</details>
 
 ## Configuration
 
@@ -171,7 +248,7 @@ See [Mintlify Documentation](https://mintlify.com/docs) for full configuration o
 
 To update the favicon:
 
-1. **Place your favicon file** in the `mintlify/` directory root:
+1. **Place your favicon file** in the `mintlify/logo/` directory:
 
    **Supported formats** (you can use any of these):
 
@@ -185,7 +262,7 @@ To update the favicon:
 
    ```json
    {
-     "favicon": "/favicon.svg" // Use "/favicon.png" or "/favicon.ico" if preferred
+     "favicon": "/logo/favicon.ico" // Use "/logo/favicon.svg" or "/logo/favicon.png" if preferred
    }
    ```
 
@@ -200,7 +277,7 @@ To update the favicon:
 
 ## Images
 
-All documentation images should be placed in the `mintlify/images/` directory.
+All documentation images should be placed in the `mintlify/images/` directory (create it if it doesn't exist).
 
 ### Adding Images
 
@@ -227,14 +304,63 @@ All documentation images should be placed in the `mintlify/images/` directory.
 - Use PNG for screenshots and complex images
 - Consider responsive images for large diagrams
 
-## Next Steps
+## Mintlify Components Used
 
-- Add more pages from `docs/` directory
-- Customize colors and branding in `docs.json`
-- Set up Mintlify Cloud deployment
-- Add API reference documentation
+This documentation uses Mintlify's rich component library:
+
+- `<Card>` & `<CardGroup>` - Visual organization
+- `<Info>`, `<Warning>`, `<Tip>`, `<Note>` - Callouts
+- `<Steps>` & `<Step>` - Step-by-step guides
+- `<Checks>` & `<Check>` - Checklists
+- `<Accordion>` & `<AccordionGroup>` - Collapsible sections
+- `<CodeGroup>` - Multi-language code examples
+- `<Tabs>` & `<Tab>` - Tabbed content
+
+See [Mintlify Components Docs](https://mintlify.com/docs/content/components) for full reference.
+
+## File Naming Conventions
+
+- Use `.mdx` extension (not `.md`)
+- Use lowercase with hyphens: `my-page.mdx`
+- No spaces in filenames
+- Match filename to page topic
+
+## Content Guidelines
+
+- Add descriptive frontmatter to every page
+- Use proper heading hierarchy (h1 → h2 → h3)
+- Include code examples with language identifiers
+- Add navigation links between related pages
+- Use Mintlify components for better UX
 
 ## Troubleshooting
+
+### "Page not found" errors
+
+✅ **Already fixed!** This implementation uses:
+
+- Correct `tabs → groups → pages` structure
+- `.mdx` file extensions
+- Proper path references in docs.json
+
+### Dev server not starting
+
+```bash
+# Clear cache
+rm -rf node_modules .mintlify
+npm install -g mintlify@latest
+
+# Restart
+pnpm docs:dev
+```
+
+### Navigation not updating
+
+After changing docs.json:
+
+1. Stop the dev server (Ctrl+C)
+2. Restart with `pnpm docs:dev`
+3. Hard refresh browser (Ctrl+Shift+R)
 
 ### "requires an internet connection" Error
 
@@ -261,3 +387,19 @@ rm -rf ~/.mintlify
 # Then run mint dev again
 pnpm docs:dev
 ```
+
+### Windows Path Space Bug
+
+See [Windows Setup](#-windows-users-critical-path-space-bug) section above for the WSL workaround.
+
+## Resources
+
+- **Mintlify Docs:** https://mintlify.com/docs
+- **Component Reference:** https://mintlify.com/docs/content/components
+- **Navigation Guide:** https://mintlify.com/docs/settings/navigation
+- **Deployment Guide:** https://mintlify.com/docs/development
+
+---
+
+**Last Updated:** 2025-01-17  
+**Maintained By:** Delight Team

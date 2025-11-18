@@ -1,0 +1,283 @@
+---
+title: 'Quickstart'
+description: 'Get started with Delight in under 15 minutes'
+---
+
+# Quickstart Guide
+
+Get up and running with the Delight platform quickly.
+
+## Prerequisites
+
+<Info>
+**You'll need:**
+- Node.js 18+ and pnpm
+- Python 3.11+
+- Git
+- A Supabase account (free tier)
+- A Clerk account (free tier)
+</Info>
+
+## Installation
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/your-org/delight.git
+    cd delight
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    **Install all monorepo dependencies:**
+
+    ```bash
+    make install
+    ```
+
+    Or manually:
+
+    ```bash
+    # Root + frontend
+    pnpm install
+
+    # Backend
+    cd packages/backend
+    poetry install
+    cd ../..
+    ```
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    **Create backend .env file:**
+
+    ```bash
+    cd packages/backend
+    cp .env.example .env
+    ```
+
+    **Edit `.env` with your credentials:**
+
+    ```bash
+    # Database (Supabase)
+    DATABASE_URL=postgresql+asyncpg://postgres:[password]@[host]:5432/postgres
+
+    # Authentication (Clerk)
+    CLERK_SECRET_KEY=sk_test_...
+    CLERK_WEBHOOK_SECRET=whsec_...
+
+    # AI/LLM (OpenAI)
+    OPENAI_API_KEY=sk-...
+
+    # Environment
+    ENVIRONMENT=development
+    ```
+
+    **Create frontend .env.local:**
+
+    ```bash
+    cd ../frontend
+    cp .env.example .env.local
+    ```
+
+    **Edit `.env.local`:**
+
+    ```bash
+    # Clerk Authentication
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+    CLERK_SECRET_KEY=sk_test_...
+
+    # API URL
+    NEXT_PUBLIC_API_URL=http://localhost:8000
+    ```
+  </Step>
+
+  <Step title="Set Up Database">
+    **Run migrations:**
+
+    ```bash
+    cd packages/backend
+    poetry run alembic upgrade head
+    ```
+
+    **Verify connection:**
+
+    ```bash
+    poetry run python scripts/test_db_connection.py
+    ```
+  </Step>
+
+  <Step title="Start Development Servers">
+    **From the root directory:**
+
+    ```bash
+    make dev
+    ```
+
+    This starts both:
+    - **Frontend:** http://localhost:3000
+    - **Backend:** http://localhost:8000
+
+    Or start them separately:
+
+    ```bash
+    # Terminal 1 - Backend
+    make dev:backend
+
+    # Terminal 2 - Frontend
+    make dev:frontend
+    ```
+  </Step>
+</Steps>
+
+## Verify Your Setup
+
+<Checks>
+  <Check>Frontend loads at http://localhost:3000</Check>
+  <Check>Backend API docs at http://localhost:8000/docs</Check>
+  <Check>Database connection successful</Check>
+  <Check>Clerk authentication works</Check>
+</Checks>
+
+## Quick Commands Reference
+
+### Development
+
+```bash
+make dev              # Start both frontend + backend
+make dev:frontend     # Next.js dev server
+make dev:backend      # FastAPI dev server
+```
+
+### Database
+
+```bash
+cd packages/backend
+poetry run alembic upgrade head         # Apply migrations
+poetry run alembic revision -m "desc"   # Create migration
+poetry run alembic downgrade -1         # Rollback
+```
+
+### Testing
+
+```bash
+# Backend
+cd packages/backend
+poetry run pytest -v
+
+# Frontend
+cd packages/frontend
+npm run test:e2e
+```
+
+## Infrastructure Modes
+
+### Cloud Mode (Recommended)
+
+Uses managed services (Supabase + Upstash):
+
+```bash
+make cloud-dev
+```
+
+### Local Mode
+
+Uses Docker for PostgreSQL + Redis:
+
+```bash
+make local      # Start local services
+make stop       # Stop local services
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Development Guide"
+    icon="code"
+    href="/dev/bmad-guide"
+  >
+    Learn the BMAD development workflow
+  </Card>
+  <Card
+    title="Architecture"
+    icon="sitemap"
+    href="/architecture/overview"
+  >
+    Understand the system architecture
+  </Card>
+  <Card
+    title="API Documentation"
+    icon="book"
+    href="http://localhost:8000/docs"
+  >
+    Explore the FastAPI documentation
+  </Card>
+  <Card
+    title="Epic Breakdown"
+    icon="list"
+    href="/epics/overview"
+  >
+    See the product roadmap
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Port already in use">
+    **Solution:**
+
+    ```bash
+    # Check what's using the port
+    lsof -i :8000    # Backend
+    lsof -i :3000    # Frontend
+
+    # Kill the process or use a different port
+    poetry run uvicorn main:app --reload --port 8001
+    ```
+  </Accordion>
+
+  <Accordion title="Database connection errors">
+    **Solution:**
+
+    1. Verify DATABASE_URL format: `postgresql+asyncpg://user:pass@host:port/db`
+    2. Check Supabase connection pooler settings
+    3. Ensure pgvector extension is enabled
+    4. Test connection: `poetry run python scripts/test_db_connection.py`
+  </Accordion>
+
+  <Accordion title="Migration issues">
+    **Solution:**
+
+    ```bash
+    # Verify all models are imported in app/models/__init__.py
+    # Regenerate migration
+    poetry run alembic revision -m "description" --autogenerate
+
+    # If stuck, reset (development only!)
+    poetry run alembic downgrade base
+    poetry run alembic upgrade head
+    ```
+  </Accordion>
+
+  <Accordion title="Clerk authentication not working">
+    **Solution:**
+
+    1. Verify CLERK_SECRET_KEY matches dashboard
+    2. Check frontend has NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    3. Ensure middleware.ts is configured
+    4. Verify webhook endpoints if using user sync
+  </Accordion>
+</AccordionGroup>
+
+## Get Help
+
+- **Documentation:** Browse this documentation
+- **API Docs:** http://localhost:8000/docs (when running)
+- **GitHub Issues:** Report bugs and request features
+- **Quick Reference:** [Command Cheat Sheet](/dev/quick-reference)
+
+---
+
+Ready to contribute? Check out the [Development Guide](/dev/bmad-guide)!

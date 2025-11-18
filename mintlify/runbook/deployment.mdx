@@ -1,0 +1,444 @@
+---
+title: Deployment Runbook
+description: 'Operational procedures for deploying Delight to production'
+---
+
+# Deployment Runbook
+
+Standard operating procedures for deploying the Delight platform to production.
+
+## Deployment Overview
+
+Delight uses a monorepo structure with separate deployment pipelines for frontend and backend.
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="browser">
+    **Next.js 15**
+
+    Deployed to Vercel or similar platform
+  </Card>
+  <Card title="Backend" icon="server">
+    **FastAPI**
+
+    Deployed to cloud platform (AWS, GCP, or Railway)
+  </Card>
+</CardGroup>
+
+## Pre-Deployment Checklist
+
+<Checks>
+  <Check>All tests passing in CI/CD</Check>
+  <Check>Code reviewed and approved</Check>
+  <Check>Database migrations tested</Check>
+  <Check>Environment variables configured</Check>
+  <Check>Secrets rotated if needed</Check>
+  <Check>Monitoring and alerts configured</Check>
+  <Check>Rollback plan documented</Check>
+  <Check>Changelog updated</Check>
+</Checks>
+
+## Frontend Deployment
+
+### Vercel Deployment
+
+<Steps>
+  <Step title="Connect Repository">
+    Connect your GitHub repository to Vercel:
+
+    1. Go to https://vercel.com/new
+    2. Import your repository
+    3. Select `packages/frontend` as the root directory
+  </Step>
+
+  <Step title="Configure Build Settings">
+    ```bash
+    # Build Command
+    npm run build
+
+    # Output Directory
+    .next
+
+    # Install Command
+    npm install
+    ```
+  </Step>
+
+  <Step title="Set Environment Variables">
+    Add these environment variables in Vercel dashboard:
+
+    ```bash
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+    CLERK_SECRET_KEY=sk_live_...
+    NEXT_PUBLIC_API_URL=https://api.delight.com
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    ```bash
+    # Automatic deployment on push to main
+    git push origin main
+
+    # Or manual deployment
+    vercel --prod
+    ```
+  </Step>
+
+  <Step title="Verify Deployment">
+    <Checks>
+      <Check>Site loads successfully</Check>
+      <Check>Authentication works</Check>
+      <Check>API calls succeed</Check>
+      <Check>No console errors</Check>
+    </Checks>
+  </Step>
+</Steps>
+
+### Manual Frontend Deployment
+
+```bash
+cd packages/frontend
+
+# Build the application
+npm run build
+
+# Test the production build locally
+npm run start
+
+# Deploy to your hosting platform
+# (Platform-specific commands here)
+```
+
+## Backend Deployment
+
+### Railway Deployment
+
+<Steps>
+  <Step title="Create New Project">
+    1. Go to https://railway.app
+    2. Create new project
+    3. Connect GitHub repository
+    4. Select `packages/backend` directory
+  </Step>
+
+  <Step title="Configure Service">
+    **Start Command:**
+    ```bash
+    poetry run uvicorn main:app --host 0.0.0.0 --port $PORT
+    ```
+
+    **Build Command:**
+    ```bash
+    poetry install --no-dev
+    ```
+  </Step>
+
+  <Step title="Set Environment Variables">
+    ```bash
+    DATABASE_URL=postgresql+asyncpg://...
+    CLERK_SECRET_KEY=sk_live_...
+    CLERK_WEBHOOK_SECRET=whsec_...
+    OPENAI_API_KEY=sk-...
+    REDIS_URL=redis://...
+    ENVIRONMENT=production
+    CORS_ORIGINS=https://delight.com,https://www.delight.com
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    Railway automatically deploys on push to main branch.
+
+    Monitor deployment in Railway dashboard.
+  </Step>
+
+  <Step title="Run Migrations">
+    ```bash
+    # Connect to Railway shell
+    railway shell
+
+    # Run migrations
+    poetry run alembic upgrade head
+    ```
+  </Step>
+
+  <Step title="Verify Deployment">
+    <Checks>
+      <Check>Health endpoint returns 200: /health</Check>
+      <Check>API docs accessible: /docs</Check>
+      <Check>Database connection successful</Check>
+      <Check>Authentication working</Check>
+    </Checks>
+  </Step>
+</Steps>
+
+### Docker Deployment
+
+```bash
+cd packages/backend
+
+# Build Docker image
+docker build -t delight-backend:latest .
+
+# Run locally for testing
+docker run -p 8000:8000 --env-file .env delight-backend:latest
+
+# Push to container registry
+docker tag delight-backend:latest registry.example.com/delight-backend:latest
+docker push registry.example.com/delight-backend:latest
+
+# Deploy to your platform (Kubernetes, ECS, etc.)
+```
+
+## Database Migrations
+
+### Production Migration Process
+
+<Warning>
+Always backup the database before running migrations in production!
+</Warning>
+
+<Steps>
+  <Step title="Backup Database">
+    ```bash
+    # Via Supabase dashboard or CLI
+    pg_dump $DATABASE_URL > backup-$(date +%Y%m%d-%H%M%S).sql
+    ```
+  </Step>
+
+  <Step title="Test Migration on Staging">
+    ```bash
+    # On staging environment
+    poetry run alembic upgrade head
+    ```
+
+    Verify application works correctly after migration.
+  </Step>
+
+  <Step title="Schedule Maintenance Window">
+    If migration involves downtime:
+    - Notify users in advance
+    - Choose low-traffic time
+    - Prepare rollback plan
+  </Step>
+
+  <Step title="Run Migration">
+    ```bash
+    # SSH into production server or use Railway shell
+    poetry run alembic upgrade head
+    ```
+
+    Monitor for errors and verify success.
+  </Step>
+
+  <Step title="Verify">
+    <Checks>
+      <Check>Migration completed without errors</Check>
+      <Check>Application starts successfully</Check>
+      <Check>Smoke tests pass</Check>
+      <Check>No data loss</Check>
+    </Checks>
+  </Step>
+</Steps>
+
+### Rolling Back Migrations
+
+If migration fails:
+
+```bash
+# Rollback one migration
+poetry run alembic downgrade -1
+
+# Rollback to specific revision
+poetry run alembic downgrade <revision_id>
+
+# Restore from backup (last resort)
+psql $DATABASE_URL < backup-20250117-120000.sql
+```
+
+## Environment Variables
+
+### Production Environment Variables
+
+**Frontend:**
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_API_URL=https://api.delight.com
+NODE_ENV=production
+```
+
+**Backend:**
+```bash
+DATABASE_URL=postgresql+asyncpg://...
+CLERK_SECRET_KEY=sk_live_...
+CLERK_WEBHOOK_SECRET=whsec_...
+OPENAI_API_KEY=sk-...
+REDIS_URL=redis://...
+ENVIRONMENT=production
+CORS_ORIGINS=https://delight.com,https://www.delight.com
+LOG_LEVEL=info
+SENTRY_DSN=https://...@sentry.io/...
+```
+
+### Secrets Management
+
+<Info>
+Never commit secrets to git. Use platform secret management or environment variables.
+</Info>
+
+**Recommended approach:**
+- Use platform's secret storage (Vercel Secrets, Railway Variables)
+- Rotate secrets regularly
+- Use different secrets for each environment
+- Audit secret access regularly
+
+## Monitoring and Alerts
+
+### Health Checks
+
+Implement health check endpoints:
+
+```python
+# Backend health check
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "database": await check_db(),
+        "redis": await check_redis(),
+        "timestamp": datetime.utcnow()
+    }
+```
+
+### Monitoring Setup
+
+<Checks>
+  <Check>Uptime monitoring (UptimeRobot, Pingdom)</Check>
+  <Check>Error tracking (Sentry)</Check>
+  <Check>Performance monitoring (Vercel Analytics)</Check>
+  <Check>Log aggregation (Datadog, LogRocket)</Check>
+</Checks>
+
+### Alert Configuration
+
+Set up alerts for:
+- API error rate > 5%
+- Response time > 2s (p95)
+- Database connection failures
+- High memory/CPU usage
+- SSL certificate expiration
+
+## Rollback Procedures
+
+### Frontend Rollback
+
+<Steps>
+  <Step title="Identify Issue">
+    Determine the problematic deployment version.
+  </Step>
+
+  <Step title="Revert via Vercel">
+    1. Go to Vercel dashboard
+    2. Select the deployment
+    3. Click "Promote to Production" on previous good deployment
+  </Step>
+
+  <Step title="Verify">
+    Check that the issue is resolved.
+  </Step>
+</Steps>
+
+### Backend Rollback
+
+<Steps>
+  <Step title="Identify Version">
+    Find the last known good version.
+  </Step>
+
+  <Step title="Revert Code">
+    ```bash
+    # Rollback via Railway dashboard
+    # Or redeploy previous git commit
+    git revert <bad-commit>
+    git push origin main
+    ```
+  </Step>
+
+  <Step title="Rollback Database">
+    If needed:
+    ```bash
+    poetry run alembic downgrade -1
+    ```
+  </Step>
+
+  <Step title="Verify">
+    <Checks>
+      <Check>Application starts successfully</Check>
+      <Check>Health check passes</Check>
+      <Check>Smoke tests pass</Check>
+    </Checks>
+  </Step>
+</Steps>
+
+## Post-Deployment
+
+### Verification Checklist
+
+<Checks>
+  <Check>All services healthy</Check>
+  <Check>Authentication working</Check>
+  <Check>API endpoints responding</Check>
+  <Check>Database queries successful</Check>
+  <Check>No spike in error rates</Check>
+  <Check>Performance metrics normal</Check>
+</Checks>
+
+### Communication
+
+After deployment:
+1. Update status page if you have one
+2. Notify team in Slack/Discord
+3. Update changelog
+4. Monitor for issues for 24 hours
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Deployment fails with build errors">
+    **Solutions:**
+    - Check build logs for specific errors
+    - Verify all dependencies are in package.json/pyproject.toml
+    - Ensure environment variables are set
+    - Test build locally first
+  </Accordion>
+
+  <Accordion title="Application crashes after deployment">
+    **Solutions:**
+    - Check application logs
+    - Verify environment variables
+    - Check database connection
+    - Verify migrations ran successfully
+    - Rollback if necessary
+  </Accordion>
+
+  <Accordion title="High error rates after deployment">
+    **Solutions:**
+    - Check error tracking (Sentry)
+    - Review recent code changes
+    - Check for database migration issues
+    - Monitor resource usage (CPU, memory)
+    - Consider rollback if critical
+  </Accordion>
+</AccordionGroup>
+
+## Emergency Contacts
+
+- **DevOps Lead:** [contact info]
+- **Backend Lead:** [contact info]
+- **Frontend Lead:** [contact info]
+- **Database Admin:** [contact info]
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2025-11-17
+**Maintained By:** Delight Team

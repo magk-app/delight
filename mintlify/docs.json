@@ -1,29 +1,18 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
+  "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Delight Documentation",
-  "description": "Emotionally intelligent AI companion that transforms overwhelming goals into achievable daily missions",
-  "favicon": "/favicon.ico",
   "colors": {
-    "primary": "#6366F1",
-    "light": "#F8FAFC",
-    "dark": "#0F172A"
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
   },
-  "background": {
-    "color": {
-      "light": "#FFFFFF",
-      "dark": "#0F172A"
-    }
-  },
-  "logo": {
-    "light": "/favicon.ico",
-    "dark": "/favicon.ico"
-  },
+  "favicon": "/logo/favicon.ico",
   "navigation": {
     "tabs": [
       {
         "tab": "Documentation",
-        "pages": [
+        "groups": [
           {
             "group": "Get Started",
             "pages": ["introduction", "quickstart"]
@@ -54,7 +43,7 @@
       },
       {
         "tab": "Product",
-        "pages": [
+        "groups": [
           {
             "group": "Epics",
             "pages": [
@@ -77,7 +66,7 @@
       },
       {
         "tab": "Operations",
-        "pages": [
+        "groups": [
           {
             "group": "Runbooks",
             "pages": [
@@ -88,24 +77,32 @@
           }
         ]
       }
-    ]
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/magk-app/delight",
+          "icon": "github"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "links": [
       {
-        "label": "GitHub",
-        "href": "https://github.com/magk-app/delight"
+        "label": "Support",
+        "href": "mailto:jack@hexahacks.com"
       }
     ]
   },
   "footer": {
     "socials": {
       "github": "https://github.com/magk-app/delight"
-    }
-  },
-  "integrations": {
-    "telemetry": {
-      "enabled": false
     }
   }
 }

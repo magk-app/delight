@@ -1,0 +1,243 @@
+---
+title: "Epic 1 - User Onboarding & Foundation"
+description: "Establish technical foundation, authentication system, and deployment pipeline"
+---
+
+# Epic 1: User Onboarding & Foundation
+
+## Epic Goal
+
+Establish the technical foundation and user authentication system that enables all subsequent features. This epic sets up the monorepo structure, deployment pipeline, core backend/frontend infrastructure, and basic user onboarding flow.
+
+## Priority & Scope
+
+<Checks items={[
+  "MVP foundational work - must complete before other epics",
+  "5 interconnected stories with clear prerequisites",
+  "Estimated 3-4 weeks of focused development",
+  "Enables all downstream features"
+]} />
+
+## Architecture Components
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: FastAPI, SQLAlchemy 2.0 with async support
+- **Database**: Supabase (managed PostgreSQL with pgvector)
+- **Authentication**: Clerk (OAuth, email, magic links, 2FA)
+- **Infrastructure**: Environment configuration and deployment pipeline
+
+## Stories
+
+### Story 1.1: Initialize Monorepo Structure and Core Dependencies
+
+Initialize the monorepo with all core packages and dependencies.
+
+<Card title="Story Type" icon="task">
+  Infrastructure Setup
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "packages/frontend/ with Next.js 15 + TypeScript + Tailwind + shadcn/ui setup",
+  "packages/backend/ with FastAPI + Poetry + async SQLAlchemy configured",
+  "packages/shared/ for TypeScript types",
+  "Root package.json with workspace configuration",
+  "All core dependencies installed (see technical notes)",
+  "Development servers start successfully"
+]} />
+
+**Technical Highlights:**
+- Use `npx create-next-app@latest` with App Router
+- Poetry for Python dependency management
+- Install Clerk: `npm install @clerk/nextjs` + `poetry add clerk-backend-sdk`
+- AI dependencies: LangChain, LangGraph, OpenAI, transformers
+- Infrastructure: ARQ, Redis, Sentry
+
+**Key Environment Variables:**
+```bash
+# Backend
+DATABASE_URL=postgresql+asyncpg://...
+CLERK_SECRET_KEY=sk_test_...
+OPENAI_API_KEY=sk-proj-...
+
+# Frontend
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+---
+
+### Story 1.2: Set Up Database Schema and Migrations
+
+Configure Alembic migrations and create initial database schema.
+
+<Card title="Story Type" icon="database">
+  Database Infrastructure
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Alembic configured for migrations in backend/app/db/migrations/",
+  "Initial schema with core tables: users, user_preferences",
+  "pgvector extension enabled in Supabase PostgreSQL",
+  "Alembic upgrade/downgrade works reliably",
+  "UUID primary keys using PostgreSQL gen_random_uuid()"
+]} />
+
+**Core Tables:**
+
+```sql
+-- users table
+id UUID PRIMARY KEY
+clerk_user_id VARCHAR UNIQUE  -- Primary identifier from Clerk
+email VARCHAR NOT NULL
+timezone VARCHAR
+created_at TIMESTAMP WITH TIME ZONE
+updated_at TIMESTAMP WITH TIME ZONE
+
+-- user_preferences table
+user_id UUID FK -> users.id
+custom_hours JSONB
+theme VARCHAR
+communication_preferences JSONB
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Prerequisites:**
+- Story 1.1 (monorepo and Supabase project created)
+
+---
+
+### Story 1.3: Integrate Clerk Authentication System
+
+Set up Clerk authentication with OAuth and email options.
+
+<Card title="Story Type" icon="lock">
+  Authentication
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Clerk authentication UI displays with multiple sign-in options",
+  "Support for email/password, Google OAuth, GitHub OAuth, magic links",
+  "User records created in database on successful authentication",
+  "Backend validates Clerk sessions on protected endpoints",
+  "Session invalidation works across devices on logout",
+  "Theme matches app's medieval/modern aesthetic"
+]} />
+
+**Frontend Implementation:**
+- Use `@clerk/nextjs` with App Router
+- Wrap app in `<ClerkProvider>`
+- Protect routes with `middleware.ts`
+- Custom or built-in sign-in/sign-up components
+
+**Backend Implementation:**
+- Use `clerk-backend-sdk` for session verification
+- Create FastAPI dependency: `get_current_user()`
+- Webhook endpoint: `POST /api/v1/webhooks/clerk`
+- Handle events: user.created, user.updated, user.deleted
+
+**Prerequisites:**
+- Story 1.2 (database schema)
+
+---
+
+### Story 1.4: Create User Onboarding Flow (MVP)
+
+⚠️ **NOTE:** This story will be deferred to later in development (after Epic 2). Onboarding should showcase actual app features, which need to exist first.
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "3-step onboarding flow after registration",
+  "Welcome screen explaining Delight's companion concept",
+  "Timezone and productive hours selection",
+  "Communication preferences (in-app, email, SMS opt-in)",
+  "Resume from last completed step on return",
+  "Redirect to companion chat interface on completion"
+]} />
+
+**Frontend Structure:**
+- `frontend/src/app/(auth)/onboarding/` with 3 step pages
+- React state management for multi-step form
+- Mobile-responsive design with Tailwind
+
+**Backend API:**
+- `POST /api/v1/users/preferences` endpoint
+- Store in `user_preferences.onboarding_completed` boolean
+
+**Prerequisites:**
+- Story 1.3 (authentication system)
+
+---
+
+### Story 1.5: Set Up Deployment Pipeline and Environment Configuration
+
+Configure CI/CD and environment management.
+
+<Card title="Story Type" icon="rocket">
+  DevOps & Deployment
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "CI/CD pipeline runs on push to main branch",
+  "Linting: ESLint (frontend) + Ruff/Black (backend)",
+  "Testing: Jest (frontend) + pytest (backend)",
+  "Docker builds for backend and frontend",
+  "Automatic deployment to staging environment",
+  ".env.example files for frontend and backend",
+  "Health check endpoints return system status"
+]} />
+
+**Health Check Endpoints:**
+```bash
+GET /api/v1/health
+# Returns 200 with system status including:
+# - Database connection status
+# - Redis connection status
+# - External services (Clerk, OpenAI) connectivity
+```
+
+**Environment Configuration:**
+- Separate configs for dev/staging/production
+- Secrets managed securely (not in git)
+- Database connection pooling (Supabase PgBouncer)
+- Redis connection pooling
+
+**Deployment Platforms:**
+- Consider Railway, Render, or Fly.io for MVP
+- Docker Compose for local development
+
+**Prerequisites:**
+- Stories 1.1-1.4 (all foundation components)
+
+---
+
+## Epic Dependencies
+
+**None** - This is the first epic and enables all subsequent epics.
+
+## Success Criteria
+
+When Epic 1 is complete:
+
+<Checks items={[
+  "Both frontend and backend development servers run locally",
+  "Users can register and authenticate via Clerk",
+  "Database migrations apply and rollback successfully",
+  "API endpoints are documented and testable via Swagger",
+  "CI/CD pipeline executes on code commits",
+  "Monorepo structure supports future growth",
+  "Developer environment setup takes < 30 minutes"
+]} />
+
+## Next Epic
+
+Once Epic 1 is complete, proceed to **Epic 2: Companion & Memory System** to build the emotionally aware AI companion (Eliza) with memory management.

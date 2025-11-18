@@ -1,0 +1,528 @@
+---
+title: "Epic 7 - Nudge & Outreach"
+description: "Implement compassionate notifications for retention and engagement"
+---
+
+# Epic 7: Nudge & Outreach
+
+## Epic Goal
+
+Implement compassionate nudges (in-app, SMS, email) that gently bring users back when they drift away, without feeling naggy or transactional.
+
+## Priority & Scope
+
+<Checks items={[
+  "P1 - Critical retention driver",
+  "5 stories with 3 MVP + 2 future features",
+  "Estimated 3-4 weeks of development",
+  "Balances re-engagement with user autonomy"
+]} />
+
+## Architecture Components
+
+- **Notification Service**: Multi-channel delivery (in-app, email, SMS)
+- **Nudge Scheduler**: Drop-off detection and smart timing
+- **Template System**: Personalized message generation
+- **Preference Management**: User opt-in/opt-out controls
+- **ARQ Workers**: Background processing for scheduling
+- **External Services**: SendGrid (email), Twilio (SMS)
+
+## Core Principles
+
+<Checks items={[
+  "Never shame or guilt users for missing days",
+  "Respect user's quiet hours and communication preferences",
+  "Personalize with context (streaks, goals, progress)",
+  "Limit frequency to avoid notification fatigue",
+  "Celebrate returning users warmly",
+  "Provide easy re-engagement path"
+]} />
+
+## Stories
+
+### Story 7.1: Set Up Notification Infrastructure
+
+Build multi-channel notification system.
+
+<Card title="Story Type" icon="mail">
+  System Architecture
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Send notifications via in-app, email, and SMS",
+  "User preferences respected for each channel",
+  "Rate limiting to prevent notification fatigue",
+  "Delivery tracking (sent, delivered, opened, clicked)",
+  "Failure handling and retry mechanism",
+  "Environment-aware (dev/staging/production)"
+]} />
+
+**Supported Channels:**
+- **In-app**: Stored in database, shown in UI
+- **Email**: Via SendGrid
+- **SMS**: Via Twilio
+- **Push**: Future (mobile app)
+
+**User Preferences:**
+```sql
+-- Add to user_preferences
+communication_preferences JSONB
+{
+  "email_nudges": true,
+  "sms_nudges": false,
+  "push_nudges": false,
+  "character_messages": true,
+  "achievement_celebrations": true,
+  "quiet_hours_start": 22,
+  "quiet_hours_end": 8,
+  "max_nudges_per_day": 2,
+  "max_nudges_per_week": 10
+}
+```
+
+**Notification Storage:**
+```sql
+-- notifications table
+id UUID PRIMARY KEY
+user_id UUID FK
+notification_type ENUM('nudge', 'achievement', 'character_event', 'system')
+channel ENUM('in_app', 'email', 'sms', 'push')
+title VARCHAR
+content TEXT
+metadata JSONB
+scheduled_at TIMESTAMP WITH TIME ZONE
+sent_at TIMESTAMP WITH TIME ZONE (nullable)
+delivered_at TIMESTAMP WITH TIME ZONE (nullable)
+opened_at TIMESTAMP WITH TIME ZONE (nullable)
+clicked_at TIMESTAMP WITH TIME ZONE (nullable)
+status ENUM('pending', 'sent', 'failed', 'bounced', 'suppressed')
+retry_count INT
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Service Implementation:**
+```python
+# backend/app/services/notification_service.py
+
+class NotificationService:
+    async def send_notification(
+        notification: NotificationSchema,
+        channels: List[Channel] = None,
+        schedule_at: Optional[datetime] = None
+    ) -> Notification
+
+    async def check_user_preferences(
+        user_id: UUID,
+        notification_type: NotificationType
+    ) -> List[Channel]  # Which channels are enabled
+
+    async def respect_quiet_hours(
+        user_id: UUID,
+        send_time: datetime
+    ) -> Optional[datetime]  # Reschedule if during quiet hours
+
+    async def check_rate_limits(
+        user_id: UUID,
+        time_window: timedelta
+    ) -> bool  # Can send without exceeding limit
+```
+
+**Environment Configuration:**
+```bash
+# Development: All notifications logged, not actually sent
+ENVIRONMENT=development
+
+# Staging: Send to test numbers/emails only
+SENDGRID_TEST_EMAIL=test@example.com
+TWILIO_TEST_PHONE=+1234567890
+
+# Production: Send to real users respecting preferences
+SENDGRID_API_KEY=...
+TWILIO_API_KEY=...
+TWILIO_ACCOUNT_SID=...
+```
+
+**Prerequisites:**
+- Story 1.4 (user communication preferences)
+
+---
+
+### Story 7.2: Implement Drop-Off Detection and Smart Nudge Scheduling
+
+Detect inactivity and schedule compassionate re-engagement.
+
+<Card title="Story Type" icon="bell">
+  Drop-Off Detection & Scheduling
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Detect when users haven't completed missions for 48+ hours",
+  "Schedule nudges at 3 intervals (day 2, day 4, day 7)",
+  "Compassionate messaging (no shame or guilt)",
+  "Nudges adapt to user patterns and optimal times",
+  "Stop nudges after 3 if no response",
+  "Welcome users back warmly when they return"
+]} />
+
+**Nudge Schedule:**
+
+| Day | Channel | Content | Priority |
+|-----|---------|---------|----------|
+| Day 2 | In-app | Gentle reminder, no shame | Low |
+| Day 4 | Email | Eliza's encouragement about goal | Medium |
+| Day 7 | SMS | Personal message about streak (if opted in) | High |
+
+**Nudge Templates:**
+```
+Day 2: "We noticed you've been away—how are you doing? Your [goal_name] goal is waiting."
+
+Day 4: "Eliza has been thinking about your journey. You've got this! Remember, even 10 minutes counts."
+
+Day 7: "Your [streak_days]-day streak is waiting for you. Come back and celebrate how far you've come."
+```
+
+**NOT Allowed:**
+- ❌ "You missed X days!" (shame)
+- ❌ "Don't give up!" (guilt)
+- ❌ "Your streak is lost!" (punishment)
+- ❌ Multiple urgent notifications daily
+
+**Worker Implementation:**
+```python
+# backend/app/workers/nudge_scheduler.py
+
+async def check_drop_offs(session: AsyncSession):
+    """Run daily to detect drop-offs and schedule nudges"""
+    # Find users with no activity for 48+ hours
+    inactive_users = await find_inactive_users(session, hours=48)
+
+    for user in inactive_users:
+        nudge_count = await get_nudge_count_this_sequence(user)
+
+        if nudge_count == 0:
+            # Schedule day 2 nudge
+            await schedule_nudge(user, "day_2", channel="in_app")
+        elif nudge_count == 1 and (now - last_nudge) > timedelta(days=2):
+            # Schedule day 4 nudge
+            await schedule_nudge(user, "day_4", channel="email")
+        elif nudge_count == 2 and (now - last_nudge) > timedelta(days=3):
+            # Schedule day 7 nudge
+            await schedule_nudge(user, "day_7", channel="sms")
+        elif nudge_count >= 3:
+            # Stop nudging, mark for manual follow-up
+            await mark_for_manual_followup(user)
+
+    # Handle user return
+    returning_users = await find_recently_active_users(session)
+    for user in returning_users:
+        # Send welcome-back message
+        await send_comeback_message(user)
+        # Clear nudge sequence
+        await reset_nudge_sequence(user)
+```
+
+**Smart Scheduling (MVP):**
+- Send at user's optimal engagement time if available
+- Default to 10am user's local time
+- Respect quiet hours
+- Consider time zones
+
+**Return Flow:**
+1. User returns and completes mission
+2. System detects activity (mission completion)
+3. Welcome-back message sent immediately
+4. Suggest "ease back in" mission (shorter, easier)
+5. Celebrate returning consistency
+
+**Storage:**
+```sql
+-- nudge_sequences table
+id UUID PRIMARY KEY
+user_id UUID FK
+last_nudge_at TIMESTAMP WITH TIME ZONE
+nudge_count_in_sequence INT
+sequence_started_at TIMESTAMP WITH TIME ZONE
+sequence_status ENUM('active', 'paused', 'completed')
+```
+
+**Prerequisites:**
+- Story 7.1 (notification infrastructure)
+- Story 3.4 (mission activity data)
+
+---
+
+### Story 7.3: Build In-App Notification Center (MVP)
+
+Create notification history and management UI.
+
+<Card title="Story Type" icon="inbox">
+  User Interface
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Notification center with unread badge count",
+  "Chronological list of all notifications",
+  "Mark as read/unread",
+  "Dismiss notifications",
+  "Actionable notifications with CTAs",
+  "Real-time notifications via WebSocket",
+  "Toast/banner for high-priority notifications"
+]} />
+
+**Notification Types:**
+- **Nudges**: Drop-off re-engagement messages
+- **Achievements**: Badge/milestone unlocks
+- **Character Messages**: Eliza or characters reaching out
+- **Story Updates**: Narrative progression or hidden quest unlocks
+- **System**: App updates, maintenance, announcements
+
+**Notification Center Features:**
+- Filter by type (all, nudges, achievements, etc.)
+- Filter by read status
+- Dismiss individual notifications
+- "Clear all read" option
+- Search by text
+- Infinite scroll or pagination
+
+**Storage:**
+```sql
+-- Add to notifications table
+is_read BOOLEAN (default false)
+is_dismissed BOOLEAN (default false)
+dismissed_at TIMESTAMP WITH TIME ZONE (nullable)
+action_taken BOOLEAN (default false)
+action_taken_at TIMESTAMP WITH TIME ZONE (nullable)
+action_url VARCHAR (nullable)  -- CTA destination
+```
+
+**Components:**
+- `NotificationCenter.tsx` - Main dropdown/modal
+- `NotificationList.tsx` - Scrollable list
+- `NotificationItem.tsx` - Individual notification
+- `NotificationBadge.tsx` - Unread count indicator
+- `ToastNotification.tsx` - High-priority toast
+
+**Real-Time Updates:**
+- WebSocket event: "notification_created"
+- Update badge count immediately
+- Show toast for high-priority notifications
+- Add to list at top of notification center
+
+**Toast Triggers:**
+- Achievement unlocked
+- Hidden quest discovered
+- Character initiated message
+- Streak milestone (100+ days)
+
+**Mock Toast:**
+```typescript
+<Toast
+  title="Achievement Unlocked!"
+  description="Week Warrior - 7-day streak!"
+  icon={<TrophyIcon />}
+  action={<Button>View</Button>}
+  duration={5000}  // Auto-dismiss after 5 seconds
+/>
+```
+
+**Prerequisites:**
+- Story 7.1 (notification infrastructure)
+
+---
+
+### Story 7.4: Implement Opt-In/Opt-Out Management UI
+
+Give users fine-grained control over notifications.
+
+<Card title="Story Type" icon="settings">
+  User Preferences
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Toggle notifications by type and channel",
+  "Set quiet hours",
+  "Set maximum nudges per day/week",
+  "Manage phone number for SMS",
+  "Changes take effect immediately",
+  "Preference history for debugging"
+]} />
+
+**Settings Interface:**
+
+**Notification Toggles:**
+- [ ] Email nudges (when inactive)
+- [ ] SMS nudges (requires phone number)
+- [ ] Character messages (from Eliza, Lyra, etc.)
+- [ ] Achievement celebrations
+- [ ] Story updates
+
+**Frequency Controls:**
+- Max nudges per day: [slider 0-5]
+- Max nudges per week: [slider 0-20]
+- Preferred contact method: [dropdown]
+
+**Quiet Hours:**
+- Start hour: [hour picker]
+- End hour: [hour picker]
+- Timezone: [auto-detect user timezone]
+
+**Phone Number (SMS):**
+- [text input]
+- "Verify" button (send test SMS)
+- Revoke access checkbox
+
+**API Endpoint:**
+```bash
+PATCH /api/v1/users/preferences
+{
+  "communication_preferences": {
+    "email_nudges": true,
+    "sms_nudges": false,
+    "character_messages": true,
+    "achievement_celebrations": true,
+    "quiet_hours_start": 22,
+    "quiet_hours_end": 8,
+    "max_nudges_per_day": 2,
+    "max_nudges_per_week": 10,
+    "phone_number": "+1234567890"
+  }
+}
+```
+
+**Components:**
+- `NotificationPreferences.tsx` - Main settings page
+- `ToggleCard.tsx` - Notification type toggle
+- `HourPicker.tsx` - Quiet hours selector
+- `PhoneInput.tsx` - SMS phone number input
+- `FrequencySlider.tsx` - Max nudges control
+
+**Validation:**
+- Warn if quiet hours would block all notifications
+- Suggest minimum daily nudge limit
+- Phone number validation before SMS enabled
+
+**Prerequisites:**
+- Story 7.1 (notification infrastructure)
+
+---
+
+### Story 7.5: Add AI-Driven Optimal Timing Intelligence (Future)
+
+Use ML to predict best notification times.
+
+<Card title="Story Type" icon="sparkles">
+  Future Feature - ML Optimization
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Analyze user response patterns (when they act on nudges)",
+  "Consider mission completion times",
+  "Predict optimal send times per user",
+  "Learn and improve over time",
+  "Users can override with manual preference",
+  "A/B test different timing strategies"
+]} />
+
+**Analysis Method:**
+1. Track when user receives notifications
+2. Track when user acts on them (clicks, returns)
+3. Identify patterns (day of week, time of day)
+4. Generate optimal send time prediction
+5. Update weekly with new data
+
+**Metrics Tracked:**
+- Open rate by hour
+- Click rate by hour
+- Return rate by hour
+- Completion rate after nudge by timing
+- Response latency
+
+**Prediction Model:**
+```python
+# Simple time-series prediction
+optimal_time = predict_engagement_peak(
+    user_engagement_history,
+    day_of_week,
+    time_zone
+)
+```
+
+**Storage:**
+```sql
+-- user_insights table
+id UUID PRIMARY KEY
+user_id UUID FK
+insight_type ENUM('optimal_send_time', 'engagement_peak', 'response_pattern')
+insight_data JSONB
+confidence_score FLOAT  -- 0-1.0
+based_on_days INT
+generated_at TIMESTAMP WITH TIME ZONE
+valid_until TIMESTAMP WITH TIME ZONE
+```
+
+**Integration:**
+- Nudge scheduler queries insights before sending
+- Automatically uses AI prediction if available
+- Falls back to user's manual preference if set
+- Continuous learning from engagement data
+
+**Prerequisites:**
+- Story 7.2 (nudge scheduler)
+- Story 5.2 (analytics data)
+
+---
+
+## Epic Dependencies
+
+**Requires:**
+- Epic 1 (Foundation) - Auth, database
+- Epic 3 (Goal & Missions) - Activity to detect drop-offs
+
+**Enables:**
+- Epic 4 (Character-initiated messages)
+- Future email/SMS campaigns
+
+## Success Criteria
+
+When Epic 7 is complete:
+
+<Checks items={[
+  "Users receive compassionate re-engagement nudges",
+  "Drop-off detection is accurate and timely",
+  "Notifications respect user preferences and quiet hours",
+  "Users feel welcomed, not guilty or shamed",
+  "Notification center is easy to navigate",
+  "Users returning after absence are celebrated",
+  "Frequency limits prevent notification fatigue",
+  "Opt-out is always easy and respected"
+]} />
+
+## Nudge Philosophy
+
+Delight's nudges are designed to:
+- **Acknowledge struggle**: "We noticed you've been away—how are you doing?"
+- **Celebrate commitment**: "You built a 14-day streak"
+- **Provide context**: "Eliza has been thinking about your craft goal"
+- **Make return easy**: "Come back for a 10-minute mission"
+- **Never shame**: No guilt, no "you failed" messages
+
+## Cost Estimation
+
+- **SendGrid (email)**: ~$0.0001/email (included in tier)
+- **Twilio (SMS)**: ~$0.01/SMS
+- **Average nudges**: 1-2/week per user = ~$0.001/user/day
+- **Total**: ~$0.001/user/day
+
+## Next Epic
+
+Once Epic 7 is complete, Epic 4 (Narrative Engine) can be completed to integrate character-initiated messages with the notification system, and Epic 8 (Evidence & Reflection) provides the final user-facing features.

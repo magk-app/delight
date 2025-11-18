@@ -1,0 +1,213 @@
+---
+title: Architecture Overview
+description: 'Comprehensive overview of Delight platform architecture'
+---
+
+# Architecture Overview
+
+This document provides a comprehensive overview of the Delight platform architecture.
+
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Technology Stack](#technology-stack)
+- [System Components](#system-components)
+- [Integration Points](#integration-points)
+- [Architecture Decisions](#architecture-decisions)
+
+## Architecture Philosophy
+
+Delight's architecture is designed around three core principles:
+
+<CardGroup cols={3}>
+  <Card title="AI-First" icon="brain">
+    Built for real-time AI interactions with streaming support
+  </Card>
+  <Card title="Async-Native" icon="bolt">
+    Fully asynchronous from database to API to frontend
+  </Card>
+  <Card title="Type-Safe" icon="shield-check">
+    Complete type safety across TypeScript and Python
+  </Card>
+</CardGroup>
+
+## System Architecture
+
+### High-Level Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Frontend                             │
+│     Next.js 15 + React 19 + TypeScript + Tailwind          │
+│                                                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
+│  │  Pages   │ │Components│ │   Hooks  │ │ API Client│     │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ REST API + SSE
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         Backend                              │
+│        FastAPI + SQLAlchemy 2.0 + LangGraph                 │
+│                                                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
+│  │   API    │ │ Services │ │  Agents  │ │ Workers  │      │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┬─────────────┐
+        ▼             ▼             ▼             ▼
+  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+  │Supabase  │  │  Clerk   │  │ OpenAI   │  │  Redis   │
+  │PostgreSQL│  │   Auth   │  │   LLM    │  │  Queue   │
+  └──────────┘  └──────────┘  └──────────┘  └──────────┘
+```
+
+## Core Components
+
+### Frontend Layer
+
+**Next.js 15 App Router**
+- Server Components for initial page loads
+- Client Components for interactivity
+- Streaming support for AI responses
+- Optimistic UI updates
+
+**Key Features:**
+- Real-time AI chat via Server-Sent Events
+- Mission tracking and progress visualization
+- Companion character interactions
+- Responsive design with Tailwind CSS
+
+### Backend Layer
+
+**FastAPI Application**
+- Async-first API design
+- RESTful endpoints for CRUD operations
+- SSE streaming for AI responses
+- Background job processing with ARQ
+
+**Key Services:**
+- Companion Service - AI character management
+- Mission Service - Goal and mission CRUD
+- Memory Service - Vector-based semantic search
+- Narrative Service - Story generation
+
+### AI Layer
+
+**LangGraph Agents**
+- Multi-character AI system
+- Stateful conversation management
+- Context-aware responses
+- Emotion detection and adaptation
+
+**AI Models:**
+- GPT-4o-mini - Chat, personas, quest generation ($0.03/user/day)
+- GPT-4o - Premium narrative generation (less frequent)
+- text-embedding-3-small - Semantic memory (1536 dimensions)
+- RoBERTa - Emotion classification (self-hosted)
+
+### Data Layer
+
+**Supabase (PostgreSQL 16+)**
+- Primary database with pgvector extension
+- Vector storage for semantic memory
+- Async SQLAlchemy 2.0 ORM
+- Alembic for migrations
+
+**Key Tables:**
+- users - User profiles and preferences
+- missions - Goals and daily missions
+- memories - Vector-indexed user memories
+- conversations - Chat history
+- narrative_state - Story progression
+
+## Integration Patterns
+
+### Frontend ↔ Backend
+
+```typescript
+// REST API for actions
+const response = await api.post('/api/v1/missions', missionData);
+
+// SSE for AI streaming
+const eventSource = new EventSource('/api/v1/sse/companion/stream');
+eventSource.onmessage = (event) => {
+  const token = JSON.parse(event.data);
+  // Append token to UI
+};
+```
+
+### Backend ↔ AI
+
+```python
+# LangGraph agent orchestration
+from app.agents import eliza_agent
+
+response = await eliza_agent.ainvoke({
+    "user_message": message,
+    "user_context": context,
+    "conversation_history": history
+})
+```
+
+### Backend ↔ Database
+
+```python
+# Async SQLAlchemy 2.0
+from sqlalchemy import select
+from app.models import Mission
+
+async with db.begin():
+    result = await db.execute(
+        select(Mission).where(Mission.user_id == user_id)
+    )
+    missions = result.scalars().all()
+```
+
+## Architecture Diagrams
+
+For detailed component diagrams, see:
+- [Technology Stack Details](/architecture/technology-stack)
+- [Data Architecture](/architecture/data-architecture)
+- [API Contracts](/architecture/api-contracts)
+- [Deployment Architecture](/architecture/deployment)
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card
+    title="Executive Summary"
+    icon="file-lines"
+    href="/architecture/executive-summary"
+  >
+    High-level architecture overview for stakeholders
+  </Card>
+  <Card
+    title="Decision Records"
+    icon="book"
+    href="/architecture/decision-records"
+  >
+    Architecture Decision Records (ADRs)
+  </Card>
+  <Card
+    title="Security Architecture"
+    icon="lock"
+    href="/architecture/security"
+  >
+    Security design and best practices
+  </Card>
+  <Card
+    title="Performance"
+    icon="gauge-high"
+    href="/architecture/performance"
+  >
+    Performance considerations and optimizations
+  </Card>
+</CardGroup>
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2025-11-10
+**Maintained By:** Delight Team
