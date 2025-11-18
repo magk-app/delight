@@ -13,6 +13,22 @@ from main import app
 from app.agents.task_types import TaskType, TaskStatus, TaskPriority
 
 
+@pytest.fixture(autouse=True)
+def cleanup_workflows():
+    """Clean up in-memory workflow storage before and after each test."""
+    from app.api.v1.workflows import _workflows, _orchestrators
+
+    # Clear before test
+    _workflows.clear()
+    _orchestrators.clear()
+
+    yield
+
+    # Clear after test
+    _workflows.clear()
+    _orchestrators.clear()
+
+
 @pytest.fixture
 async def client():
     """Create async HTTP client for testing."""

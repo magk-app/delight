@@ -32,6 +32,8 @@ router = APIRouter(prefix="/workflows", tags=["Workflows"])
 
 
 # In-memory workflow storage (replace with database in production)
+# ⚠️ NOT THREAD-SAFE: Only use with single FastAPI worker (--workers 1)
+# or replace with database-backed storage before production deployment
 _workflows: Dict[UUID, Workflow] = {}
 _orchestrators: Dict[UUID, WorkflowOrchestrator] = {}
 
@@ -116,13 +118,10 @@ async def create_workflow(request: WorkflowCreateRequest) -> WorkflowResponse:
         Created workflow with assigned IDs
     """
     # Create workflow config
-    config = WorkflowConfig()
     if request.config:
-        config.breadth = request.config.breadth
-        config.depth = request.config.depth
-        config.timeout_seconds = request.config.timeout_seconds
-        config.enable_retry = request.config.enable_retry
-        config.collect_intermediate = request.config.collect_intermediate
+        config = WorkflowConfig(**request.config.model_dump())
+    else:
+        config = WorkflowConfig()
 
     # Create workflow
     workflow = Workflow(
@@ -247,6 +246,10 @@ async def execute_workflow(
     orchestrator = WorkflowOrchestrator(config=workflow.config)
     _orchestrators[workflow_id] = orchestrator
 
+    # Set status to RUNNING before adding background task to avoid race condition
+    workflow.status = TaskStatus.RUNNING
+    workflow.started_at = datetime.utcnow()
+
     # Execute workflow in background
     async def run_workflow():
         try:
@@ -254,11 +257,13 @@ async def execute_workflow(
         except Exception as e:
             workflow.status = TaskStatus.FAILED
             workflow.results["error"] = str(e)
+        finally:
+            # Clean up orchestrator to free memory after workflow completes
+            if workflow_id in _orchestrators:
+                del _orchestrators[workflow_id]
 
     background_tasks.add_task(run_workflow)
 
-    # Return immediately with running status
-    workflow.status = TaskStatus.RUNNING
     return _convert_workflow_to_response(workflow)
 
 
