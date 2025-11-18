@@ -31,17 +31,18 @@ export function formatDuration(minutes: number): string {
 
 /**
  * Get Tailwind color class based on DCI (Daily Consistency Index) score
+ * Uses DCI_THRESHOLDS constants: EXCELLENT (0.9), STRONG (0.8), STEADY (0.6), FRAGILE (0.3)
  * @param score - DCI score between 0 and 1
  * @returns Tailwind text color class
  */
 export function getDCIStatusColor(score: number): string {
-  if (score >= 0.8) {
-    return "text-green-600"; // Excellent
+  if (score >= 0.9) {
+    return "text-green-600"; // Excellent (>= 0.9)
+  } else if (score >= 0.8) {
+    return "text-blue-600"; // Strong (>= 0.8)
   } else if (score >= 0.6) {
-    return "text-blue-600"; // Good
-  } else if (score >= 0.4) {
-    return "text-yellow-600"; // Fair
+    return "text-yellow-600"; // Steady (>= 0.6)
   } else {
-    return "text-red-600"; // Needs improvement
+    return "text-red-600"; // Fragile (< 0.6)
   }
 }

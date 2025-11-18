@@ -29,7 +29,10 @@ import type {
   MissionTriad,
 } from '../types';
 
-// Mock User ID
+// ⚠️ SECURITY WARNING: This mock user ID is used for all test data.
+// When connecting to real API, replace ALL references with actual user ID from Clerk.
+// Search codebase for "MOCK_USER_ID" before deploying to production.
+// Risk: Hard-coded user ID could expose data cross-user if not properly replaced.
 const MOCK_USER_ID = 'user_mock_001';
 
 // Goals

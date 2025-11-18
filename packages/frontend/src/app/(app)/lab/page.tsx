@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockMemories, mockNarrativeState } from '@/lib/mock/data';
 import { MEMORY_TIER, VALUE_CATEGORIES } from '@/lib/constants';
+import { sendChatMessage, searchMemories } from '@/lib/api/client';
 
 export default function LabPage() {
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
@@ -18,31 +19,58 @@ export default function LabPage() {
   const [selectedModel, setSelectedModel] = useState<'gpt-4o' | 'gpt-4o-mini'>('gpt-4o-mini');
   const [showRetrievedMemories, setShowRetrievedMemories] = useState(false);
 
-  const handleSendMessage = () => {
+  // Loading and error states
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [isMemoryLoading, setIsMemoryLoading] = useState(false);
+  const [memoryError, setMemoryError] = useState<string | null>(null);
+
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    setChatMessages((prev) => [
-      ...prev,
-      { role: 'user', content: inputMessage },
-      {
-        role: 'assistant',
-        content: `[Mock Response] I understand you said: "${inputMessage}". In production, this would call the Eliza agent via /api/v1/companion/chat.`,
-      },
-    ]);
-    setInputMessage('');
+    setIsChatLoading(true);
+    setChatError(null);
+
+    try {
+      // Add user message immediately
+      const userMessage = { role: 'user' as const, content: inputMessage };
+      setChatMessages((prev) => [...prev, userMessage]);
+      setInputMessage('');
+
+      // Get AI response
+      const response = await sendChatMessage(inputMessage);
+
+      // Add assistant message
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: response },
+      ]);
+    } catch (error) {
+      setChatError('Failed to send message. Please try again.');
+      console.error('Chat error:', error);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
-  const handleMemorySearch = () => {
+  const handleMemorySearch = async () => {
     if (!memoryQuery.trim()) {
       setMemoryResults([]);
       return;
     }
 
-    // Simple mock search
-    const results = mockMemories.filter((m) =>
-      m.content.toLowerCase().includes(memoryQuery.toLowerCase())
-    );
-    setMemoryResults(results);
+    setIsMemoryLoading(true);
+    setMemoryError(null);
+
+    try {
+      const results = await searchMemories(memoryQuery);
+      setMemoryResults(results);
+    } catch (error) {
+      setMemoryError('Failed to search memories. Please try again.');
+      console.error('Memory search error:', error);
+    } finally {
+      setIsMemoryLoading(false);
+    }
   };
 
   return (
@@ -125,21 +153,30 @@ export default function LabPage() {
               )}
             </div>
 
+            {/* Error Display */}
+            {chatError && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {chatError}
+              </div>
+            )}
+
             {/* Input */}
             <div className="flex gap-2">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyPress={(e) => e.key === 'Enter' && !isChatLoading && handleSendMessage()}
                 placeholder="Type a message..."
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isChatLoading}
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleSendMessage}
-                className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors"
+                disabled={isChatLoading || !inputMessage.trim()}
+                className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send
+                {isChatLoading ? 'Sending...' : 'Send'}
               </button>
             </div>
 
@@ -170,17 +207,25 @@ export default function LabPage() {
                   type="text"
                   value={memoryQuery}
                   onChange={(e) => setMemoryQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleMemorySearch()}
+                  onKeyPress={(e) => e.key === 'Enter' && !isMemoryLoading && handleMemorySearch()}
                   placeholder="e.g., coding, goals, morning"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isMemoryLoading}
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   onClick={handleMemorySearch}
-                  className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors"
+                  disabled={isMemoryLoading || !memoryQuery.trim()}
+                  className="px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Search
+                  {isMemoryLoading ? 'Searching...' : 'Search'}
                 </button>
               </div>
+              {/* Error Display */}
+              {memoryError && (
+                <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2 text-sm text-red-700">
+                  {memoryError}
+                </div>
+              )}
             </div>
 
             {/* Filters */}
@@ -210,7 +255,14 @@ export default function LabPage() {
 
             {/* Results */}
             <div className="rounded-lg border bg-gray-50 p-4 min-h-[200px]">
-              {memoryResults.length === 0 ? (
+              {isMemoryLoading ? (
+                <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                    Searching memories...
+                  </div>
+                </div>
+              ) : memoryResults.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-sm text-gray-500">
                   {memoryQuery ? 'No results found' : 'Enter a query to search memories'}
                 </div>

@@ -118,14 +118,16 @@ export default function MemoryPage() {
                 const isSelected = selectedMemory?.id === memory.id;
 
                 return (
-                  <div
+                  <button
                     key={memory.id}
                     onClick={() => setSelectedMemory(memory)}
-                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    className={`w-full text-left p-4 rounded-lg border cursor-pointer transition-all ${
                       isSelected
                         ? 'border-primary bg-primary/5 shadow-md'
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                     }`}
+                    aria-pressed={isSelected}
+                    aria-label={`View memory: ${memory.content.substring(0, 50)}...`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <span
@@ -158,7 +160,7 @@ export default function MemoryPage() {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -172,6 +174,7 @@ export default function MemoryPage() {
                 <button
                   onClick={() => setSelectedMemory(null)}
                   className="text-gray-400 hover:text-gray-600"
+                  aria-label="Close memory details panel"
                 >
                   ✕
                 </button>
