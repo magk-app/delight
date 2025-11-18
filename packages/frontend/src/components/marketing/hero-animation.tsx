@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Animation timing constants
+const ANIMATION_RESTART_DELAY = 3000; // ms - delay before restarting animation loop
+const TYPEWRITER_CHAR_DELAY = 30; // ms - delay between each character
+const PHASE_TRANSITION_DELAY = 1000; // ms - delay before moving to next phase
+
 export function HeroAnimation() {
   const [currentPhase, setCurrentPhase] = useState(0);
   const [narrativeText, setNarrativeText] = useState("");
@@ -28,7 +33,7 @@ export function HeroAnimation() {
         setCurrentPhase(0);
         setNarrativeText("");
         setProgress(0);
-      }, 3000);
+      }, ANIMATION_RESTART_DELAY);
       return () => clearTimeout(timer);
     }
 
@@ -45,9 +50,9 @@ export function HeroAnimation() {
         setTimeout(() => {
           setCurrentPhase((prev) => prev + 1);
           setProgress((prev) => Math.min(prev + 33, 100));
-        }, 1000);
+        }, PHASE_TRANSITION_DELAY);
       }
-    }, 30);
+    }, TYPEWRITER_CHAR_DELAY);
 
     return () => clearInterval(typeInterval);
   }, [currentPhase]);

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { CheckCircle2, Mail, Clock, Users } from "lucide-react";
 
+// Google Form URL from environment
+const WAITLIST_FORM_URL = process.env.NEXT_PUBLIC_WAITLIST_FORM_URL ||
+  "https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform";
+
 export default function WaitlistPage() {
   return (
     <div className="flex flex-col">
@@ -31,8 +35,8 @@ export default function WaitlistPage() {
                     What to expect
                   </h2>
                   <p className="text-muted-foreground leading-relaxed">
-                    When you join our waitlist, you&apos;re not just signing up
-                    for updates—you&apos;re expressing interest in helping shape
+                    When you join our waitlist, you're not just signing up
+                    for updates—you're expressing interest in helping shape
                     a tool that could genuinely change how you approach your
                     goals.
                   </p>
@@ -51,7 +55,7 @@ export default function WaitlistPage() {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Waitlist members get first access when we open up pilot
-                        cohorts. You&apos;ll be using Delight before the general
+                        cohorts. You'll be using Delight before the general
                         public, helping us refine the experience.
                       </p>
                     </div>
@@ -68,7 +72,7 @@ export default function WaitlistPage() {
                         Thoughtful, infrequent updates
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        We&apos;ll send you meaningful progress updates when we
+                        We'll send you meaningful progress updates when we
                         hit major milestones. No daily spam. No sales pressure.
                         Just honest communication about where we are.
                       </p>
@@ -87,7 +91,7 @@ export default function WaitlistPage() {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Your feedback will directly influence features,
-                        priorities, and design decisions. We&apos;re building
+                        priorities, and design decisions. We're building
                         this for people like you—not for abstract personas.
                       </p>
                     </div>
@@ -96,7 +100,7 @@ export default function WaitlistPage() {
 
                 <div className="bg-muted/50 border border-border rounded-xl p-6">
                   <h3 className="font-semibold text-foreground mb-3">
-                    Who&apos;s the best fit for early access?
+                    Who's the best fit for early access?
                   </h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
@@ -117,7 +121,7 @@ export default function WaitlistPage() {
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                       <span>
                         People willing to give honest feedback, even when
-                        it&apos;s critical
+                        it's critical
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -146,13 +150,11 @@ export default function WaitlistPage() {
                   {/* Google Form Embed */}
                   <div className="rounded-xl overflow-hidden border border-border">
                     <iframe
-                      src="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform?embedded=true"
-                      width="100%"
+                      src={`${WAITLIST_FORM_URL}?embedded=true`}
+                      className="w-full border-0"
                       height="800"
-                      frameBorder="0"
-                      marginHeight={0}
-                      marginWidth={0}
-                      className="w-full"
+                      sandbox="allow-scripts allow-forms allow-same-origin"
+                      title="Waitlist signup form"
                     >
                       Loading…
                     </iframe>
@@ -160,9 +162,9 @@ export default function WaitlistPage() {
 
                   <div className="mt-6">
                     <p className="text-xs text-muted-foreground text-center">
-                      Can&apos;t see the form?{" "}
+                      Can't see the form?{" "}
                       <a
-                        href="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform"
+                        href={WAITLIST_FORM_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
@@ -186,7 +188,7 @@ export default function WaitlistPage() {
                     When will the beta start?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    We&apos;re targeting early pilot cohorts in Q1 2026. The
+                    We're targeting early pilot cohorts in Q1 2026. The
                     exact timing depends on core loop stability and memory
                     system performance. Waitlist members will get at least 2
                     weeks notice before their cohort starts.
@@ -199,7 +201,7 @@ export default function WaitlistPage() {
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Very rarely. Expect 1-2 emails per month at most, and only
-                    when there&apos;s something meaningful to share— like beta
+                    when there's something meaningful to share— like beta
                     access opening, major feature launches, or requests for
                     specific feedback. You can unsubscribe anytime.
                   </p>
@@ -211,18 +213,18 @@ export default function WaitlistPage() {
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Yes. Pilot cohort members will have free access during the
-                    beta period. We&apos;re not asking you to pay for an
-                    unfinished product—we&apos;re asking you to invest time
-                    giving us feedback. That&apos;s valuable enough.
+                    beta period. We're not asking you to pay for an
+                    unfinished product—we're asking you to invest time
+                    giving us feedback. That's valuable enough.
                   </p>
                 </div>
 
                 <div className="border border-border rounded-xl p-6">
                   <h3 className="font-semibold text-foreground mb-2">
-                    What if Delight doesn&apos;t work for me?
+                    What if Delight doesn't work for me?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    That&apos;s important data. If the core loop doesn&apos;t
+                    That's important data. If the core loop doesn't
                     resonate, if the narrative feels gimmicky, if the AI
                     misunderstands you—we want to know. Critical feedback is
                     more valuable than polite praise. Help us build something

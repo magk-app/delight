@@ -14,6 +14,10 @@ import {
   Cpu
 } from "lucide-react";
 
+// Force dynamic rendering for Clerk compatibility
+// See: docs/stories/epic-1/1-3-IMPLEMENTATION-SUMMARY.md
+export const dynamic = "force-dynamic";
+
 export default function MarketingHome() {
   return (
     <div className="flex flex-col">

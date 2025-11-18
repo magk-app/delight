@@ -15,20 +15,31 @@ import {
 } from "../support/helpers/wait";
 
 test.describe("Homepage", () => {
-  test("should load homepage", async ({ page }) => {
+  test("should load marketing homepage", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/Delight/i);
-    await expect(page.locator("h1")).toContainText("Welcome to Delight");
+    // Updated to match new marketing copy
+    await expect(page.locator("h1")).toContainText("Turn overwhelming goals into");
   });
 
-  test("should navigate to sign-up page", async ({ page }) => {
+  test("should navigate to waitlist page", async ({ page }) => {
     await page.goto("/");
 
-    // Click get started button using data-testid
-    await page.click('[data-testid="get-started-button"]');
+    // Click "Join Waitlist" button (updated from "get started")
+    await page.click('a[href="/waitlist"]');
 
-    // Should redirect to sign-up page
-    await expect(page).toHaveURL(/\/sign-up/);
+    // Should redirect to waitlist page
+    await expect(page).toHaveURL(/\/waitlist/);
+  });
+
+  test("should navigate to why page", async ({ page }) => {
+    await page.goto("/");
+
+    // Click "Why we're building this" button
+    await page.click('a[href="/why"]');
+
+    // Should redirect to why page
+    await expect(page).toHaveURL(/\/why/);
   });
 });
 
