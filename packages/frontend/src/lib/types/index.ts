@@ -1,68 +1,190 @@
 /**
- * Type definitions for Delight application
+ * Core TypeScript types for Delight application
+ * These define the data structures used throughout the app
  */
 
 import type {
   ValueCategory,
   MissionStatus,
+  EnergyLevel,
   GoalStatus,
-  MemoryTier,
-} from "../constants";
+  Zone,
+  MemoryTier as MemoryTierType,
+  NarrativeAct,
+  Priority,
+} from '../constants';
 
-// Mission types
-export interface Mission {
+// Re-export types
+export type MemoryTier = MemoryTierType;
+
+// User and Profile
+export interface User {
   id: string;
-  title: string;
-  description: string;
-  valueCategory: ValueCategory;
-  status: MissionStatus;
-  estimatedMinutes: number;
-  energyLevel: "low" | "medium" | "high";
-  goalId?: string;
-  goal?: {
-    id: string;
-    title: string;
-  };
-  createdAt?: string;
-  completedAt?: string;
+  clerkUserId: string;
+  email: string;
+  timezone: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Goal types
+export interface UserPreferences {
+  userId: string;
+  customHours?: Record<string, any>;
+  theme: 'modern' | 'medieval' | 'scifi' | 'cyberpunk' | 'zombie';
+  communicationPreferences: {
+    inApp: boolean;
+    email: boolean;
+    sms: boolean;
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+  };
+  essenceBalance: number;
+}
+
+// Goals
 export interface Goal {
   id: string;
+  userId: string;
   title: string;
   description: string;
   valueCategory: ValueCategory;
-  status: GoalStatus;
   targetDate?: string;
-  createdAt?: string;
+  status: GoalStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Memory types
+// Missions
+export interface Mission {
+  id: string;
+  goalId: string;
+  userId: string;
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  energyLevel: EnergyLevel;
+  valueCategory: ValueCategory;
+  priorityScore: number;
+  priority: Priority;
+  status: MissionStatus;
+  createdAt: string;
+  completedAt?: string;
+  goal?: Goal; // Optional populated goal
+}
+
+// Mission Session (for tracking active work)
+export interface MissionSession {
+  id: string;
+  missionId: string;
+  startedAt: string;
+  completedAt?: string;
+  actualMinutes?: number;
+  notes?: string;
+}
+
+// Memory System
 export interface Memory {
   id: string;
-  content: string;
+  userId: string;
   tier: MemoryTier;
-  tags?: string[];
+  content: string;
+  metadata: Record<string, any>;
   createdAt: string;
   accessedAt: string;
+  relatedGoalId?: string;
+  relatedMissionId?: string;
+  tags?: string[];
 }
 
-// Story Beat types
+// Narrative System
+export interface NarrativeState {
+  id: string;
+  userId: string;
+  scenarioId: string;
+  currentAct: NarrativeAct;
+  currentChapter: number;
+  daysInStory: number;
+  worldState: WorldState;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorldState {
+  locations: Record<string, LocationState>;
+  events: WorldEvent[];
+  persons: Record<string, PersonState>;
+  items: {
+    essence: number;
+    titles: string[];
+    artifacts: Artifact[];
+  };
+  worldTime: {
+    currentAct: number;
+    currentChapter: number;
+    daysInStory: number;
+  };
+}
+
+export interface LocationState {
+  discovered: boolean;
+  description: string;
+  npcsPresent: string[];
+  unlockCondition?: string;
+}
+
+export interface WorldEvent {
+  eventId: string;
+  occurredAt: string;
+  impact: string;
+  description: string;
+}
+
+export interface PersonState {
+  relationshipLevel: number;
+  lastInteraction: string;
+  knowsAbout: string[];
+  status: 'friendly' | 'neutral' | 'distant';
+}
+
+export interface Artifact {
+  id: string;
+  name: string;
+  acquiredAt: string;
+  description: string;
+}
+
 export interface StoryBeat {
   id: string;
+  userId: string;
+  narrativeStateId: string;
+  act: NarrativeAct;
+  chapter: number;
   title: string;
   content: string;
-  act: number;
-  chapter: number;
+  emotionalTone: string;
   createdAt: string;
-  emotionalTone?: string;
+  unlocks?: string[];
 }
 
-// DCI (Daily Consistency Index) types
+// Progress and Analytics
+export interface StreakSummary {
+  userId: string;
+  overallStreak: number;
+  longestStreak: number;
+  lastActivityDate: string;
+  categoryStreaks: {
+    health: number;
+    craft: number;
+    growth: number;
+    connection: number;
+  };
+}
+
 export interface DCISnapshot {
-  score: number; // 0-1
-  status: string;
+  userId: string;
+  date: string;
+  score: number;
+  status: 'Fragile' | 'Steady' | 'Strong' | 'Excellent';
   breakdown: {
     streakFactor: number;
     completionRate: number;
@@ -76,67 +198,65 @@ export interface DCIHistoryPoint {
   score: number;
 }
 
-// Streak types
-export interface StreakSummary {
-  overallStreak: number;
-  longestStreak: number;
-  categoryStreaks: Record<string, number>;
-}
-
-// Highlight Reel types
 export interface HighlightReel {
   id: string;
+  userId: string;
   title: string;
+  milestoneType: string;
   content: {
     accomplishments: string[];
-    stats: Record<string, number>;
+    stats: Record<string, any>;
     quote?: string;
   };
-  createdAt?: string;
+  generatedAt: string;
 }
 
-// Narrative State types
-export interface NarrativeState {
-  worldState: {
-    worldTime: {
-      currentAct: number;
-      currentChapter: number;
-      daysInStory: number;
-    };
-    locations: Record<
-      string,
-      {
-        discovered: boolean;
-        description?: string;
-      }
-    >;
-    persons: Record<
-      string,
-      {
-        relationshipLevel: number;
-        status: "friendly" | "neutral" | "hostile";
-      }
-    >;
-    items: {
-      essence: number;
-      titles: string[];
-    };
+// World Zones
+export interface ZoneState {
+  zone: Zone;
+  available: boolean;
+  reason?: string;
+  charactersPresent: string[];
+  opensAt?: string;
+}
+
+// Companion and Characters
+export interface CompanionMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  emotionalContext?: {
+    detectedEmotion: string;
+    emotionScores: Record<string, number>;
   };
 }
 
-// Character types
 export interface Character {
   id: string;
   name: string;
   role: string;
   description: string;
-  relationshipLevel?: number;
+  zone: Zone;
+  relationshipLevel: number;
 }
 
-// Mission Triad type
+// Evidence and Reflection
+export interface Evidence {
+  id: string;
+  userId: string;
+  missionId: string;
+  fileType: 'image' | 'document';
+  fileSize: number;
+  caption?: string;
+  uploadedAt: string;
+  thumbnailUrl: string;
+  fullUrl: string;
+}
+
+// Priority Triad - The three daily missions
 export interface MissionTriad {
   high: Mission;
   medium: Mission;
   low: Mission;
 }
-
