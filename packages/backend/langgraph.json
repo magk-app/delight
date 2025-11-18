@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "eliza": "app.agents.eliza_agent:graph"
+  },
+  "env": ".env"
+}
