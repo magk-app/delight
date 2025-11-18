@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   ClerkProvider,
   SignInButton,
@@ -42,22 +43,22 @@ export default function RootLayout({
                     Sign Up
                   </button>
                 </SignUpButton>
-                <a
+                <Link
                   href="/waitlist"
                   className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-md hover:bg-accent transition-colors"
                 >
                   Waitlist
-                </a>
+                </Link>
               </div>
             </SignedOut>
             <SignedIn>
               <div className="flex gap-2 items-center">
-                <a
+                <Link
                   href="/waitlist"
                   className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-md hover:bg-accent transition-colors"
                 >
                   Waitlist
-                </a>
+                </Link>
                 <UserButton afterSignOutUrl="/" />
               </div>
             </SignedIn>
