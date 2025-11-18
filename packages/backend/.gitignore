@@ -144,3 +144,6 @@ poetry.lock
 .DS_Store
 Thumbs.db
 
+# langgraph
+.langgraph/
+.langgraph_api/
