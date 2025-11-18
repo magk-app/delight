@@ -1,0 +1,542 @@
+---
+title: "Epic 6 - World State & Time System"
+description: "Create dynamic zones with time-aware availability and real-time updates"
+---
+
+# Epic 6: World State & Time System
+
+## Epic Goal
+
+Create dynamic world zones (Arena, Observatory, Commons) with time-aware availability and presence, building the foundation for future multiplayer features.
+
+## Priority & Scope
+
+<Checks items={[
+  "MVP: Basic zones and time awareness",
+  "5 stories with 2 MVP + 3 future features",
+  "Estimated 2-3 weeks of development",
+  "Foundation for immersive world experience"
+]} />
+
+## Architecture Components
+
+- **World Service**: Zone management and state engine
+- **Time Rules Engine**: User timezone and availability logic
+- **Redis Cache**: Real-time world state caching
+- **WebSocket Server**: Real-time updates to clients
+- **Zone Models**: Database schema for zones and user presence
+
+## Core Concepts
+
+### World Zones
+
+Three distinct zones for different work types:
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+  <Card title="Arena" icon="fire">
+    **Health & Craft** - Energizing, action-focused missions. Characters: Lyra, Thorne
+  </Card>
+  <Card title="Observatory" icon="telescope">
+    **Growth & Learning** - Contemplative, reflective missions. Character: Elara
+  </Card>
+  <Card title="Commons" icon="people">
+    **Connection & Community** - Collaborative, social missions. Central gathering place
+  </Card>
+</div>
+
+### Time-Aware State
+
+Zones open/close based on:
+- User's local timezone
+- User's custom productive hours
+- Default rules (e.g., Arena closes 9pm-6am)
+
+## Stories
+
+### Story 6.1: Implement Time-Aware State Engine
+
+Build core time rules and caching infrastructure.
+
+<Card title="Story Type" icon="clock">
+  System Architecture
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Time-based rules engine that respects user timezone",
+  "Redis cache for world state (15-minute TTL)",
+  "ARQ worker updates cache every 15 minutes",
+  "Support for user-customizable productive hours",
+  "Graceful fallback if Redis unavailable"
+]} />
+
+**Default Time Rules:**
+```json
+{
+  "zones": {
+    "arena": {
+      "opens_hour": 6,
+      "closes_hour": 21,
+      "description": "Open during productive daylight hours"
+    },
+    "observatory": {
+      "opens_hour": 0,
+      "closes_hour": 24,
+      "description": "Always available for reflection"
+    },
+    "commons": {
+      "opens_hour": 0,
+      "closes_hour": 24,
+      "description": "Always available for connection"
+    }
+  }
+}
+```
+
+**User Overrides:**
+```sql
+-- Add to user_preferences
+custom_hours JSONB
+# {
+#   "productive_hours": { "start": 7, "end": 22 },
+#   "quiet_hours": { "start": 22, "end": 7 },
+#   "timezone": "America/Los_Angeles",
+#   "zone_overrides": {
+#     "arena": { "open": 8, "close": 20 }
+#   }
+# }
+```
+
+**Caching Strategy:**
+```python
+# Redis key: world_state:{user_id}
+{
+  "timestamp": "2025-11-17T14:30:00Z",
+  "user_timezone": "America/Los_Angeles",
+  "zones": {
+    "arena": {
+      "available": true,
+      "opens_at": "06:00",
+      "closes_at": "21:00"
+    },
+    "observatory": {
+      "available": true,
+      "opens_at": null,
+      "closes_at": null
+    },
+    "commons": {
+      "available": true
+    }
+  },
+  "current_time_user_tz": "2025-11-17T06:30:00-08:00"
+}
+```
+
+**Worker (`world_state_updater.py`):**
+- Runs every 15 minutes
+- Checks all active users' time rules
+- Updates Redis cache
+- Emits WebSocket events for changed availability
+
+**Implementation:**
+- Service: `backend/app/services/world_service.py`
+- Use `pytz` for timezone handling
+- Store time rules in `user_preferences.time_rules JSONB`
+
+**Prerequisites:**
+- Story 1.4 (user preferences with timezone)
+
+---
+
+### Story 6.2: Create World Zones (Arena, Observatory, Commons) - MVP
+
+Build zone navigation and display.
+
+<Card title="Story Type" icon="world">
+  Frontend & API
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Three zones accessible from navigation menu",
+  "Each zone displays name, description, available missions",
+  "Zone shows characters present in location",
+  "Time availability indicator (grayed out if closed)",
+  "Zone-specific color schemes and theming",
+  "Mission filtering by zone's value categories"
+]} />
+
+**Zone Configurations:**
+```json
+{
+  "arena": {
+    "name": "The Arena",
+    "description": "A space for action and craft",
+    "value_categories": ["health", "craft"],
+    "characters": ["Lyra", "Thorne"],
+    "color_scheme": "red/orange",
+    "icon": "flame"
+  },
+  "observatory": {
+    "name": "The Observatory",
+    "description": "A space for growth and reflection",
+    "value_categories": ["growth", "learning"],
+    "characters": ["Elara"],
+    "color_scheme": "blue/purple",
+    "icon": "telescope"
+  },
+  "commons": {
+    "name": "The Commons",
+    "description": "A gathering place for connection",
+    "value_categories": ["connection"],
+    "characters": [],
+    "color_scheme": "green/neutral",
+    "icon": "people"
+  }
+}
+```
+
+**API Endpoint:**
+```bash
+GET /api/v1/world/zones
+# Returns available zones with state and missions
+{
+  "zones": [
+    {
+      "zone_id": "arena",
+      "available": true,
+      "opens_at": "06:00",
+      "closes_at": "21:00",
+      "current_time_display": "Open",
+      "missions_available": 5,
+      "characters_present": ["Lyra"]
+    }
+  ]
+}
+```
+
+**Frontend Routes:**
+- `/world` - Zone selection/overview
+- `/world/arena` - Arena zone
+- `/world/observatory` - Observatory zone
+- `/world/commons` - Commons zone
+
+**Components:**
+- `ZoneLayout.tsx` - Zone container with theming
+- `ZoneHeader.tsx` - Zone name and description
+- `ZoneAvailability.tsx` - Time indicator and open/close times
+- `ZoneMissions.tsx` - List of available missions filtered by category
+- `ZoneCharacters.tsx` - Character presence display
+
+**Theming:**
+```css
+/* Zone-specific Tailwind variants */
+.zone-arena { @apply bg-red-50 border-red-200 }
+.zone-observatory { @apply bg-blue-50 border-blue-200 }
+.zone-commons { @apply bg-green-50 border-green-200 }
+```
+
+**Storage:**
+```sql
+-- zones table
+id VARCHAR PRIMARY KEY  -- 'arena', 'observatory', 'commons'
+name VARCHAR
+description TEXT
+value_categories ARRAY OF VARCHAR
+default_availability JSONB
+color_scheme VARCHAR
+icon VARCHAR
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Prerequisites:**
+- Story 6.1 (time engine)
+- Story 3.3 (missions to display)
+
+---
+
+### Story 6.3: Add WebSocket for Real-Time World Updates (MVP)
+
+Implement real-time state synchronization.
+
+<Card title="Story Type" icon="zap">
+  Real-Time Infrastructure
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "WebSocket connection for real-time updates",
+  "Zone availability changes broadcast to connected clients",
+  "Character appearance/disappearance updates",
+  "Event notifications in real-time",
+  "Auto-reconnect on disconnect",
+  "Fallback to polling if WebSocket unavailable"
+]} />
+
+**WebSocket Endpoint:**
+```bash
+WS /ws/world
+# Authenticated with Clerk token
+```
+
+**Message Types:**
+```json
+// Zone update
+{
+  "type": "zone_update",
+  "zone_id": "arena",
+  "available": true,
+  "opens_at": "06:00",
+  "closes_at": "21:00"
+}
+
+// Character arrival
+{
+  "type": "character_arrived",
+  "zone_id": "arena",
+  "character": "Lyra",
+  "message": "Lyra has entered the Arena"
+}
+
+// Event notification
+{
+  "type": "event",
+  "event_id": "mission_unlock",
+  "data": {...}
+}
+```
+
+**Client Implementation:**
+- `lib/websocket.ts` - WebSocket connection manager
+- Auto-reconnect with exponential backoff
+- Message queue for offline operation
+- Fallback to polling (60-second interval) if WebSocket fails
+
+**Resilience Features:**
+- Heartbeat/ping-pong (30-second interval)
+- Auto-disconnect detection
+- Graceful degradation to polling
+- No data loss during reconnection
+- Browser tab visibility detection
+
+**Server Implementation:**
+```python
+# FastAPI WebSocket endpoint
+@app.websocket("/ws/world")
+async def websocket_world(websocket: WebSocket):
+    await websocket.accept()
+    user_id = await get_current_user(websocket)
+
+    # Subscribe user to world state updates
+    await world_service.subscribe(user_id, websocket)
+
+    try:
+        while True:
+            # Listen for client messages
+            data = await websocket.receive_json()
+            # Handle pings, client state requests, etc.
+    except WebSocketDisconnect:
+        await world_service.unsubscribe(user_id, websocket)
+```
+
+**Polling Fallback:**
+```typescript
+// If WebSocket unavailable, poll every 60 seconds
+const FALLBACK_POLL_INTERVAL = 60000;
+const worldState = await fetch('/api/v1/world/zones');
+```
+
+**Prerequisites:**
+- Story 6.2 (world zones)
+
+---
+
+### Story 6.4: Implement Zone Unlocking System (Future)
+
+Enable progressive zone discovery.
+
+<Card title="Story Type" icon="key">
+  Future Feature - Progression
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "New users only see Commons initially",
+  "Arena unlocks after 5 missions completed",
+  "Observatory unlocks after 7-day streak or Chapter 2",
+  "Cinematic reveal animation on unlock",
+  "Character introduction when zone unlocks",
+  "Guided zone tour"
+]} />
+
+**Unlock Triggers:**
+```json
+{
+  "arena": {
+    "trigger_type": "mission_count",
+    "trigger_value": 5,
+    "character_intro": "Lyra",
+    "unlock_narrative": "You've proven yourself in the Commons..."
+  },
+  "observatory": {
+    "trigger_type": "streak_or_narrative_chapter",
+    "trigger_value": 7,
+    "alternative_trigger": "narrative_chapter >= 2",
+    "character_intro": "Elara",
+    "unlock_narrative": "As you grow, new horizons appear..."
+  }
+}
+```
+
+**Storage:**
+```sql
+-- user_zones table
+id UUID PRIMARY KEY
+user_id UUID FK
+zone_id VARCHAR FK -> zones.id
+unlocked_at TIMESTAMP WITH TIME ZONE
+intro_completed BOOLEAN
+first_visited TIMESTAMP WITH TIME ZONE (nullable)
+```
+
+**Unlock Animation:**
+- Fade-in effect with Framer Motion
+- Character introduction dialog
+- Guided tour highlighting zone features
+- "Begin your first mission" CTA
+
+**Worker Integration:**
+- Check unlock criteria when user completes missions
+- Emit WebSocket event: "zone_unlocked"
+- Queue unlock notification
+
+**Prerequisites:**
+- Story 6.2 (zones)
+- Story 4.3 (narrative progression for Observatory)
+
+---
+
+### Story 6.5: Add Multiplayer Zone Features (Future)
+
+Enable shared zone experiences.
+
+<Card title="Story Type" icon="users">
+  Future Feature - Multiplayer
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "See other users in shared zones (anonymized or real)",
+  "Real-time presence indicators",
+  "Activity notifications (user just completed mission)",
+  "Send encouragement reactions",
+  "Zone capacity limits with instance sharding",
+  "Pod members prioritized in same instance"
+]} />
+
+**Multiplayer Features:**
+- **Presence**: See avatars of other users currently in zone
+- **Activity Feed**: Brief notifications of others' actions
+- **Encouragement**: Send emoji reactions (👏, 🎉, 💪, ✨)
+- **View Public Progress**: Optional profile visibility
+- **Shared Rituals**: Future group activities (co-working, meditation)
+
+**Presence Tracking:**
+```sql
+-- zone_presence table
+id UUID PRIMARY KEY
+user_id UUID FK
+zone_id VARCHAR FK
+joined_at TIMESTAMP WITH TIME ZONE
+last_activity TIMESTAMP WITH TIME ZONE
+instance_id UUID  -- For sharding multiple zone instances
+visibility ENUM('public', 'anonymous', 'private')
+```
+
+**Instance Sharding:**
+- Max 50 users per Commons instance
+- Max 30 users per Arena instance
+- Max 20 users per Observatory instance
+- Pod members assigned to same instance if possible
+
+**WebSocket Extensions:**
+```json
+{
+  "type": "presence_update",
+  "zone_id": "commons",
+  "users_present": [
+    {"user_id": "...", "name": "anon_1", "avatar": "..."},
+    {"user_id": "...", "name": "anon_2", "avatar": "..."}
+  ]
+}
+
+{
+  "type": "user_activity",
+  "zone_id": "arena",
+  "user_id": "...",
+  "activity": "completed_mission",
+  "mission_title": "Morning Run"
+}
+```
+
+**Privacy Controls:**
+- Users can appear "anonymous", "public", or "private"
+- Reaction recipients never see sender identity (emoji only)
+- Names hidden by default (show initials or avatars)
+
+**Prerequisites:**
+- Story 6.2 (zones)
+- Future authentication/multiplayer infrastructure
+
+---
+
+## Epic Dependencies
+
+**Requires:**
+- Epic 1 (Foundation) - Auth, database, Redis
+- Epic 3 (Goal & Missions) - Missions to display in zones
+
+**Enables:**
+- Epic 4 (Narrative zones as story locations)
+- Future multiplayer features
+
+## Success Criteria
+
+When Epic 6 is complete:
+
+<Checks items={[
+  "Users can navigate three distinct themed zones",
+  "Zone availability respects user timezone and hours",
+  "Real-time updates via WebSocket with polling fallback",
+  "Zones filter and display appropriate missions",
+  "Zone UI is beautiful and immersive",
+  "Time awareness prevents frustration from closed zones",
+  "Foundation in place for future multiplayer expansion"
+]} />
+
+## World Design Principles
+
+<Checks items={[
+  "Each zone has distinct personality and purpose",
+  "Time rules respect user autonomy (customizable)",
+  "Availability indicators clear and intuitive",
+  "Characters tied to specific zones",
+  "Zones eventually unlock progressively",
+  "Multiplayer foundation without forced social interaction"
+]} />
+
+## Cost Estimation
+
+- **WebSocket infrastructure**: Minimal (shared with backend)
+- **Redis world state caching**: Included in infrastructure
+- **Real-time updates**: No additional cost
+- **Total**: ~$0/additional per user
+
+## Next Epic
+
+Once Epic 6 is complete, proceed to **Epic 7: Nudge & Outreach** to build the retention system with compassionate re-engagement messages and notification management.

@@ -1,0 +1,373 @@
+---
+title: "Epic 2 - Companion & Memory System"
+description: "Build emotionally aware AI companion with 3-tier memory system"
+---
+
+# Epic 2: Companion & Memory System
+
+## Epic Goal
+
+Build the emotionally aware AI companion (Eliza) with a 3-tier memory system that enables contextual, empathetic conversations that improve over time.
+
+## Priority & Scope
+
+<Checks items={[
+  "P0 - Core differentiator of Delight platform",
+  "7 stories with 5 MVP + 2 future features",
+  "Estimated 4-5 weeks of development",
+  "Foundation for all narrative and coaching features"
+]} />
+
+## Architecture Components
+
+- **AI Framework**: LangGraph for stateful agents
+- **LLM**: OpenAI GPT-4o-mini (chat/personas), GPT-4o (premium narratives)
+- **Embeddings**: OpenAI text-embedding-3-small (1536 dimensions)
+- **Vector Storage**: PostgreSQL pgvector (integrated with Supabase)
+- **Memory Service**: 3-tier architecture (personal/project/task)
+- **Emotion Detection**: cardiffnlp/twitter-roberta-base-emotion (self-hosted)
+
+## Core Concepts
+
+### 3-Tier Memory Architecture
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+  <Card title="Personal Tier" icon="user">
+    **Identity & Long-term** - User's goals, values, emotional patterns (persistent)
+  </Card>
+  <Card title="Project Tier" icon="folder">
+    **Goals & Medium-term** - Active goals, plans, progress snapshots (weeks/months)
+  </Card>
+  <Card title="Task Tier" icon="zap">
+    **Actions & Short-term** - Mission details, recent actions (pruned after 30 days)
+  </Card>
+</div>
+
+## Stories
+
+### Story 2.1: Set Up PostgreSQL pgvector and Memory Schema
+
+Configure pgvector extension and create memory tables.
+
+<Card title="Story Type" icon="database">
+  Vector Database Setup
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "pgvector extension enabled in Supabase PostgreSQL",
+  "memories table with vector(1536) column for embeddings",
+  "memory_collections table for organizing memories",
+  "Vector similarity search returns top K memories",
+  "HNSW or IVFFlat indexes created for performance"
+]} />
+
+**Schema:**
+```sql
+-- memories table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+memory_type ENUM('personal', 'project', 'task')
+content TEXT
+embedding VECTOR(1536)  -- OpenAI text-embedding-3-small
+metadata JSONB
+created_at TIMESTAMP WITH TIME ZONE
+accessed_at TIMESTAMP WITH TIME ZONE
+
+-- memory_collections table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+collection_type VARCHAR
+name VARCHAR
+description TEXT
+```
+
+**Prerequisites:**
+- Story 1.2 (database schema with Supabase)
+
+---
+
+### Story 2.2: Implement Memory Service with 3-Tier Architecture
+
+Build the core memory service with retrieval and storage.
+
+<Card title="Story Type" icon="cog">
+  Service Implementation
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Store memories with automatic embedding generation",
+  "Query memories by type (personal/project/task)",
+  "Hybrid search combining semantic + time-weighted recency",
+  "Task memories auto-pruned after 30 days",
+  "Time decay scoring: score * (1 + log(1 + days_since_access)^-1)"
+]} />
+
+**Service Methods:**
+```python
+class MemoryService:
+    async def add_memory(
+        content: str,
+        memory_type: MemoryType,
+        metadata: dict
+    ) -> Memory
+
+    async def query_memories(
+        query: str,
+        memory_type: MemoryType = None,
+        limit: int = 5
+    ) -> List[Memory]
+
+    async def prune_old_task_memories()
+        # Background job to cleanup
+```
+
+**Implementation Details:**
+- Service: `backend/app/services/memory_service.py`
+- Use LangChain `PostgresVectorStore` or custom implementation
+- ARQ background job for pruning
+- Query optimization with vector indexes
+
+**Prerequisites:**
+- Story 2.1 (memory schema)
+
+---
+
+### Story 2.3: Build Eliza Agent with LangGraph
+
+Create the main conversational AI agent with state management.
+
+<Card title="Story Type" icon="brain">
+  AI Agent Implementation
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Eliza agent implemented as LangGraph state machine",
+  "5 nodes: receive_input → recall_context → reason → respond → store_memory",
+  "Conversation state maintained across messages",
+  "Memory tiers accessed strategically (personal always, project/task contextual)",
+  "Supports emotional awareness (for Story 2.6)"
+]} />
+
+**Agent Nodes:**
+1. **receive_input**: Parse user message, extract intent
+2. **recall_context**: Query relevant memories by tier
+3. **reason**: LLM processes input + context
+4. **respond**: Generate empathetic response
+5. **store_memory**: Save conversation to memory
+
+**System Prompt Theme:**
+- Empathetic, emotionally intelligent coaching
+- Eliza as personal companion and coach
+- Asks clarifying questions, validates feelings
+- Offers grounding suggestions when overwhelmed
+
+**Prerequisites:**
+- Story 2.2 (memory service)
+
+---
+
+### Story 2.4: Create Companion Chat API with SSE Streaming
+
+Build REST API for streaming conversations.
+
+<Card title="Story Type" icon="chat">
+  API Implementation
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Messages stream token-by-token using Server-Sent Events (SSE)",
+  "Response includes emotional awareness",
+  "Conversation history persisted in database",
+  "Memory updated after each exchange",
+  "Graceful handling of connection drops"
+]} />
+
+**Endpoints:**
+```bash
+POST /api/v1/companion/chat
+# Request: { message: string }
+# Response: 200 with conversation_id
+
+GET /api/v1/sse/companion/stream/{conversation_id}
+# Server-Sent Events stream
+# Format: data: {"token": "text", "type": "content"}\n\n
+```
+
+**Conversation Storage:**
+```sql
+-- conversations table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+messages JSONB  -- Array of {role, content, timestamp}
+started_at TIMESTAMP WITH TIME ZONE
+ended_at TIMESTAMP WITH TIME ZONE (nullable)
+```
+
+**Emotional Awareness:**
+- Acknowledges stated feelings
+- Asks clarifying questions
+- Offers grounding suggestions for overwhelm
+
+**Prerequisites:**
+- Story 2.3 (Eliza agent)
+
+---
+
+### Story 2.5: Build Companion Chat UI (Frontend)
+
+Create beautiful, responsive chat interface.
+
+<Card title="Story Type" icon="palette">
+  Frontend Implementation
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Chat interface with message history",
+  "Real-time streaming responses character-by-character",
+  "Animated breathing effect when idle",
+  "Typing indicator while Eliza thinks",
+  "Smooth message animations with Framer Motion",
+  "Mobile and desktop responsive",
+  "Accessible (keyboard navigation, screen reader support)"
+]} />
+
+**Component Structure:**
+- `CompanionChat.tsx` - Main chat component
+- `MessageBubble.tsx` - Individual message display
+- `TypingIndicator.tsx` - Animated typing indicator
+- `BreathingIndicator.tsx` - Idle animation
+
+**Features:**
+- Auto-scroll to latest message
+- Store conversation ID in session storage
+- Framer Motion for smooth animations
+- Tailwind + shadcn/ui components
+- Character-by-character streaming display
+
+**Route:** `frontend/src/app/companion/page.tsx`
+
+**Prerequisites:**
+- Story 2.4 (chat API)
+
+---
+
+### Story 2.6: Implement Emotional State Detection
+
+Add emotion detection using open-source ML model.
+
+<Card title="Story Type" icon="sparkles">
+  ML Integration - CRITICAL FEATURE
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Detect 7 emotions: joy, anger, sadness, fear, love, surprise, neutral",
+  "Fast inference (< 100ms per message)",
+  "Privacy-preserving (self-hosted model)",
+  "Appropriate response based on detected emotion",
+  "Track emotional state in user preferences"
+]} />
+
+**Emotion-Based Responses:**
+- **Overwhelm/Fear**: Offer calming ritual or breathing exercise
+- **Sadness/Anger**: Empathetic acknowledgment, suggest breaking down goals
+- **Joy/Love**: Celebrate wins, encourage momentum
+- **Neutral**: Normal conversational flow
+
+**Model Details:**
+- **Model**: `cardiffnlp/twitter-roberta-base-emotion-multilingual-latest`
+- **Source**: Hugging Face (400K+ downloads, actively maintained)
+- **Performance**: ~50ms inference on CPU
+- **Support**: 7-emotion classification, multilingual
+
+**Deployment Options:**
+- MVP: Hugging Face Inference API (1000 req/day free)
+- Production: Self-host with PyTorch (~500MB model)
+
+**Storage:**
+```sql
+-- Add to user_preferences table
+current_emotional_state JSONB
+# { joy: 0.8, anger: 0.1, ... }
+dominant_emotion VARCHAR
+last_state_change TIMESTAMP WITH TIME ZONE
+```
+
+**Prerequisites:**
+- Story 2.4 (chat API)
+
+---
+
+### Story 2.7: Add Multiple Character Personas (Future)
+
+Enable additional narrative characters beyond Eliza.
+
+<Card title="Story Type" icon="theater">
+  Future Feature - Multi-Character System
+</Card>
+
+**Planned Characters:**
+- **Lyra** - Craft/creativity mentor (Arena)
+- **Thorne** - Health/physical mentor (Arena)
+- **Elara** - Growth/learning mentor (Observatory)
+
+**Key Distinction:**
+- **Eliza**: Personal companion/coach (always available)
+- **Character Personas**: Story NPCs with specialized roles
+
+**Acceptance Criteria:**
+- Each character has distinct personality and expertise
+- Characters unlock through progression or narrative triggers
+- Character-initiated conversations tied to story moments
+- Relationship levels grow with interactions
+- Separate memory namespaces per character
+
+**Prerequisites:**
+- Story 2.4 (chat API)
+- Story 6.2 (world zones for character locations)
+
+---
+
+## Epic Dependencies
+
+**Requires:** Epic 1 (Foundation) - Database, authentication, and core infrastructure
+
+**Enables:**
+- Epic 3 (Goal Decomposition with Eliza)
+- Epic 4 (Narrative Integration)
+- Epic 5 (Progress Analytics)
+
+## Success Criteria
+
+When Epic 2 is complete:
+
+<Checks items={[
+  "Users can chat with Eliza in real-time with streaming responses",
+  "Memories persist and are retrieved contextually",
+  "Emotional state detection works with appropriate responses",
+  "Chat history maintained across sessions",
+  "Memory pruning removes old task memories automatically",
+  "Eliza system prompt creates empathetic, helpful conversations"
+]} />
+
+## Cost Estimation
+
+- **GPT-4o-mini chat**: ~$0.03/user/day
+- **Embedding generation**: ~$0.005/user/day
+- **Emotion detection (self-hosted)**: Free
+- **Total**: ~$0.04/user/day (well within $0.50/day target)
+
+## Next Epic
+
+Once Epic 2 is complete, proceed to **Epic 3: Goal & Mission Management** to enable users to create goals and work through adaptive micro-missions with Eliza's help.

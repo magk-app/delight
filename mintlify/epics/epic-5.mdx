@@ -1,0 +1,513 @@
+---
+title: "Epic 5 - Progress & Analytics"
+description: "Build momentum storytelling through streaks, DCI, and highlight reels"
+---
+
+# Epic 5: Progress & Analytics
+
+## Epic Goal
+
+Build momentum storytelling through streaks, highlight reels, and the Daily Consistency Index (DCI) dashboard so users see their progress compounding over time.
+
+## Priority & Scope
+
+<Checks items={[
+  "P1 - Engagement and motivation driver",
+  "6 stories with 4 MVP + 2 future features",
+  "Estimated 3-4 weeks of development",
+  "Transforms raw data into compelling visualizations"
+]} />
+
+## Architecture Components
+
+- **Progress Service**: DCI calculation, streak tracking, analytics
+- **Analytics Pipeline**: Data aggregation and trend analysis
+- **Visualization**: Charts, timelines, achievement displays
+- **Highlight Generation**: Cinematic summary creation
+- **Database Models**: Streaks, DCI history, progress snapshots, achievements
+
+## Core Concepts
+
+### Daily Consistency Index (DCI)
+
+A single score (0-1.0) that measures overall consistency:
+
+```
+DCI = weighted_average(
+  streak_factor: 0.35,
+  completion_rate: 0.35,
+  engagement_depth: 0.20,
+  nudge_response: 0.10
+)
+```
+
+### Momentum Storytelling
+
+Every achievement tells a story:
+- Week 1: "You showed up 5 days in a row"
+- Month 1: "You've invested 15 hours on your craft goal"
+- Quarter 1: "You've completed 47 missions across 4 goals"
+
+## Stories
+
+### Story 5.1: Implement Streak Tracking System
+
+Create the foundation for consistency visualization.
+
+<Card title="Story Type" icon="fire">
+  Core Motivation System
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Streak counter increments on consecutive days with missions",
+  "Display total days, start date, and category streaks",
+  "Reset on missed day (or use freeze if available)",
+  "Compassionate notifications on streak breaks",
+  "Celebrate milestones: 7, 14, 30, 100, 365 days"
+]} />
+
+**Streak Types:**
+- **Overall**: Any mission completion counts
+- **Health**: Only health missions count
+- **Craft**: Only craft missions count
+- **Growth**: Only growth missions count
+- **Connection**: Only connection missions count
+
+**Schema:**
+```sql
+-- streaks table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+streak_type ENUM('overall', 'health', 'craft', 'growth', 'connection')
+current_streak INT
+longest_streak INT
+last_activity_date DATE
+started_at DATE
+streak_freeze_available BOOLEAN (default false)
+created_at TIMESTAMP WITH TIME ZONE
+updated_at TIMESTAMP WITH TIME ZONE
+```
+
+**Milestone Rewards:**
+- 7 days: Badge "Week Warrior"
+- 14 days: Badge "The Consistent"
+- 30 days: Essence reward + badge
+- 100 days: Essence reward + title "The Relentless"
+- 365 days: Special achievement + title "One Year Strong"
+
+**Daily Check:**
+- ARQ worker runs nightly
+- Checks if user completed mission yesterday
+- Increments or resets streak appropriately
+- Sends compassionate re-engagement if streak breaks
+
+**Prerequisites:**
+- Story 3.4 (mission completion tracking)
+
+---
+
+### Story 5.2: Build Daily Consistency Index (DCI) Dashboard
+
+Create quantitative progress measurement system.
+
+<Card title="Story Type" icon="chart">
+  Analytics Dashboard
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "DCI score (0-1.0) calculated from multiple factors",
+  "Display as percentage (e.g., 'DCI: 73%')",
+  "Color-coded zones: red (0-33%), yellow (33-66%), green (66-100%)",
+  "7, 30, 90-day views",
+  "Line chart showing DCI trends over time",
+  "Breakdown by value category",
+  "Personalized insights and patterns"
+]} />
+
+**DCI Calculation Components:**
+```python
+# Streak factor (0-1.0)
+streak_factor = min(current_streak / 30, 1.0)
+
+# Completion rate (0-1.0)
+completion_rate = completed_missions / (completed + skipped)
+
+# Engagement depth (0-1.0)
+# Considers time spent, mission difficulty, goal progress
+engagement_depth = (avg_session_minutes / 45) * (missions_per_goal / 5)
+
+# Nudge response (0-1.0)
+nudge_response = nudges_acted_upon / total_nudges_received
+
+# Weighted average
+DCI = (
+  streak_factor * 0.35 +
+  completion_rate * 0.35 +
+  engagement_depth * 0.20 +
+  nudge_response * 0.10
+)
+```
+
+**Dashboard Sections:**
+1. **Current DCI** - Large, prominent score with trend arrow
+2. **Category Breakdown** - DCI by health/craft/growth/connection
+3. **Trend Charts** - 7/30/90-day line charts
+4. **Insights** - AI-generated observations
+5. **Streaks** - Current and longest streaks
+6. **Recent Activity** - Last 5 completed missions
+
+**Storage:**
+```sql
+-- dci_history table (daily snapshots)
+id UUID PRIMARY KEY
+user_id UUID FK
+calculated_date DATE
+dci_score FLOAT
+streak_factor FLOAT
+completion_rate FLOAT
+engagement_depth FLOAT
+nudge_response FLOAT
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Frontend:**
+- `ProgressDashboard.tsx` - Main dashboard component
+- `DCICard.tsx` - Display current DCI with trend
+- Use Chart.js or Recharts for visualizations
+- Mobile-responsive with Tailwind
+
+**Insights Examples:**
+- "You're most consistent with Health missions (82%)"
+- "Your DCI peaks on Tuesday mornings"
+- "20% improvement since last month"
+- "You respond to nudges 90% of the time"
+
+**Prerequisites:**
+- Story 5.1 (streak tracking)
+- Story 3.4 (mission sessions)
+
+---
+
+### Story 5.3: Generate Highlight Reels (MVP)
+
+Create cinematic accomplishment summaries.
+
+<Card title="Story Type" icon="film">
+  Celebration & Sharing
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Highlight reels generated on milestones",
+  "Beautiful summary with title, accomplishments, stats",
+  "Motivational quote or Eliza message",
+  "Animated transitions and visual polish",
+  "View past reels, export as image/PDF",
+  "Optional social media sharing (privacy-aware)"
+]} />
+
+**Trigger Milestones:**
+- Goal completed
+- 7/14/30-day streak achieved
+- 25/50/100 missions completed
+- Chapter unlocked (narrative)
+- Hidden quest completed
+
+**Reel Components:**
+```json
+{
+  "title": "Your 7-Day Journey in Craft",
+  "summary": "You showed up every day for a week...",
+  "accomplishments": [
+    "Completed 8 craft missions",
+    "Spent 4 hours creating",
+    "Unlocked: The Persistent badge"
+  ],
+  "stats": {
+    "missions_completed": 8,
+    "time_invested_minutes": 240,
+    "streak_maintained": 7,
+    "goals_progressed": 1
+  },
+  "quote": "Consistency compounds...",
+  "visual_elements": {
+    "primary_color": "#8b5cf6",  // craft category color
+    "icons": ["fire", "star", "sparkle"],
+    "background_theme": "gradient"
+  }
+}
+```
+
+**Generation Process:**
+1. ARQ worker detects milestone
+2. Calls highlight service with context
+3. Service gathers relevant stats and accomplishments
+4. LLM generates motivational message
+5. Frontend renders beautiful animation
+6. User can share or save
+
+**Storage:**
+```sql
+-- highlight_reels table
+id UUID PRIMARY KEY
+user_id UUID FK
+milestone_type VARCHAR
+milestone_id UUID  -- Links to specific goal, streak, etc.
+content JSONB
+generated_at TIMESTAMP WITH TIME ZONE
+viewed_at TIMESTAMP WITH TIME ZONE (nullable)
+shared_at TIMESTAMP WITH TIME ZONE (nullable)
+```
+
+**Frontend:**
+- `HighlightReel.tsx` with Framer Motion animations
+- Fade-in sequence for accomplishments
+- Animated counter for stats
+- Share buttons (Twitter, Instagram, email)
+- "Download as image" option
+
+**MVP Version:**
+- Text + data reels
+- Future: video generation with AI narration
+
+**Prerequisites:**
+- Story 5.1 (streaks)
+- Story 3.4 (mission completion data)
+
+---
+
+### Story 5.4: Implement Progress Snapshots and Goal Timelines
+
+Visualize long-term goal progress.
+
+<Card title="Story Type" icon="timeline">
+  Goal Progress Visualization
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Timeline of all missions for each goal",
+  "Milestones marked on timeline",
+  "Velocity chart (missions/week over time)",
+  "Estimated completion date based on pace",
+  "Filter by date range",
+  "View notes from each mission session",
+  "Identify activity gaps"
+]} />
+
+**Progress Timeline Features:**
+- **X-axis**: Date/time
+- **Y-axis**: Completion percentage or mission count
+- **Milestones**: Marked points with annotations
+- **Velocity**: Trend line showing mission completion rate
+- **Projection**: Estimated completion based on current pace
+
+**Storage:**
+```sql
+-- progress_snapshots table (weekly)
+id UUID PRIMARY KEY
+goal_id UUID FK
+snapshot_date DATE  -- Every Sunday
+missions_completed_this_week INT
+completion_percentage FLOAT
+cumulative_missions INT
+velocity FLOAT  -- missions per week
+notes TEXT
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Calculations:**
+```python
+# Velocity (missions per week)
+velocity = missions_completed_this_week / 1
+
+# Estimated completion (weeks remaining)
+remaining_missions = total_goal_missions - completed
+weeks_remaining = remaining_missions / avg_velocity
+
+# Completion date
+estimated_completion = today + (weeks_remaining * 7 days)
+```
+
+**Frontend:**
+- `GoalTimeline.tsx` with interactive chart
+- Use Recharts or Chart.js
+- Hover for details on each milestone
+- Mobile-responsive line chart
+- Date range selector (1mo, 3mo, 6mo, all-time)
+
+**Prerequisites:**
+- Story 3.1 (goals)
+- Story 3.4 (mission sessions)
+
+---
+
+### Story 5.5: Add "What's Working" Analytics Insights (Future)
+
+Generate AI-powered productivity pattern insights.
+
+<Card title="Story Type" icon="bulb">
+  Future Feature - AI Insights
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Generate insights after 30+ days of data",
+  "Identify time-of-day patterns (peak productivity)",
+  "Day-of-week trends (which days most consistent)",
+  "Mission length preferences",
+  "Category-specific patterns",
+  "Present as natural language insights",
+  "Update monthly with new patterns"
+]} />
+
+**Insight Examples:**
+- "You complete 3x more missions on Tuesday mornings"
+- "Health missions after 8am have 90% completion rate"
+- "Your streaks break most often on Fridays"
+- "Missions under 20min have highest completion rate"
+- "You're more engaged when working on craft goals"
+
+**Analysis Methods:**
+- Time-of-day clustering (hours of highest completion)
+- Day-of-week distribution
+- Mission length vs completion rate correlation
+- Category performance trends
+- Seasonal patterns (if enough data)
+
+**Storage:**
+```sql
+-- user_insights table
+id UUID PRIMARY KEY
+user_id UUID FK
+insight_text TEXT
+insight_type VARCHAR  -- 'time_pattern', 'category_pattern', etc.
+confidence_score FLOAT
+based_on_days INT  -- Number of data points
+generated_at TIMESTAMP WITH TIME ZONE
+```
+
+**Eliza Integration:**
+- Uses insights to recommend optimal mission times
+- Suggests scheduling changes
+- Adjusts mission difficulty recommendations
+- Provides personalized coaching based on patterns
+
+**Prerequisites:**
+- Story 5.2 (DCI dashboard with analytics data)
+
+---
+
+### Story 5.6: Implement Achievement Gallery and Badges (Future)
+
+Create collectible achievement system.
+
+<Card title="Story Type" icon="trophy">
+  Future Feature - Gamification
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Badges unlock for various milestones",
+  "Achievement gallery shows all unlocked and locked badges",
+  "Badges shareable on social media",
+  "Tiers: Bronze, Silver, Gold, Platinum",
+  "Higher tiers grant Essence rewards",
+  "Progress bars for tracking toward next tier"
+]} />
+
+**Achievement Examples:**
+```
+- The Starter: Complete first mission
+- Week Warrior: 7-day streak
+- The Persistent: 14-day streak
+- The Relentless: 20-day streak in one category
+- Century: 100 missions completed
+- Master Planner: Decompose 10 goals with Eliza
+- Momentum: Complete 5 missions in a row
+- Balanced: Complete missions in all 4 categories
+- Essence Collector: Accumulate 500 Essence
+```
+
+**Schema:**
+```sql
+-- achievements table
+id UUID PRIMARY KEY
+name VARCHAR
+description TEXT
+tier ENUM('bronze', 'silver', 'gold', 'platinum')
+unlock_criteria JSONB
+essence_reward INT
+icon_url VARCHAR
+created_at TIMESTAMP WITH TIME ZONE
+
+-- user_achievements table
+id UUID PRIMARY KEY
+user_id UUID FK
+achievement_id UUID FK
+unlocked_at TIMESTAMP WITH TIME ZONE
+tier ENUM('bronze', 'silver', 'gold', 'platinum')
+```
+
+**Frontend:**
+- `AchievementGallery.tsx` with grid display
+- Filter by: all, unlocked, tier, category
+- Click for details and unlock progress
+- Share buttons for individual badges
+- Profile integration showing top badges
+
+**Prerequisites:**
+- Story 5.1 (milestones)
+- Story 4.7 (Essence economy)
+
+---
+
+## Epic Dependencies
+
+**Requires:**
+- Epic 1 (Foundation)
+- Epic 3 (Goal & Missions) - For progress data
+
+**Enables:**
+- Epic 7 (Nudge timing optimization)
+- Epic 4 (Narrative progression triggers)
+
+## Success Criteria
+
+When Epic 5 is complete:
+
+<Checks items={[
+  "Users can see DCI score and understand consistency",
+  "Streaks motivate and celebrate consistency",
+  "Highlight reels celebrate real achievements",
+  "Progress timelines show long-term momentum",
+  "Analytics provide actionable insights",
+  "Achievements reward various types of accomplishment",
+  "Visualizations are beautiful and motivating"
+]} />
+
+## Analytics Impact
+
+Epic 5 transforms raw activity into:
+- **Quantified Progress**: DCI shows measurable improvement
+- **Pattern Recognition**: Insights reveal optimal work times
+- **Celebration**: Reels create shareable moments
+- **Motivation**: Streaks and badges drive consistency
+
+## Cost Estimation
+
+- **Analytics processing**: Included in backend services
+- **Insight generation (future)**: ~$0.002/user/day
+- **Total**: ~$0.002/user/day additional
+
+## Next Epic
+
+Once Epic 5 is complete, proceed to **Epic 7: Nudge & Outreach** to build the retention system using progress data to send compassionate re-engagement messages.

@@ -1,0 +1,73 @@
+---
+title: Security Architecture
+description: Authentication, authorization, data protection, and privacy implementation for Delight
+icon: shield
+---
+
+## Authentication
+
+<CardGroup cols={2}>
+  <Card title="Clerk Integration" icon="key">
+    Managed authentication service handling all user identity verification
+    - Session management with JWTs (handled by Clerk)
+    - OAuth providers (Google, GitHub, etc.)
+    - Magic link authentication
+    - Multi-factor authentication (2FA)
+    - Password policies and breach detection
+  </Card>
+  <Card title="Implementation" icon="code">
+    **Backend:** Clerk session verification middleware
+
+    **Frontend:** `@clerk/nextjs` for auth UI and session management
+  </Card>
+</CardGroup>
+
+## Authorization
+
+<Info>
+User-scoped data access ensures users can only access their own missions and progress data.
+</Info>
+
+**Key Principles:**
+
+<Checks>
+  - Clerk user IDs used as primary user identifier in database
+  - Role-based access control: User, Admin (future, managed via Clerk metadata)
+  - Resource-level authorization on all protected endpoints
+</Checks>
+
+## Data Protection
+
+<CardGroup cols={2}>
+  <Card title="Encryption at Rest" icon="database">
+    Database encryption via PostgreSQL built-in encryption capabilities
+  </Card>
+  <Card title="Encryption in Transit" icon="wifi">
+    HTTPS/TLS for all network communications
+  </Card>
+  <Card title="File Storage" icon="file">
+    S3 with signed URLs and user-only access controls
+  </Card>
+  <Card title="Password Security" icon="lock">
+    Clerk handles password security (not stored in our database)
+  </Card>
+</CardGroup>
+
+## Privacy & Compliance
+
+<Info title="Privacy Controls">
+  Opt-in approach for all tracking features including tab monitoring and activity logging.
+</Info>
+
+**Compliance Features:**
+
+<Checks>
+  - GDPR-compliant user data export/deletion endpoints
+  - Clerk compliance: SOC 2 Type II, GDPR, CCPA compliant
+  - User privacy preferences enforced at application level
+  - Regular security audits and penetration testing
+</Checks>
+
+---
+
+**Last Updated:** 2025-11-17

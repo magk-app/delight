@@ -1,0 +1,113 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Delight Documentation",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/executive-summary",
+              "architecture/technology-stack",
+              "architecture/decision-records",
+              "architecture/data-architecture",
+              "architecture/api-contracts",
+              "architecture/security",
+              "architecture/deployment"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "dev/setup",
+              "dev/bmad-guide",
+              "dev/quick-reference",
+              "dev/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Product",
+        "groups": [
+          {
+            "group": "Epics",
+            "pages": [
+              "epics/overview",
+              "epics/epic-1",
+              "epics/epic-2",
+              "epics/epic-3",
+              "epics/epic-4",
+              "epics/epic-5",
+              "epics/epic-6",
+              "epics/epic-7",
+              "epics/epic-8"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": ["users/getting-started"]
+          }
+        ]
+      },
+      {
+        "tab": "Operations",
+        "groups": [
+          {
+            "group": "Runbooks",
+            "pages": [
+              "runbook/documentation",
+              "runbook/deployment",
+              "runbook/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/your-org/delight",
+          "icon": "github"
+        },
+        {
+          "anchor": "API Documentation",
+          "href": "/api-reference",
+          "icon": "code"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@delight.com"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/your-org/delight"
+    }
+  }
+}

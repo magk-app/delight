@@ -1,0 +1,125 @@
+---
+title: "Epics Overview"
+description: "High-level overview of the 8 epics that define Delight's development roadmap"
+---
+
+# Delight Epics Overview
+
+Delight is structured around **8 interconnected epics** that build the complete emotionally intelligent AI companion platform. Each epic is designed to work together, creating a seamless user experience that combines AI coaching, narrative world-building, and structured progress tracking.
+
+## Epic Structure
+
+The epics follow a logical implementation order while building the foundation correctly from the start:
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+  <Card title="Epic 1" icon="foundation">
+    **User Onboarding & Foundation** - Technical setup and authentication (Stories: 5)
+  </Card>
+  <Card title="Epic 2" icon="brain">
+    **Companion & Memory System** - AI companion with 3-tier memory (Stories: 7)
+  </Card>
+  <Card title="Epic 3" icon="target">
+    **Goal & Mission Management** - Goals, decomposition, and priority triads (Stories: 7)
+  </Card>
+  <Card title="Epic 4" icon="book">
+    **Narrative Engine** - Living story system with hidden quests (Stories: 7)
+  </Card>
+  <Card title="Epic 5" icon="chart">
+    **Progress & Analytics** - Streaks, DCI dashboard, highlight reels (Stories: 6)
+  </Card>
+  <Card title="Epic 6" icon="world">
+    **World State & Time System** - Dynamic zones and time-aware state (Stories: 5)
+  </Card>
+  <Card title="Epic 7" icon="bell">
+    **Nudge & Outreach** - Compassionate notifications and retention (Stories: 5)
+  </Card>
+  <Card title="Epic 8" icon="photo">
+    **Evidence & Reflection** - File uploads and achievement validation (Stories: 6)
+  </Card>
+</div>
+
+## Recommended Implementation Order
+
+The epics are designed to be implemented sequentially to minimize refactoring and maximize user value:
+
+<div className="flex flex-col gap-2 mt-6">
+  <div className="border-l-4 border-blue-500 pl-4">
+    <p className="font-semibold text-blue-600">1. Epic 1: Foundation</p>
+    <p className="text-sm text-gray-600">Required first - sets up monorepo, auth, and database infrastructure</p>
+  </div>
+
+  <div className="border-l-4 border-purple-500 pl-4">
+    <p className="font-semibold text-purple-600">2. Epic 2: Companion & Memory</p>
+    <p className="text-sm text-gray-600">Core differentiator - Eliza AI with emotional intelligence</p>
+  </div>
+
+  <div className="border-l-4 border-green-500 pl-4">
+    <p className="font-semibold text-green-600">3. Epic 3: Goal & Mission</p>
+    <p className="text-sm text-gray-600">Core productivity loop - goals, missions, and execution</p>
+  </div>
+
+  <div className="border-l-4 border-amber-500 pl-4">
+    <p className="font-semibold text-amber-600">4. Epic 5: Progress & Analytics</p>
+    <p className="text-sm text-gray-600">Engagement driver - streaks, DCI dashboard, highlight reels</p>
+  </div>
+
+  <div className="border-l-4 border-red-500 pl-4">
+    <p className="font-semibold text-red-600">5. Epic 7: Nudge & Outreach</p>
+    <p className="text-sm text-gray-600">Retention system - compassionate nudges and re-engagement</p>
+  </div>
+
+  <div className="border-l-4 border-indigo-500 pl-4">
+    <p className="font-semibold text-indigo-600">6. Epic 4: Narrative Engine</p>
+    <p className="text-sm text-gray-600">Enhanced experience - living story system with hidden quests</p>
+  </div>
+
+  <div className="border-l-4 border-cyan-500 pl-4">
+    <p className="font-semibold text-cyan-600">7. Epic 6: World State & Time</p>
+    <p className="text-sm text-gray-600">World building - zones, time awareness, and multiplayer foundation</p>
+  </div>
+
+  <div className="border-l-4 border-pink-500 pl-4">
+    <p className="font-semibold text-pink-600">8. Epic 8: Evidence & Reflection</p>
+    <p className="text-sm text-gray-600">Advanced features - file uploads and achievement validation</p>
+  </div>
+</div>
+
+## Key Architecture Principles
+
+These principles guide all epics:
+
+<Checks items={[
+  "Async-first database operations (SQLAlchemy 2.0 with asyncpg)",
+  "User data privacy and GDPR compliance",
+  "Graceful degradation (features work without each other)",
+  "Cost optimization ($0.50 per user per day target)",
+  "Accessibility and responsive design",
+  "Clear separation of concerns (services, models, schemas)",
+  "Comprehensive error handling and user feedback",
+  "Event-driven architecture where appropriate"
+]} />
+
+## Technology Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: FastAPI, SQLAlchemy 2.0, Pydantic, Alembic
+- **Database**: Supabase (PostgreSQL + pgvector)
+- **AI/LLM**: OpenAI GPT-4o-mini (chat), GPT-4o (narrative), text-embedding-3-small
+- **Infrastructure**: ARQ (async jobs), Redis, Clerk (auth)
+
+## Story Counts by Epic
+
+- **Epic 1**: 5 stories (all MVP)
+- **Epic 2**: 7 stories (5 MVP, 2 future)
+- **Epic 3**: 7 stories (5 MVP, 2 future)
+- **Epic 4**: 7 stories (2 MVP, 5 future)
+- **Epic 5**: 6 stories (4 MVP, 2 future)
+- **Epic 6**: 5 stories (2 MVP, 3 future)
+- **Epic 7**: 5 stories (3 MVP, 2 future)
+- **Epic 8**: 6 stories (3 MVP, 3 future)
+
+**Total**: 53 stories across all epics, ~25-30 stories in MVP scope
+
+## Next Steps
+
+Select an epic below to see detailed story breakdowns, technical specifications, and acceptance criteria. Each story includes prerequisites to prevent forward dependencies and implementation guidance aligned with the Architecture document.
