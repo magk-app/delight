@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_router
+from app.core.config import settings
 from app.db.session import engine
 
 
@@ -56,12 +57,21 @@ app = FastAPI(
 )
 
 # CORS configuration for frontend communication
+# Parse CORS_ORIGINS from environment (comma-separated list)
+cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
+
+# Add default localhost origins if not in production
+if settings.ENVIRONMENT == "development":
+    cors_origins.extend([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ])
+
+print(f"🌐 CORS enabled for origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Frontend dev server
-        "http://127.0.0.1:3000",  # Alternative localhost
-    ],
+    allow_origins=cors_origins,  # Dynamic origins from environment
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
