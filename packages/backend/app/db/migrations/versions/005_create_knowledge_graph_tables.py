@@ -35,6 +35,9 @@ def upgrade() -> None:
     # Verify it's available (idempotent)
     op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
+    # Enable pg_trgm extension for text similarity search (used in graph_retrieval_service)
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+
     # Create node_type enum (idempotent)
     op.execute("""
         DO $$ BEGIN
