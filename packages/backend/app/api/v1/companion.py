@@ -22,7 +22,7 @@ from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.clerk_auth import get_current_user
+from app.core.clerk_auth import get_current_user, get_current_user_from_token_dependency
 from app.db.session import get_db
 from app.models.memory import Memory, MemoryType
 from app.models.user import User
@@ -456,9 +456,8 @@ async def chat_with_eliza(
 @router.get("/stream/{conversation_id}")
 async def stream_response(
     conversation_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_token_dependency),  # Extracts token from query param
     db: AsyncSession = Depends(get_db),
-    token: str = Query(..., description="Auth token for EventSource")  # EventSource can't set headers
 ):
     """
     Stream Eliza's response via SSE (Server-Sent Events).
