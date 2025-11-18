@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { HeroAnimation } from "@/components/marketing/hero-animation";
 import {
   Brain,
@@ -33,7 +32,7 @@ export default function Home() {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                     adaptive daily missions
                   </span>
-                </h1>
+        </h1>
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   An emotionally intelligent AI companion that remembers your
                   journey, understands when you&apos;re stuck, and helps you build
@@ -42,29 +41,19 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <SignUpButton mode="modal">
-                  <button
-                    data-testid="get-started-button"
-                    className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                  >
-                    Get Started
-                  </button>
-                </SignUpButton>
-                <SignInButton mode="modal">
-                  <button
-                    data-testid="sign-in-button"
-                    className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
-                  >
-                    Sign In
-                  </button>
-                </SignInButton>
-                <Link
+          <Link
                   href="/waitlist"
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
-                >
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+          >
                   Join Waitlist
-                </Link>
-              </div>
+          </Link>
+          <Link
+                  href="/why"
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
+          >
+                  Why we&apos;re building this
+          </Link>
+        </div>
 
               <p className="text-sm text-muted-foreground">
                 For founders, students, and ambitious people navigating life
@@ -307,10 +296,10 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground mb-2">
                   Highlight Reels
                 </h3>
-                <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                   Proof of work with notes and photos
-                </p>
-              </div>
+            </p>
+          </div>
 
               <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-all">
                 <div className="inline-flex w-12 h-12 rounded-full bg-success/10 items-center justify-center mb-4">
@@ -319,10 +308,10 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground mb-2">
                   Constellation
                 </h3>
-                <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                   Growth across four dimensions
-                </p>
-              </div>
+            </p>
+          </div>
 
               <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-all">
                 <div className="inline-flex w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-4">
@@ -331,12 +320,12 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground mb-2">
                   Consistency Index
                 </h3>
-                <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                   Nuanced scoring beyond streaks
-                </p>
-              </div>
-            </div>
+            </p>
           </div>
+        </div>
+      </div>
         </div>
       </section>
 
@@ -480,22 +469,12 @@ export default function Home() {
               mission at a time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <SignUpButton mode="modal">
-                <button
-                  data-testid="get-started-button"
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                >
-                  Get Started
-                </button>
-              </SignUpButton>
-              <SignInButton mode="modal">
-                <button
-                  data-testid="sign-in-button"
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
-                >
-                  Sign In
-                </button>
-              </SignInButton>
+              <Link
+                href="/waitlist"
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                Join Waitlist
+              </Link>
               <Link
                 href="/future"
                 className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
