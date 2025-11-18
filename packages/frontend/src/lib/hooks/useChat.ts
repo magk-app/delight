@@ -70,42 +70,87 @@ export function useChat() {
       return;
     }
 
+    // Helper function to fetch history with retry logic for 401 errors
+    const fetchHistoryWithRetry = async (retryCount = 0): Promise<void> => {
+      try {
+        // Get fresh token right before request
+        const token = await getToken();
+        if (!token) {
+          throw new Error("Missing authentication token");
+        }
+
+        const response = await fetch(
+          resolveApiUrl("/api/v1/companion/history"),
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Handle 401 with retry (token might have expired between fetch and request)
+        if (response.status === 401 && retryCount === 0) {
+          console.warn(
+            "History endpoint returned 401, retrying with fresh token..."
+          );
+          // Wait a bit to allow Clerk to refresh token, then retry once
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          return fetchHistoryWithRetry(1);
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to load history: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const latestConversation = data?.conversations?.[0];
+
+        if (!latestConversation) {
+          setMessages([]);
+          setConversationId(null);
+          return;
+        }
+
+        // Add defensive check for messages array
+        const messages = latestConversation.messages ?? [];
+        if (!Array.isArray(messages)) {
+          console.warn("Invalid messages format received:", messages);
+          setMessages([]);
+          setConversationId(latestConversation.id);
+          return;
+        }
+
+        setConversationId(latestConversation.id);
+        setMessages(
+          messages.map((message: any) => ({
+            role: message.role === "assistant" ? "assistant" : "user",
+            content: message.content ?? "",
+            timestamp: new Date(message.timestamp || Date.now()),
+          }))
+        );
+      } catch (error) {
+        // Only throw if it's not a 401 retry scenario
+        if (
+          retryCount === 0 &&
+          error instanceof Error &&
+          error.message.includes("401")
+        ) {
+          // Will be caught by outer try-catch and retried
+          throw error;
+        }
+        // After retry or non-401 error, show error message
+        console.error("Failed to load conversation history", error);
+        setError("Unable to load previous messages. Please try again later.");
+        throw error; // Re-throw to be caught by outer handler
+      }
+    };
+
     try {
-      const token = await getToken();
-      if (!token) {
-        throw new Error("Missing authentication token");
-      }
-
-      const response = await fetch(resolveApiUrl("/api/v1/companion/history"), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load history: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const latestConversation = data?.conversations?.[0];
-
-      if (!latestConversation) {
-        setMessages([]);
-        setConversationId(null);
-        return;
-      }
-
-      setConversationId(latestConversation.id);
-      setMessages(
-        (latestConversation.messages ?? []).map((message: any) => ({
-          role: message.role === "assistant" ? "assistant" : "user",
-          content: message.content ?? "",
-          timestamp: new Date(message.timestamp),
-        }))
-      );
-    } catch (historyError) {
-      console.error("Failed to load conversation history", historyError);
-      setError("Unable to load previous messages. Please try again later.");
+      await fetchHistoryWithRetry();
+    } catch (error) {
+      // This should only happen if retry also failed or it's a non-401 error
+      // Error message already set in fetchHistoryWithRetry
+      console.error("Failed to load conversation history after retry", error);
     }
   }, [getToken, isLoaded, isSignedIn]);
 
@@ -114,12 +159,20 @@ export function useChat() {
   }, [loadHistory]);
 
   const streamResponse = useCallback(
-    (convId: string, token: string) => {
+    async (convId: string, token: string) => {
       closeEventSource();
+
+      // Ensure we have a fresh token
+      const freshToken = token || (await getToken());
+      if (!freshToken) {
+        setError("Authentication required. Please sign in again.");
+        setIsLoading(false);
+        return;
+      }
 
       const streamUrl = `${resolveApiUrl(
         `/api/v1/companion/stream/${convId}`
-      )}?token=${encodeURIComponent(token)}`;
+      )}?token=${encodeURIComponent(freshToken)}`;
       const eventSource = new EventSource(streamUrl);
 
       eventSourceRef.current = eventSource;
@@ -165,32 +218,44 @@ export function useChat() {
             if (payload.usage) {
               console.log(
                 `[Companion Chat] ${payload.usage.model}: ${payload.usage.total_tokens} tokens ` +
-                `(${payload.usage.input_tokens} in + ${payload.usage.output_tokens} out) = ` +
-                `$${payload.usage.cost_usd.toFixed(6)}`
+                  `(${payload.usage.input_tokens} in + ${payload.usage.output_tokens} out) = ` +
+                  `$${payload.usage.cost_usd.toFixed(6)}`
               );
             }
             setIsLoading(false);
             closeEventSource();
           } else if (payload.type === "error") {
-            setError(
+            const errorMessage =
               payload.message ??
-                "Something went wrong while streaming the response."
-            );
+              "Something went wrong while streaming the response.";
+            setError(errorMessage);
             setIsLoading(false);
             closeEventSource();
+            // Clear error after 5 seconds to allow retry
+            setTimeout(() => setError(null), 5000);
           }
         } catch (parseError) {
           console.error("Failed to parse streaming event", parseError);
         }
       };
 
-      eventSource.onerror = () => {
-        setError("Connection lost. Please try sending your message again.");
-        setIsLoading(false);
-        closeEventSource();
+      eventSource.onerror = (error) => {
+        // Only log and handle errors if we're actually in a loading state
+        // EventSource fires onerror during normal closure, so we need to check readyState
+        if (eventSource.readyState === EventSource.CLOSED) {
+          // Connection was closed - check if it was an error or normal completion
+          // If we're still loading, it was an error
+          console.error("EventSource connection closed:", error);
+          setError("Connection lost. Please try sending your message again.");
+          setIsLoading(false);
+        } else if (eventSource.readyState === EventSource.CONNECTING) {
+          // Still connecting - might be a network issue
+          console.warn("EventSource connection issue:", error);
+        }
+        // Don't close here - let the complete/error handlers manage cleanup
       };
     },
-    [closeEventSource]
+    [closeEventSource, getToken]
   );
 
   const sendMessage = useCallback(
@@ -242,7 +307,14 @@ export function useChat() {
 
         if (nextConversationId) {
           setConversationId(nextConversationId);
-          streamResponse(nextConversationId, token);
+          // Ensure we have a fresh token before streaming
+          const freshToken = await getToken();
+          if (!freshToken) {
+            throw new Error(
+              "Authentication token expired. Please refresh the page."
+            );
+          }
+          await streamResponse(nextConversationId, freshToken);
         } else {
           throw new Error("Missing conversation identifier in response");
         }

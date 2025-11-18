@@ -203,3 +203,128 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_current_user_from_token_dependency(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    """
+    Dependency for EventSource authentication.
+    Extracts token from query parameter (EventSource can't set headers).
+    """
+    token = request.query_params.get("token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token in query parameter",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return await get_current_user_from_token(token, db)
+
+
+async def get_current_user_from_token(
+    token: str,
+    db: AsyncSession,
+) -> User:
+    """
+    Validate Clerk session token from query parameter (for EventSource compatibility).
+    
+    EventSource cannot set custom headers, so this allows authentication via query parameter.
+    This is a security consideration - tokens in URLs are logged, but necessary for SSE.
+    
+    Args:
+        token: JWT token from query parameter
+        db: Database session
+        
+    Returns:
+        User: Authenticated user from database
+        
+    Raises:
+        HTTPException: 401 if token invalid or user not found
+    """
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Verify token - same logic as get_current_user
+    try:
+        is_test_env = os.getenv("ENVIRONMENT") in ["test", "testing"]
+        
+        if is_test_env:
+            logger.debug("Test environment detected - using simplified token validation")
+            payload = jwt.decode(
+                token,
+                options={
+                    "verify_signature": False,
+                    "verify_exp": True,
+                },
+            )
+        else:
+            # PRODUCTION MODE: Full JWKS verification
+            jwks_client = get_clerk_jwks_client()
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            
+            payload = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["RS256"],
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iat": True,
+                    "verify_nbf": True,
+                },
+            )
+            logger.debug("Production JWT verification successful")
+        
+        # Extract user ID from verified token
+        clerk_user_id = payload.get("sub")
+        
+        if not clerk_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: missing user ID",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        logger.debug(f"Successfully verified JWT for user: {clerk_user_id[:8]}...")
+        
+    except HTTPException:
+        raise
+    except jwt.ExpiredSignatureError:
+        logger.warning("JWT token expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid JWT token: {type(e).__name__}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during JWT verification: {type(e).__name__}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Find user in database
+    result = await db.execute(select(User).where(User.clerk_user_id == clerk_user_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found in database"
+        )
+    
+    return user
