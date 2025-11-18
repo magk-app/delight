@@ -26,6 +26,7 @@ from enum import Enum
 from typing import Dict, Optional
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user_preferences import AgentPreferences, ModelPreference, ReasoningDepth
@@ -156,7 +157,7 @@ class ModelRouter:
             AgentPreferences or None (will use system defaults)
         """
         result = await db.execute(
-            db.query(AgentPreferences).filter(AgentPreferences.user_id == user_id)
+            select(AgentPreferences).where(AgentPreferences.user_id == user_id)
         )
         return result.scalar_one_or_none()
 

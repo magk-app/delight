@@ -18,6 +18,7 @@ Cron Schedule:
 import logging
 from datetime import datetime, timezone
 from typing import Dict
+from urllib.parse import urlparse
 
 from arq import cron
 from arq.connections import RedisSettings
@@ -174,6 +175,25 @@ async def on_shutdown(ctx: Dict) -> None:
         logger.info(f"Memory pruner worker shutting down (uptime: {uptime})")
 
 
+def parse_redis_url(url: str) -> tuple:
+    """
+    Parse Redis URL into host and port
+
+    Args:
+        url: Redis URL (e.g., redis://localhost:6379, redis://user:pass@host:port/db)
+
+    Returns:
+        (host, port) tuple
+    """
+    if not url:
+        return ("localhost", 6379)
+
+    parsed = urlparse(url)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or 6379
+    return (host, port)
+
+
 # ARQ worker configuration
 class WorkerSettings:
     """
@@ -184,10 +204,8 @@ class WorkerSettings:
     """
 
     # Redis connection
-    redis_settings = RedisSettings(
-        host=settings.REDIS_URL.split("://")[-1].split(":")[0] if settings.REDIS_URL else "localhost",
-        port=int(settings.REDIS_URL.split(":")[-1]) if settings.REDIS_URL and ":" in settings.REDIS_URL.split("://")[-1] else 6379,
-    )
+    redis_host, redis_port = parse_redis_url(settings.REDIS_URL) if settings.REDIS_URL else ("localhost", 6379)
+    redis_settings = RedisSettings(host=redis_host, port=redis_port)
 
     # Job functions
     functions = [prune_old_task_memories, prune_user_task_memories]
