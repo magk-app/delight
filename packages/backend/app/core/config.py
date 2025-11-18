@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[str] = None
     CORS_ORIGINS: Optional[str] = "http://localhost:3000,http://127.0.0.1:3000"
 
+    # Memory Service Configuration (Story 2.2)
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    EMBEDDING_DIMENSIONS: int = 1536
+    MEMORY_SIMILARITY_THRESHOLD: float = 0.7
+    MEMORY_PRUNE_RETENTION_DAYS: int = 30
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

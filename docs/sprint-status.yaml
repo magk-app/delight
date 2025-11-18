@@ -65,7 +65,7 @@ development_status:
   # Epic 2: Companion & Memory System
   epic-2: contexted # ✅ Tech spec generated (tech-spec-epic-2.md) - 2025-11-11
   2-1-set-up-postgresql-pgvector-and-memory-schema: done # ✅ COMPLETED 2025-11-12: All tests passed, migration 004 applied, production-ready (9.5/10 quality)
-  2-2-implement-memory-service-with-3-tier-architecture: drafted # ✅ Comprehensive story created 2025-11-12
+  2-2-implement-memory-service-with-3-tier-architecture: in-progress # 🚀 Implementation started 2025-11-18
   2-3-build-eliza-agent-with-langgraph: backlog # Uses GPT-4o-mini
   2-4-create-companion-chat-api-with-sse-streaming: backlog
   2-5-companion-chat-ui-with-essential-memory: ready-for-dev # Story draft updated + context generated 2025-11-12

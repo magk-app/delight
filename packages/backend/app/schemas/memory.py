@@ -203,30 +203,66 @@ class MemoryQuery(BaseModel):
 
 class MemorySimilarityQuery(BaseModel):
     """
-    Schema for semantic similarity search.
+    Schema for semantic similarity search with hybrid scoring.
 
-    Used in Story 2.2 for vector-based memory retrieval.
+    Used in Story 2.2 for vector-based memory retrieval with:
+    - Semantic similarity (vector cosine distance)
+    - Time decay (recency boost)
+    - Access frequency (importance signal)
     """
 
-    query: str = Field(
+    query_text: str = Field(
         ...,
         min_length=1,
-        max_length=1000,
+        max_length=5000,
         description="Natural language query to find similar memories",
     )
-    memory_type: Optional[MemoryType] = Field(
+    memory_types: Optional[List[MemoryType]] = Field(
         None,
-        description="Filter by memory tier (optional)",
+        description="Filter by memory tiers (defaults to all types if not specified)",
     )
     limit: int = Field(
-        default=5,
+        default=10,
         ge=1,
-        le=50,
+        le=100,
         description="Maximum number of similar memories to return",
     )
-    threshold: Optional[float] = Field(
-        None,
+    similarity_threshold: float = Field(
+        default=0.7,
         ge=0.0,
-        le=2.0,
-        description="Maximum distance threshold (0=identical, 2=opposite)",
+        le=1.0,
+        description="Minimum similarity score (0.0-1.0, higher = stricter filtering)",
+    )
+
+
+class MemoryWithScore(MemoryResponse):
+    """
+    Extended response schema for hybrid search results.
+
+    Includes scoring breakdown for transparency and debugging:
+    - final_score: Combined score (similarity * time_boost * frequency_boost)
+    - similarity_score: Base semantic similarity (0-1, 1=identical)
+    - time_boost: Recency multiplier (>= 1.0)
+    - frequency_boost: Access frequency multiplier (>= 1.0)
+    """
+
+    final_score: float = Field(
+        ...,
+        description="Final hybrid score (similarity * time_boost * frequency_boost)",
+    )
+    similarity_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Base semantic similarity score (0=different, 1=identical)",
+    )
+    time_boost: float = Field(
+        ...,
+        ge=1.0,
+        description="Time decay boost (recent memories prioritized)",
+    )
+    frequency_boost: float = Field(
+        ...,
+        ge=1.0,
+        description="Access frequency boost (frequently accessed memories prioritized)",
     )

@@ -63,6 +63,7 @@ from main import app as fastapi_app  # noqa: E402
 # Import all models so they're registered with Base.metadata
 # This is required for create_all() to work
 from app.models.user import User, UserPreferences  # noqa: F401, E402
+from app.models.memory import Memory, MemoryCollection  # noqa: F401, E402
 
 
 # ---------------------------------------------------------------------------
