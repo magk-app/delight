@@ -3,23 +3,19 @@
  * Wraps all authenticated pages (/dashboard, /missions, /memory, etc.)
  */
 
-import { UserButton } from '@clerk/nextjs';
-import Link from 'next/link';
-import { AppNav } from '@/components/app/AppNav';
+import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
+import { AppNav } from "@/components/app/AppNav";
 
 // Force dynamic rendering for Clerk
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="container relative flex h-16 items-center justify-between px-4">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-2">
             <div className="text-2xl">✨</div>
@@ -37,9 +33,7 @@ export default function AppLayout({
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
+      <main className="container mx-auto px-4 py-8">{children}</main>
     </div>
   );
 }
