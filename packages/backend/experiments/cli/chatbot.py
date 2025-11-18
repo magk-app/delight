@@ -1,10 +1,11 @@
-"""Conversational AI Chatbot with Memory Integration.
+"""Conversational AI Chatbot with PostgreSQL Memory Integration.
 
 This chatbot:
-- Retrieves relevant memories when you ask questions
-- Uses memories to provide personalized responses
+- Retrieves relevant memories from PostgreSQL when you chat
+- Uses memories to provide personalized responses via OpenAI
 - Creates new memories from your messages
 - Shows what memories it's using in real-time
+- Stores everything in the database with pgvector semantic search
 
 Run with:
     poetry run python experiments/cli/chatbot.py
@@ -12,8 +13,8 @@ Run with:
 
 import asyncio
 import uuid
-from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
 
 from openai import AsyncOpenAI
 from rich.console import Console
@@ -21,28 +22,28 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 
-from experiments.database.json_storage import JSONStorage
-from experiments.memory.fact_extractor import FactExtractor
-from experiments.memory.categorizer import DynamicCategorizer
-from experiments.memory.embedding_service import EmbeddingService
+from app.db.session import AsyncSessionLocal
+from app.models.memory import MemoryType
 from experiments.config import get_config
+from experiments.memory.memory_service import MemoryService
+from experiments.memory.types import SearchResult
 
 
 console = Console()
 
 
 class MemoryChatbot:
-    """Conversational AI that uses memories to respond.
+    """Conversational AI that uses PostgreSQL memories to respond.
 
     This chatbot:
-    1. Searches your memories for relevant context
-    2. Uses that context to provide personalized responses
-    3. Extracts facts from your messages
-    4. Creates new memories
+    1. Searches PostgreSQL for relevant memories using semantic search
+    2. Uses that context to provide personalized responses via GPT-4o-mini
+    3. Extracts facts from your messages using LLM
+    4. Creates new memories in PostgreSQL with embeddings
     5. Shows everything happening in real-time
     """
 
-    def __init__(self, user_id: Optional[uuid.UUID] = None):
+    def __init__(self, user_id: Optional[UUID] = None):
         """Initialize chatbot.
 
         Args:
@@ -53,11 +54,8 @@ class MemoryChatbot:
         self.config = get_config()
 
         # Initialize components
-        self.console.print("\n[bold cyan]🔧 Initializing AI chatbot...[/bold cyan]")
-        self.storage = JSONStorage()
-        self.fact_extractor = FactExtractor()
-        self.categorizer = DynamicCategorizer()
-        self.embedding_service = EmbeddingService()
+        self.console.print("\n[bold cyan]🔧 Initializing AI chatbot with PostgreSQL...[/bold cyan]")
+        self.memory_service = MemoryService()
         self.openai = AsyncOpenAI(api_key=self.config.openai_api_key)
 
         # Conversation history for context
@@ -71,27 +69,28 @@ class MemoryChatbot:
     def show_header(self):
         """Display welcome header."""
         header = Panel(
-            """[bold cyan]🤖 AI Chatbot with Memory[/bold cyan]
+            """[bold cyan]🤖 AI Chatbot with PostgreSQL Memory[/bold cyan]
 
-[yellow]I'm an AI assistant with access to your personal memories.[/yellow]
+[yellow]I'm an AI assistant with access to your personal memories stored in PostgreSQL.[/yellow]
 
 [green]What I can do:[/green]
   💬 Have natural conversations with you
-  🧠 Remember facts about you
-  🔍 Search my memories to answer your questions
+  🧠 Remember facts about you (stored in PostgreSQL)
+  🔍 Search my memories using semantic search (pgvector)
   📝 Create new memories from our conversation
   📊 Show you which memories I'm using
 
 [yellow]Commands:[/yellow]
   💬 Just chat naturally!
-  🔍 /search <query> - Search memories
-  💾 /memories - View all memories
+  🔍 /search <query> - Search memories semantically
+  💾 /memories - View all your memories
   📊 /stats - Show statistics
   🗑️  /clear - Clear conversation history
   ❓ /help - Show this help
   👋 /exit - Exit
 
 [dim]I'll show you which memories I retrieve and create in real-time![/dim]
+[dim]All memories are stored in PostgreSQL with vector embeddings for semantic search.[/dim]
 """,
             title="Welcome to Memory Chatbot",
             border_style="cyan",
@@ -99,42 +98,46 @@ class MemoryChatbot:
         )
         self.console.print(header)
         self.console.print(f"\n[dim]User ID: {self.user_id}[/dim]")
-        self.console.print(f"[dim]Clean memories: {self.storage.storage_path.parent / 'memories_clean.json'}[/dim]\n")
+        self.console.print(f"[dim]Database: PostgreSQL with pgvector[/dim]\n")
 
-    async def retrieve_relevant_memories(self, message: str, limit: int = 5) -> List:
-        """Retrieve memories relevant to the message.
+    async def retrieve_relevant_memories(self, message: str, limit: int = 5) -> List[SearchResult]:
+        """Retrieve memories relevant to the message from PostgreSQL.
 
         Args:
             message: User message
             limit: Maximum memories to retrieve
 
         Returns:
-            List of (memory, score) tuples
+            List of SearchResult objects
         """
-        # Generate embedding for message
-        message_embedding = await self.embedding_service.embed_text(message)
-
-        # Search for relevant memories
-        results = await self.storage.search_semantic(
-            self.user_id,
-            message_embedding,
-            limit=limit,
-            threshold=0.5  # Lower threshold to get more context
-        )
-
-        self.memories_retrieved += len(results)
-        return results
+        async with AsyncSessionLocal() as db:
+            try:
+                # Search using memory service with auto-routing
+                results = await self.memory_service.search_memories(
+                    user_id=self.user_id,
+                    query=message,
+                    db=db,
+                    auto_route=True,  # Automatically selects best search strategy
+                    limit=limit,
+                    memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]  # Include personal and project memories
+                )
+                self.memories_retrieved += len(results)
+                await db.commit()
+                return results
+            except Exception:
+                await db.rollback()
+                raise
 
     async def generate_response(
         self,
         message: str,
-        relevant_memories: List
+        relevant_memories: List[SearchResult]
     ) -> str:
         """Generate AI response using retrieved memories.
 
         Args:
             message: User message
-            relevant_memories: List of (memory, score) tuples
+            relevant_memories: List of SearchResult objects
 
         Returns:
             AI response
@@ -143,15 +146,16 @@ class MemoryChatbot:
         memory_context = ""
         if relevant_memories:
             memory_context = "\n\nRelevant memories about the user:\n"
-            for memory, score in relevant_memories:
-                memory_context += f"- {memory.content}\n"
+            for result in relevant_memories:
+                memory_context += f"- {result.content} (relevance: {result.score:.2f})\n"
 
         # Build system prompt
-        system_prompt = f"""You are a helpful AI assistant with access to the user's personal memories.
+        system_prompt = f"""You are a helpful AI assistant with access to the user's personal memories stored in PostgreSQL.
 
 Use the provided memories to give personalized, contextual responses.
 Be conversational and natural.
 Reference specific memories when relevant.
+If no memories are provided, respond naturally without making assumptions.
 {memory_context}"""
 
         # Add to conversation history
@@ -181,51 +185,34 @@ Reference specific memories when relevant.
 
         return assistant_message
 
-    async def create_memories_from_message(self, message: str):
-        """Extract facts and create memories from message.
+    async def create_memories_from_message(self, message: str) -> List:
+        """Extract facts and create memories from message in PostgreSQL.
 
         Args:
             message: User message
+
+        Returns:
+            List of created Memory objects
         """
-        # Extract facts
-        extraction_result = await self.fact_extractor.extract_facts(message)
-
-        if not extraction_result.facts:
-            return []
-
-        created_memories = []
-
-        for fact in extraction_result.facts:
-            # Categorize
-            cat_result = await self.categorizer.categorize(fact.content)
-
-            # Generate embedding
-            embedding = await self.embedding_service.embed_text(fact.content)
-
-            # Create memory
-            memory = await self.storage.create_memory(
-                user_id=self.user_id,
-                content=fact.content,
-                memory_type="personal",
-                embedding=embedding,
-                metadata={
-                    "fact_type": fact.fact_type.value,
-                    "confidence": fact.confidence,
-                    "categories": cat_result.categories,
-                    "category_hierarchy": (
-                        cat_result.hierarchy.to_path()
-                        if cat_result.hierarchy
-                        else None
-                    ),
-                    "source_message": message,
-                    "created_at": datetime.now().isoformat()
-                }
-            )
-
-            created_memories.append((fact, memory))
-            self.memories_created += 1
-
-        return created_memories
+        async with AsyncSessionLocal() as db:
+            try:
+                # Use memory service to create memories with fact extraction
+                memories = await self.memory_service.create_memory_from_message(
+                    user_id=self.user_id,
+                    message=message,
+                    memory_type=MemoryType.PERSONAL,
+                    db=db,
+                    extract_facts=True,  # Extract discrete facts
+                    auto_categorize=True,  # Auto-categorize each fact
+                    generate_embeddings=True,  # Generate embeddings for search
+                    link_facts=True  # Link related facts in graph
+                )
+                self.memories_created += len(memories)
+                await db.commit()
+                return memories
+            except Exception:
+                await db.rollback()
+                raise
 
     async def chat(self, message: str):
         """Process message and respond.
@@ -252,12 +239,14 @@ Reference specific memories when relevant.
                 header_style="bold magenta"
             )
             memory_table.add_column("Score", style="green", width=6)
+            memory_table.add_column("Type", style="cyan", width=10)
             memory_table.add_column("Memory", style="white")
 
-            for memory, score in relevant_memories:
+            for result in relevant_memories:
                 memory_table.add_row(
-                    f"{score:.2f}",
-                    memory.content[:70] + ("..." if len(memory.content) > 70 else "")
+                    f"{result.score:.2f}",
+                    result.memory_type.upper(),
+                    result.content[:60] + ("..." if len(result.content) > 60 else "")
                 )
 
             self.console.print(memory_table)
@@ -289,95 +278,109 @@ Reference specific memories when relevant.
                 show_header=True,
                 header_style="bold cyan"
             )
-            creation_table.add_column("Fact", style="white", width=50)
+            creation_table.add_column("Content", style="white", width=50)
             creation_table.add_column("Categories", style="magenta")
 
-            for fact, memory in created_memories:
-                categories = memory.metadata.get("categories", [])
-                categories_display = " → ".join(categories[:3])
+            for memory in created_memories:
+                categories = memory.extra_data.get("categories", []) if memory.extra_data else []
+                categories_display = " → ".join(categories[:3]) if categories else "uncategorized"
 
                 creation_table.add_row(
-                    fact.content,
+                    memory.content[:50] + ("..." if len(memory.content) > 50 else ""),
                     categories_display
                 )
 
             self.console.print(creation_table)
-            self.console.print(f"\n[green]✓ Created {len(created_memories)} new memories[/green]")
+            self.console.print(f"\n[green]✓ Created {len(created_memories)} new memories in PostgreSQL[/green]")
         else:
             self.console.print("[dim]No new facts to memorize[/dim]")
 
     async def search_memories(self, query: str):
-        """Search and display memories.
+        """Search and display memories from PostgreSQL.
 
         Args:
             query: Search query
         """
         self.console.print(f"\n[cyan]🔍 Searching: \"{query}\"[/cyan]\n")
 
-        query_embedding = await self.embedding_service.embed_text(query)
-        results = await self.storage.search_semantic(
-            self.user_id,
-            query_embedding,
-            limit=10,
-            threshold=0.4
-        )
-
-        if results:
-            results_table = Table(title="Search Results", box=box.ROUNDED)
-            results_table.add_column("Score", style="green", width=8)
-            results_table.add_column("Content", style="white")
-            results_table.add_column("Type", style="magenta", width=12)
-
-            for memory, score in results:
-                fact_type = memory.metadata.get("fact_type", "unknown")
-                results_table.add_row(
-                    f"{score:.3f}",
-                    memory.content,
-                    fact_type.upper()
+        async with AsyncSessionLocal() as db:
+            try:
+                results = await self.memory_service.search_memories(
+                    user_id=self.user_id,
+                    query=query,
+                    db=db,
+                    auto_route=True,
+                    limit=10,
+                    memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]
                 )
 
-            self.console.print(results_table)
-        else:
-            self.console.print("[yellow]No results found[/yellow]")
+                if results:
+                    results_table = Table(title="Search Results", box=box.ROUNDED)
+                    results_table.add_column("Score", style="green", width=8)
+                    results_table.add_column("Type", style="cyan", width=10)
+                    results_table.add_column("Content", style="white")
 
-    def show_memories(self):
-        """Show all user memories."""
-        memories = list(self.storage.memories.values())
-        user_memories = [m for m in memories if m.user_id == self.user_id]
-        user_memories.sort(key=lambda m: m.created_at, reverse=True)
+                    for result in results:
+                        results_table.add_row(
+                            f"{result.score:.3f}",
+                            result.memory_type.upper(),
+                            result.content
+                        )
 
-        if not user_memories:
-            self.console.print("\n[dim]No memories yet[/dim]")
-            return
+                    self.console.print(results_table)
+                else:
+                    self.console.print("[yellow]No results found[/yellow]")
+                await db.commit()
+            except Exception:
+                await db.rollback()
+                raise
 
-        self.console.print(f"\n[cyan]💾 Your Memories ({len(user_memories)} total)[/cyan]\n")
+    async def show_memories(self):
+        """Show all user memories from PostgreSQL."""
+        async with AsyncSessionLocal() as db:
+            try:
+                # Search for all memories (broad query)
+                results = await self.memory_service.search_memories(
+                    user_id=self.user_id,
+                    query="all memories",  # Use a broad query instead of empty
+                    db=db,
+                    auto_route=True,
+                    limit=50,
+                    memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT, MemoryType.TASK]
+                )
 
-        memory_table = Table(title="All Memories", box=box.ROUNDED)
-        memory_table.add_column("Time", style="dim", width=19)
-        memory_table.add_column("Content", style="white", width=45)
-        memory_table.add_column("Type", style="magenta", width=12)
+                if not results:
+                    self.console.print("\n[dim]No memories yet. Start chatting to create some![/dim]")
+                    return
 
-        for memory in user_memories[:20]:  # Show last 20
-            time_str = memory.created_at.strftime("%Y-%m-%d %H:%M:%S")
-            fact_type = memory.metadata.get("fact_type", "unknown")
+                self.console.print(f"\n[cyan]💾 Your Memories ({len(results)} shown)[/cyan]\n")
 
-            memory_table.add_row(
-                time_str,
-                memory.content,
-                fact_type.upper()
-            )
+                memory_table = Table(title="Recent Memories", box=box.ROUNDED)
+                memory_table.add_column("Type", style="cyan", width=10)
+                memory_table.add_column("Content", style="white", width=50)
+                memory_table.add_column("Score", style="green", width=8)
 
-        self.console.print(memory_table)
+                for result in results[:20]:  # Show last 20
+                    memory_table.add_row(
+                        result.memory_type.upper(),
+                        result.content[:50] + ("..." if len(result.content) > 50 else ""),
+                        f"{result.score:.2f}" if result.score else "N/A"
+                    )
 
-        if len(user_memories) > 20:
-            self.console.print(f"\n[dim]... and {len(user_memories) - 20} more[/dim]")
+                self.console.print(memory_table)
 
-        # Show clean file location
-        clean_path = self.storage.storage_path.parent / "memories_clean.json"
-        self.console.print(f"\n[dim]💡 View clean version: {clean_path}[/dim]")
+                if len(results) > 20:
+                    self.console.print(f"\n[dim]... and {len(results) - 20} more[/dim]")
+                await db.commit()
+            except Exception:
+                await db.rollback()
+                raise
 
     def show_statistics(self):
         """Show usage statistics."""
+        service_stats = self.memory_service.get_statistics()
+        embedding_stats = service_stats.get("embedding_service", {})
+        
         stats_panel = Panel(
             f"""[bold cyan]📊 Session Statistics[/bold cyan]
 
@@ -386,18 +389,19 @@ Reference specific memories when relevant.
   Memories Created:    {self.memories_created}
   Memories Retrieved:  {self.memories_retrieved}
 
-[yellow]Storage:[/yellow]
-  Total Memories:      {len(self.storage.memories)}
-  Your Memories:       {len([m for m in self.storage.memories.values() if m.user_id == self.user_id])}
+[yellow]Memory Service:[/yellow]
+  Total Memories Created:  {service_stats.get('total_memories_created', 0)}
+  Facts Extracted:         {service_stats.get('total_facts_extracted', 0)}
+  Searches Performed:      {service_stats.get('total_searches', 0)}
 
 [yellow]API Usage:[/yellow]
-  Embedding Requests:  {self.embedding_service.total_requests}
-  Total Tokens:        {self.embedding_service.total_tokens:,}
-  Cost (USD):          ${self.embedding_service.total_cost_usd:.4f}
+  Embedding Requests:  {embedding_stats.get('total_requests', 0):,}
+  Total Tokens:        {embedding_stats.get('total_tokens', 0):,}
+  Cost (USD):          ${embedding_stats.get('total_cost_usd', 0):.4f}
 
-[yellow]Files:[/yellow]
-  Full: {self.storage.storage_path.name}
-  Clean: memories_clean.json (no embeddings)
+[yellow]Storage:[/yellow]
+  Database: PostgreSQL with pgvector
+  User ID: {self.user_id}
 """,
             title="Statistics",
             border_style="cyan"
@@ -434,7 +438,7 @@ Reference specific memories when relevant.
                         self.show_statistics()
 
                     elif command == "memories":
-                        self.show_memories()
+                        await self.show_memories()
 
                     elif command == "clear":
                         self.conversation_history = []
