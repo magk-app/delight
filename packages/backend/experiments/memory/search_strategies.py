@@ -39,28 +39,31 @@ class BaseSearchStrategy:
         self,
         memory: Memory,
         score: float,
-        collection_name: Optional[str] = None
+        memory_type_override: Optional[str] = None
     ) -> SearchResult:
         """Convert Memory model to SearchResult.
 
         Args:
             memory: Memory ORM object
             score: Relevance score
-            collection_name: Optional collection name for memory_type
+            memory_type_override: Optional override for memory_type (uses memory.memory_type.value by default)
 
         Returns:
             SearchResult object
         """
-        categories = memory.metadata.get("categories", [])
+        # Get categories from extra_data (which maps to metadata column)
+        categories = []
+        if memory.extra_data:
+            categories = memory.extra_data.get("categories", [])
 
         return SearchResult(
             memory_id=memory.id,
             content=memory.content,
             score=score,
-            memory_type=collection_name or "unknown",
+            memory_type=memory_type_override or memory.memory_type.value,
             categories=categories,
             created_at=memory.created_at,
-            metadata=memory.metadata
+            metadata=memory.extra_data or {}
         )
 
 
@@ -117,17 +120,15 @@ class SemanticSearch(BaseSearchStrategy):
         stmt = (
             select(
                 Memory,
-                MemoryCollection.name,
                 (1 - Memory.embedding.cosine_distance(query_embedding)).label("similarity")
             )
-            .join(MemoryCollection, Memory.collection_id == MemoryCollection.id)
-            .where(MemoryCollection.user_id == user_id)
+            .where(Memory.user_id == user_id)
             .where(Memory.embedding.isnot(None))  # Only memories with embeddings
         )
 
         # Filter by memory types if specified
         if memory_types:
-            stmt = stmt.where(MemoryCollection.memory_type.in_(memory_types))
+            stmt = stmt.where(Memory.memory_type.in_(memory_types))
 
         # Order by similarity and limit
         stmt = stmt.order_by(text("similarity DESC")).limit(limit * 2)  # Get extra for filtering
@@ -138,10 +139,10 @@ class SemanticSearch(BaseSearchStrategy):
 
         # Convert to SearchResults and filter by threshold
         results = []
-        for memory, collection_name, similarity in rows:
+        for memory, similarity in rows:
             if similarity >= threshold:
                 results.append(
-                    self._memory_to_search_result(memory, similarity, collection_name)
+                    self._memory_to_search_result(memory, similarity)
                 )
 
         # Return top results
@@ -195,14 +196,12 @@ class KeywordSearch(BaseSearchStrategy):
         stmt = (
             select(
                 Memory,
-                MemoryCollection.name,
                 func.ts_rank_cd(
                     func.to_tsvector('english', Memory.content),
                     func.to_tsquery('english', search_terms)
                 ).label("rank")
             )
-            .join(MemoryCollection, Memory.collection_id == MemoryCollection.id)
-            .where(MemoryCollection.user_id == user_id)
+            .where(Memory.user_id == user_id)
             .where(
                 func.to_tsvector('english', Memory.content).op('@@')(
                     func.to_tsquery('english', search_terms)
@@ -212,7 +211,7 @@ class KeywordSearch(BaseSearchStrategy):
 
         # Filter by memory types if specified
         if memory_types:
-            stmt = stmt.where(MemoryCollection.memory_type.in_(memory_types))
+            stmt = stmt.where(Memory.memory_type.in_(memory_types))
 
         # Order by rank and limit
         stmt = stmt.order_by(text("rank DESC")).limit(limit)
@@ -223,13 +222,13 @@ class KeywordSearch(BaseSearchStrategy):
 
         # Convert to SearchResults
         # Normalize rank scores to 0-1 range
-        max_rank = max([row[2] for row in rows], default=1.0)
+        max_rank = max([row[1] for row in rows], default=1.0)
 
         results = []
-        for memory, collection_name, rank in rows:
+        for memory, rank in rows:
             normalized_score = rank / max_rank if max_rank > 0 else 0.5
             results.append(
-                self._memory_to_search_result(memory, normalized_score, collection_name)
+                self._memory_to_search_result(memory, normalized_score)
             )
 
         return results
@@ -279,38 +278,47 @@ class CategoricalSearch(BaseSearchStrategy):
         # metadata->'categories' ?| array['cat1', 'cat2'] (contains any)
         # metadata->'categories' ?& array['cat1', 'cat2'] (contains all)
 
-        operator = "?&" if match_all else "?|"  # Contains all vs contains any
-
+        # Build JSONB filter - check if categories array contains search categories
+        # Use PostgreSQL JSONB ?| (contains any) or ?& (contains all) operators
         stmt = (
-            select(Memory, MemoryCollection.name)
-            .join(MemoryCollection, Memory.collection_id == MemoryCollection.id)
-            .where(MemoryCollection.user_id == user_id)
-            .where(
-                text(f"memory.metadata->'categories' {operator} :categories")
-            ).params(categories=categories)
+            select(Memory)
+            .where(Memory.user_id == user_id)
         )
+        
+        # Add category filter using JSONB array operators
+        if categories:
+            # Build condition: metadata->'categories' ?| array['cat1', 'cat2'] (any)
+            # or metadata->'categories' ?& array['cat1', 'cat2'] (all)
+            jsonb_op = "?&" if match_all else "?|"
+            # Create array literal for PostgreSQL (escape single quotes in category names)
+            escaped_categories = [cat.replace("'", "''") for cat in categories]
+            category_array_str = "ARRAY[" + ",".join([f"'{cat}'" for cat in escaped_categories]) + "]"
+            
+            stmt = stmt.where(
+                text(f"memories.metadata->'categories' {jsonb_op} {category_array_str}")
+            )
 
         # Filter by memory types if specified
         if memory_types:
-            stmt = stmt.where(MemoryCollection.memory_type.in_(memory_types))
+            stmt = stmt.where(Memory.memory_type.in_(memory_types))
 
         # Order by recency (most recent first)
         stmt = stmt.order_by(Memory.created_at.desc()).limit(limit)
 
         # Execute query
         result = await db.execute(stmt)
-        rows = result.all()
+        memories = result.scalars().all()
 
         # Convert to SearchResults
         # Score based on how many categories match
         results = []
-        for memory, collection_name in rows:
-            memory_categories = memory.metadata.get("categories", [])
+        for memory in memories:
+            memory_categories = memory.extra_data.get("categories", []) if memory.extra_data else []
             matches = len(set(categories) & set(memory_categories))
             score = matches / len(categories) if categories else 0.5
 
             results.append(
-                self._memory_to_search_result(memory, score, collection_name)
+                self._memory_to_search_result(memory, score)
             )
 
         return results
@@ -375,9 +383,8 @@ class TemporalSearch(BaseSearchStrategy):
 
         # Build query
         stmt = (
-            select(Memory, MemoryCollection.name)
-            .join(MemoryCollection, Memory.collection_id == MemoryCollection.id)
-            .where(MemoryCollection.user_id == user_id)
+            select(Memory)
+            .where(Memory.user_id == user_id)
         )
 
         # Add time filters
@@ -388,25 +395,25 @@ class TemporalSearch(BaseSearchStrategy):
 
         # Filter by memory types if specified
         if memory_types:
-            stmt = stmt.where(MemoryCollection.memory_type.in_(memory_types))
+            stmt = stmt.where(Memory.memory_type.in_(memory_types))
 
         # Order by recency
         stmt = stmt.order_by(Memory.created_at.desc()).limit(limit)
 
         # Execute query
         result = await db.execute(stmt)
-        rows = result.all()
+        memories = result.scalars().all()
 
         # Convert to SearchResults with recency-based scoring
         now = datetime.now()
         results = []
-        for memory, collection_name in rows:
+        for memory in memories:
             # Score based on recency (exponential decay)
             age_hours = (now - memory.created_at).total_seconds() / 3600
             score = 1.0 / (1.0 + age_hours / 24.0)  # Decay over days
 
             results.append(
-                self._memory_to_search_result(memory, score, collection_name)
+                self._memory_to_search_result(memory, score)
             )
 
         return results
@@ -514,8 +521,8 @@ class GraphSearch(BaseSearchStrategy):
             if not current_memory:
                 continue
 
-            # Get relationships from metadata
-            relationships = current_memory.metadata.get("relationships", {})
+            # Get relationships from extra_data (which maps to metadata column)
+            relationships = current_memory.extra_data.get("relationships", {}) if current_memory.extra_data else {}
 
             # Traverse relationships
             for rel_type, target_ids in relationships.items():
@@ -534,25 +541,21 @@ class GraphSearch(BaseSearchStrategy):
                         queue.append((target_id, depth + 1))
 
                         # Fetch target memory
-                        stmt = select(Memory, MemoryCollection.name).join(
-                            MemoryCollection,
-                            Memory.collection_id == MemoryCollection.id
-                        ).where(Memory.id == target_id)
+                        stmt = select(Memory).where(Memory.id == target_id)
                         result = await db.execute(stmt)
-                        row = result.one_or_none()
+                        memory = result.scalar_one_or_none()
 
-                        if row:
-                            memory, collection_name = row
-                            found_memories.append((memory, collection_name, depth + 1))
+                        if memory:
+                            found_memories.append((memory, depth + 1))
 
         # Convert to SearchResults with distance-based scoring
         results = []
-        for memory, collection_name, depth in found_memories[:limit]:
+        for memory, depth in found_memories[:limit]:
             # Score inversely proportional to depth
             score = 1.0 / (depth + 1)
 
             results.append(
-                self._memory_to_search_result(memory, score, collection_name)
+                self._memory_to_search_result(memory, score)
             )
 
         return results

@@ -24,6 +24,8 @@ from rich import box
 
 from app.db.session import AsyncSessionLocal
 from app.models.memory import MemoryType
+from app.models.user import User
+from sqlalchemy import select
 from experiments.config import get_config
 from experiments.memory.memory_service import MemoryService
 from experiments.memory.types import SearchResult
@@ -50,7 +52,7 @@ class MemoryChatbot:
             user_id: User ID (creates new if not provided)
         """
         self.console = console
-        self.user_id = user_id or uuid.uuid4()
+        self.user_id = user_id
         self.config = get_config()
 
         # Initialize components
@@ -65,6 +67,50 @@ class MemoryChatbot:
         self.messages_exchanged = 0
         self.memories_created = 0
         self.memories_retrieved = 0
+
+    async def _ensure_user_exists(self) -> UUID:
+        """Ensure user exists in database, create if needed.
+        
+        Returns:
+            UUID of the user
+        """
+        async with AsyncSessionLocal() as db:
+            try:
+                # Generate user_id if not provided
+                if not self.user_id:
+                    self.user_id = uuid.uuid4()
+                
+                # Check if user exists by ID
+                stmt = select(User).where(User.id == self.user_id)
+                result = await db.execute(stmt)
+                user = result.scalar_one_or_none()
+                
+                if user:
+                    await db.commit()
+                    return self.user_id
+                
+                # User doesn't exist, create it
+                # Use a test clerk_user_id for chatbot users
+                test_clerk_id = f"chatbot_test_{self.user_id}"
+                
+                new_user = User(
+                    id=self.user_id,
+                    clerk_user_id=test_clerk_id,
+                    email=f"chatbot-{self.user_id.hex[:8]}@experiment.local",
+                    display_name="Chatbot Test User"
+                )
+                
+                db.add(new_user)
+                await db.commit()
+                await db.refresh(new_user)
+                
+                self.console.print(f"[dim]✓ Created test user: {self.user_id}[/dim]")
+                return self.user_id
+                
+            except Exception as e:
+                await db.rollback()
+                self.console.print(f"[red]❌ Error ensuring user exists: {e}[/red]")
+                raise
 
     def show_header(self):
         """Display welcome header."""
@@ -411,6 +457,9 @@ If no memories are provided, respond naturally without making assumptions.
 
     async def run(self):
         """Run the conversational chatbot."""
+        # Ensure user exists in database
+        await self._ensure_user_exists()
+        
         self.show_header()
 
         self.console.print("[bold green]🎉 Ready to chat! Ask me anything or tell me about yourself.[/bold green]\n")

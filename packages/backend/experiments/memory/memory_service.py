@@ -160,15 +160,6 @@ class MemoryService:
 
         print(f"\n🔄 Creating memory from message ({len(message)} chars)...")
 
-        # Get or create memory collection
-        collection = await self._get_or_create_collection(
-            user_id=user_id,
-            memory_type=memory_type,
-            project_id=project_id,
-            session_id=session_id,
-            db=db
-        )
-
         memories_created = []
 
         if extract_facts:
@@ -180,11 +171,16 @@ class MemoryService:
                 print("⚠️  No facts extracted, storing message as-is")
                 # Fall back to single memory
                 memory = await self._create_single_memory(
+                    user_id=user_id,
                     content=message,
-                    collection_id=collection.id,
+                    memory_type=memory_type,
                     auto_categorize=auto_categorize,
                     generate_embeddings=generate_embeddings,
-                    db=db
+                    db=db,
+                    metadata={
+                        "project_id": str(project_id) if project_id else None,
+                        "session_id": str(session_id) if session_id else None,
+                    }
                 )
                 memories_created.append(memory)
             else:
@@ -196,17 +192,20 @@ class MemoryService:
                     print(f"  📝 Fact {i+1}/{len(extraction_result.facts)}: {fact.content}")
 
                     memory = await self._create_single_memory(
+                        user_id=user_id,
                         content=fact.content,
-                        collection_id=collection.id,
+                        memory_type=memory_type,
                         auto_categorize=auto_categorize,
                         generate_embeddings=generate_embeddings,
+                        db=db,
                         metadata={
                             "fact_type": fact.fact_type.value,
                             "confidence": fact.confidence,
                             "original_message": message,
-                            "extraction_method": "llm_structured"
-                        },
-                        db=db
+                            "extraction_method": "llm_structured",
+                            "project_id": str(project_id) if project_id else None,
+                            "session_id": str(session_id) if session_id else None,
+                        }
                     )
 
                     memories_created.append(memory)
@@ -219,11 +218,16 @@ class MemoryService:
         else:
             # Store message as single memory
             memory = await self._create_single_memory(
+                user_id=user_id,
                 content=message,
-                collection_id=collection.id,
+                memory_type=memory_type,
                 auto_categorize=auto_categorize,
                 generate_embeddings=generate_embeddings,
-                db=db
+                db=db,
+                metadata={
+                    "project_id": str(project_id) if project_id else None,
+                    "session_id": str(session_id) if session_id else None,
+                }
             )
             memories_created.append(memory)
 
@@ -234,8 +238,9 @@ class MemoryService:
 
     async def _create_single_memory(
         self,
+        user_id: UUID,
         content: str,
-        collection_id: UUID,
+        memory_type: MemoryType,
         auto_categorize: bool,
         generate_embeddings: bool,
         db: AsyncSession,
@@ -244,8 +249,9 @@ class MemoryService:
         """Create a single memory with categorization and embedding.
 
         Args:
+            user_id: User ID
             content: Memory content
-            collection_id: Collection ID
+            memory_type: Memory type (PERSONAL, PROJECT, TASK)
             auto_categorize: Generate categories
             generate_embeddings: Generate embedding
             db: Database session
@@ -269,15 +275,14 @@ class MemoryService:
         if generate_embeddings:
             embedding = await self.embedding_service.embed_text(content)
 
-        # Create memory
+        # Create memory directly (no collection needed)
         memory = Memory(
             id=uuid.uuid4(),
-            collection_id=collection_id,
+            user_id=user_id,
+            memory_type=memory_type,
             content=content,
             embedding=embedding,
-            metadata=metadata,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            extra_data=metadata,  # Use extra_data (maps to metadata column)
         )
 
         db.add(memory)
@@ -359,11 +364,15 @@ class MemoryService:
         """
         # Link all memories to each other as related
         for memory in memories:
-            if "relationships" not in memory.metadata:
-                memory.metadata["relationships"] = {}
+            # Get current extra_data (which maps to metadata column)
+            if memory.extra_data is None:
+                memory.extra_data = {}
+            
+            if "relationships" not in memory.extra_data:
+                memory.extra_data["relationships"] = {}
 
             # Add all other memories as related
-            memory.metadata["relationships"]["related_to"] = [
+            memory.extra_data["relationships"]["related_to"] = [
                 str(m.id) for m in memories if m.id != memory.id
             ]
 
