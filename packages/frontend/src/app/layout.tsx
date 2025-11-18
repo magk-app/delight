@@ -42,10 +42,24 @@ export default function RootLayout({
                     Sign Up
                   </button>
                 </SignUpButton>
+                <a
+                  href="/waitlist"
+                  className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-md hover:bg-accent transition-colors"
+                >
+                  Waitlist
+                </a>
               </div>
             </SignedOut>
             <SignedIn>
-              <UserButton afterSignOutUrl="/" />
+              <div className="flex gap-2 items-center">
+                <a
+                  href="/waitlist"
+                  className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-md hover:bg-accent transition-colors"
+                >
+                  Waitlist
+                </a>
+                <UserButton afterSignOutUrl="/" />
+              </div>
             </SignedIn>
           </header>
           {children}
