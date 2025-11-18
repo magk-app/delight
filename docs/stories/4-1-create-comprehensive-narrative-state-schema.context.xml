@@ -1,0 +1,408 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>1</storyId>
+    <title>Create Comprehensive Narrative State Schema and Scenario Templates</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/4-1-create-comprehensive-narrative-state-schema.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a flexible, comprehensive schema for narrative scenarios and dynamic world state</iWant>
+    <soThat>we can support multiple themes and maintain story consistency across all narrative elements</soThat>
+    <tasks>
+      <taskGroup id="1" ac="1,4">
+        <title>Create Alembic Migration for Scenario Templates Table</title>
+        <subtask id="1.1">Create migration file: alembic revision -m "add_scenario_templates_table"</subtask>
+        <subtask id="1.2">Define scenario_templates table with all columns (id, name, theme, narrative_arc, character_prompts, hidden_quests, time_rules, world_schema, created_at, updated_at)</subtask>
+        <subtask id="1.3">Add index on theme column: CREATE INDEX idx_scenario_theme ON scenario_templates(theme)</subtask>
+        <subtask id="1.4">Add table comment documenting JSONB structure</subtask>
+        <subtask id="1.5">Test migration: alembic upgrade head</subtask>
+        <subtask id="1.6">Test rollback: alembic downgrade -1</subtask>
+      </taskGroup>
+
+      <taskGroup id="2" ac="2,3">
+        <title>Create Alembic Migration for Narrative States Table</title>
+        <subtask id="2.1">Create migration file: alembic revision -m "add_narrative_states_table"</subtask>
+        <subtask id="2.2">Define narrative_states table with all columns</subtask>
+        <subtask id="2.3">Add foreign key constraints to users and scenario_templates</subtask>
+        <subtask id="2.4">Add UNIQUE constraint on (user_id, scenario_id)</subtask>
+        <subtask id="2.5">Add indexes on user_id and scenario_id</subtask>
+        <subtask id="2.6">Add table comments documenting world_state and story_progress JSONB structures</subtask>
+        <subtask id="2.7">Test migration and rollback</subtask>
+      </taskGroup>
+
+      <taskGroup id="3" ac="8">
+        <title>Create SQLAlchemy Models</title>
+        <subtask id="3.1">Create backend/app/models/narrative.py</subtask>
+        <subtask id="3.2">Implement ScenarioTemplate model with all fields, JSONB fields (narrative_arc, character_prompts, hidden_quests, time_rules, world_schema), timestamps with default NOW(), type hints for Python 3.11+</subtask>
+        <subtask id="3.3">Implement NarrativeState model with all fields, JSONB fields (story_progress, world_state), array field (unlocked_quests UUID[]), foreign key relationships, UNIQUE constraint on (user_id, scenario_id)</subtask>
+        <subtask id="3.4">Add helper methods: get_current_chapter_data(), get_character_data(character_name), has_discovered_location(location_key), has_acquired_item(item_id)</subtask>
+        <subtask id="3.5">Add model to __init__.py for Alembic autogenerate</subtask>
+      </taskGroup>
+
+      <taskGroup id="4" ac="5">
+        <title>Create Modern Reality Scenario Seed Data</title>
+        <subtask id="4.1">Create seed script: backend/app/db/seeds/scenario_templates.py</subtask>
+        <subtask id="4.2">Define "The Mirror's Edge" scenario with name, theme, created_at, and narrative_arc with 3 acts: Act 1 "Awakening": 2 chapters, Act 2 "Challenge": 2 chapters, Act 3 "Transformation": 2 chapters, each chapter with title and progression_trigger</subtask>
+        <subtask id="4.3">Define character_prompts for Lyra (Craft mentor), Thorne (Health mentor), Elara (Growth mentor) with personality traits, role, background</subtask>
+        <subtask id="4.4">Define hidden_quests array (3-5 quests): "The Relentless" {streak_days: 20, attribute: "craft"}, "Century Milestone" {missions_completed: 100}, "The Balanced Path" {equal_value_distribution: 14 days}, "Night Owl's Discovery" {missions_after_10pm: 30}, "The Unseen Observer" {reflection_notes_written: 50}</subtask>
+        <subtask id="4.5">Define world_schema with locations (arena, observatory, commons with unlock conditions), persons (Lyra, Thorne, Elara with relationship levels), items (essence, titles, artifacts with properties), event_types (first_meeting, relationship_milestone, zone_unlock)</subtask>
+        <subtask id="4.6">Add seed execution to migration or separate script</subtask>
+      </taskGroup>
+
+      <taskGroup id="5" ac="8">
+        <title>Create Pydantic Schemas for API</title>
+        <subtask id="5.1">Create backend/app/schemas/narrative.py</subtask>
+        <subtask id="5.2">Define ScenarioTemplateResponse schema with id, name, theme, excluding sensitive fields (hidden_quests details), including summary data (act count, chapter count)</subtask>
+        <subtask id="5.3">Define NarrativeStateResponse schema with current_act, current_chapter, days_in_story, world_state (full or filtered), unlocked_quests (IDs only, no spoilers)</subtask>
+        <subtask id="5.4">Define WorldStateResponse schema with locations_discovered list, characters_met list, essence_balance int, active_title str, artifacts list (with details)</subtask>
+      </taskGroup>
+
+      <taskGroup id="6" ac="7">
+        <title>Document JSONB Structures and Consistency Rules</title>
+        <subtask id="6.1">Create backend/app/models/narrative.py docstrings documenting world_state JSONB structure, narrative_arc JSONB structure, hidden_quests JSONB structure</subtask>
+        <subtask id="6.2">Create docs/epic-4/NARRATIVE-STATE-SCHEMA.md with complete world_state schema with examples, consistency rules documentation, example queries for common operations</subtask>
+        <subtask id="6.3">Add inline comments to models explaining consistency rules</subtask>
+        <subtask id="6.4">Create JSON schema files (optional): backend/app/schemas/json/world_state.schema.json, backend/app/schemas/json/narrative_arc.schema.json</subtask>
+      </taskGroup>
+
+      <taskGroup id="7" ac="8">
+        <title>Create Unit Tests for Models</title>
+        <subtask id="7.1">Create backend/tests/models/test_narrative.py</subtask>
+        <subtask id="7.2">Test ScenarioTemplate model: create scenario with valid JSONB, query by theme, validate JSONB structure parsing</subtask>
+        <subtask id="7.3">Test NarrativeState model: create narrative state with initial world_state, update world_state (add location, add event, update relationship), validate UNIQUE constraint on (user_id, scenario_id), test helper methods</subtask>
+        <subtask id="7.4">Test consistency validation (if implemented as model methods): test has_discovered_location(), test has_acquired_item(), test relationship_level progression logic</subtask>
+      </taskGroup>
+
+      <taskGroup id="8" ac="5">
+        <title>Create Integration Tests for Seed Data</title>
+        <subtask id="8.1">Create backend/tests/integration/test_scenario_seed.py</subtask>
+        <subtask id="8.2">Test Modern Reality scenario exists after seed</subtask>
+        <subtask id="8.3">Validate narrative_arc structure: 3 acts with correct titles, chapters with progression triggers</subtask>
+        <subtask id="8.4">Validate hidden_quests structure: at least 3 quests, each quest has id, trigger, title, rewards</subtask>
+        <subtask id="8.5">Validate world_schema completeness: locations defined, characters defined, items defined, event types defined</subtask>
+        <subtask id="8.6">Test querying by theme</subtask>
+      </taskGroup>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>Scenario Templates Table Created with Comprehensive JSONB Structure</title>
+      <given>the database is set up with Alembic</given>
+      <when>I run the migration for scenario templates</when>
+      <then>the scenario_templates table exists with: id UUID PRIMARY KEY, name VARCHAR(100) NOT NULL, theme VARCHAR(50) NOT NULL, narrative_arc JSONB NOT NULL, character_prompts JSONB NOT NULL, hidden_quests JSONB NOT NULL, time_rules JSONB, world_schema JSONB NOT NULL, created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(); AND an index exists on theme column</then>
+      <verification>\d scenario_templates; SELECT * FROM pg_indexes WHERE tablename = 'scenario_templates';</verification>
+    </criterion>
+
+    <criterion id="AC2">
+      <title>Narrative States Table Created with Per-User World State Tracking</title>
+      <given>the database is set up</given>
+      <when>I run the migration for narrative states</when>
+      <then>the narrative_states table exists with: id UUID PRIMARY KEY, user_id UUID REFERENCES users(id) ON DELETE CASCADE, scenario_id UUID REFERENCES scenario_templates(id), current_act INT NOT NULL DEFAULT 1, current_chapter INT NOT NULL DEFAULT 1, unlocked_quests UUID[] DEFAULT '{}', story_progress JSONB NOT NULL DEFAULT '{}', world_state JSONB NOT NULL DEFAULT '{}', created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), UNIQUE constraint on (user_id, scenario_id); AND indexes exist on user_id and scenario_id columns</then>
+      <verification>\d narrative_states; SELECT * FROM pg_indexes WHERE tablename = 'narrative_states';</verification>
+    </criterion>
+
+    <criterion id="AC3">
+      <title>World State JSONB Structure Tracks All Narrative Elements</title>
+      <given>the narrative_states table exists</given>
+      <when>I examine the world_state JSONB schema (from seed data or documentation)</when>
+      <then>the world_state structure includes locations with discovered status, discovered_at timestamp, description, npcs_present array, visit_count; events array with event_id, event_type, occurred_at, location, impact, narrative_beat_id; persons with relationship_level, relationship_label, last_interaction, knows_about array, dialogue_unlocked array, gifted_items array; items with essence, titles array, active_title, artifacts array; world_time with current_act, current_chapter, days_in_story, story_started_at; decisions array with decision_id, chapter, prompt, choice, consequences</then>
+    </criterion>
+
+    <criterion id="AC4">
+      <title>Scenario Template JSONB Structure Defines Complete Narrative Framework</title>
+      <given>the scenario_templates table exists</given>
+      <when>I examine the JSONB schema (from seed data or documentation)</when>
+      <then>the narrative_arc structure includes acts and chapters with number, title, progression_trigger; AND hidden_quests structure with id, trigger object, title, narrative_context, rewards (essence, title, relationship_boost, artifact), time_limit_hours, narrative_significance; AND world_schema defines all possible narrative elements (locations, persons, items, event_types)</then>
+    </criterion>
+
+    <criterion id="AC5">
+      <title>At Least One Complete Scenario Template is Seeded (Modern Reality)</title>
+      <given>the scenario_templates table exists and migrations have run</given>
+      <when>I query scenario templates</when>
+      <then>at least one scenario exists with: Name "The Mirror's Edge" (or similar), Theme "modern", 3 acts defined in narrative_arc, at least 5 chapters across all acts, 3-5 hidden quest templates, Complete world_schema with at least 3 locations (arena, observatory, commons), at least 3 characters (Lyra, Thorne, Elara), item definitions (essence, titles, artifacts), at least 3 event types; AND each chapter has valid progression triggers; AND each hidden quest has valid trigger conditions</then>
+      <verification>SELECT name, theme, jsonb_array_length(narrative_arc->'act_1'->'chapters') as act1_chapters, jsonb_array_length(narrative_arc->'act_2'->'chapters') as act2_chapters, jsonb_array_length(narrative_arc->'act_3'->'chapters') as act3_chapters, jsonb_array_length(hidden_quests) as hidden_quest_count FROM scenario_templates WHERE theme = 'modern';</verification>
+    </criterion>
+
+    <criterion id="AC6">
+      <title>Scenario Template Supports Multiple Themes for Future Expansion</title>
+      <given>the scenario_templates table exists</given>
+      <when>I insert scenario templates with different themes</when>
+      <then>the schema accommodates: theme = 'modern' (Modern Reality), theme = 'medieval' (Medieval Fantasy), theme = 'scifi' (Sci-Fi Odyssey), custom themes with different world_schema structures; AND I can query scenarios by theme efficiently using the index</then>
+      <verification>INSERT INTO scenario_templates (name, theme, narrative_arc, character_prompts, hidden_quests, world_schema) VALUES ('Test Medieval', 'medieval', '{}', '{}', '[]', '{}'); SELECT name FROM scenario_templates WHERE theme = 'medieval';</verification>
+    </criterion>
+
+    <criterion id="AC7">
+      <title>Critical Consistency Rules Documented in Schema/Code</title>
+      <given>the narrative state schema is implemented</given>
+      <when>I review the database models and seed data</when>
+      <then>consistency rules are documented: Cannot reference items not yet acquired, Cannot reference locations not yet discovered, Cannot reference events that haven't occurred, Character knowledge must be consistent (can't know things not yet revealed), Relationship levels must progress logically (can't jump from 1 to 5); AND these rules are enforced in code comments or database constraints where applicable</then>
+    </criterion>
+
+    <criterion id="AC8">
+      <title>SQLAlchemy Models Created for Scenario Templates and Narrative States</title>
+      <given>the migration is complete</given>
+      <when>I review the models</when>
+      <then>SQLAlchemy models exist: ScenarioTemplate in backend/app/models/narrative.py, NarrativeState in backend/app/models/narrative.py; AND models include proper type hints for all fields, JSONB fields mapped correctly, relationships defined (narrative_states → scenario_templates FK), helper methods for common operations (e.g., get_current_chapter_data())</then>
+      <verification>from app.models.narrative import ScenarioTemplate, NarrativeState; from app.db.session import get_db; async with get_db() as db: scenario = await db.get(ScenarioTemplate, scenario_id); assert scenario.narrative_arc is not None; assert scenario.theme in ['modern', 'medieval', 'scifi']</verification>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/tech-spec-epic-4.md" section="Data Models and Contracts - Scenario Template Schema">
+        <title>Epic 4 Technical Specification - Scenario Templates</title>
+        <snippet>Complete schema design for scenario_templates table with JSONB structure for narrative_arc (acts, chapters, progression triggers), character_prompts (personality definitions), hidden_quests (pre-planned surprises with trigger conditions), time_rules (optional zone availability overrides), and world_schema (defines all possible locations, persons, items, events). Includes Modern Reality scenario example "The Mirror's Edge" with 3 acts, 6 chapters, 5 hidden quests.</snippet>
+      </doc>
+
+      <doc path="docs/tech-spec-epic-4.md" section="Data Models and Contracts - Narrative State Schema">
+        <title>Epic 4 Technical Specification - Narrative States</title>
+        <snippet>Complete world_state JSONB structure tracking comprehensive narrative elements: locations (discovered status, NPCs present, visit counts), events (chronological event history with impacts), persons (relationship levels, knowledge, dialogue unlocks), items (essence balance, titles, artifacts with lore), world_time (current act/chapter, days in story), decisions (user choices and consequences). Critical consistency rules documented to prevent inconsistencies.</snippet>
+      </doc>
+
+      <doc path="docs/ARCHITECTURE.md" section="Pattern 1: Living Narrative Engine">
+        <title>Architecture - Living Narrative Engine</title>
+        <snippet>Narrative engine architecture using PostgreSQL JSONB for scenario templates and world state. Flexible schema allows multiple themes (Modern Reality, Medieval Fantasy, Sci-Fi) without migrations. Consistency enforcement through validation layer. Scenario templates define reusable narrative frameworks with 3 acts, character prompts, hidden quests with trigger conditions, and world schema defining all possible narrative elements.</snippet>
+      </doc>
+
+      <doc path="docs/ARCHITECTURE.md" section="ADR-006: JSON vs JSONB for Flexible Schemas">
+        <title>Architecture Decision Record - JSONB Usage</title>
+        <snippet>Decision to use JSONB type for flexible data structures in PostgreSQL. Provides simpler storage model for complex nested structures, adequate performance for narrative configs, supports GIN indexes for queries. Note: Can migrate to more optimized JSONB indexing later if performance becomes an issue. Used for personality_prompt JSONB, hidden_quests JSONB, world_state JSONB.</snippet>
+      </doc>
+
+      <doc path="docs/epics.md" section="Story 4.1: Create Comprehensive Narrative State Schema">
+        <title>Epic and Story Breakdown</title>
+        <snippet>Story requirements: scenario_templates and narrative_states tables with comprehensive JSONB structures. World state must track locations, events, persons, items to prevent inconsistencies - users cannot reference items not yet acquired, locations not yet discovered, or events that haven't occurred. Seed data for Modern Reality scenario with 3 acts, 5 chapters, 3-5 hidden quests, complete world schema.</snippet>
+      </doc>
+
+      <doc path="docs/stories/4-1-create-comprehensive-narrative-state-schema.md" section="Dev Notes - Comprehensive World State Architecture">
+        <title>Story 4.1 Implementation Details</title>
+        <snippet>World state JSONB is single source of truth for all narrative elements. Key design principles: single document (all narrative state in one JSONB), chronological events array, relationship progression tracking, discovery tracking for locations, item acquisition chronology. Consistency enforcement through validation layer, schema constraints, event chronology, knowledge tracking. Example world state evolution from Day 1 to Day 5 provided.</snippet>
+      </doc>
+
+      <doc path="docs/stories/4-1-create-comprehensive-narrative-state-schema.md" section="Dev Notes - Scenario Template Architecture">
+        <title>Story 4.1 Template Design</title>
+        <snippet>Scenario templates are reusable narrative frameworks. Components: narrative_arc (acts/chapters with progression logic), character_prompts (LLM personality prompts), hidden_quests (pre-planned surprises with triggers), time_rules (optional zone availability), world_schema (master schema for all possible elements). Modern Reality scenario design: contemporary alter-ego journey, characters (Lyra artist, Thorne trainer, Elara professor), 3 acts (Awakening → Challenge → Transformation), 5 hidden quests targeting different achievement patterns.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact path="packages/backend/app/models/user.py" kind="model" symbol="User, UserPreferences" lines="1-76">
+        <reason>Provides relationship pattern for narrative states cascade delete. Shows UUID column pattern, JSONB usage (communication_preferences JSONB, custom_hours JSONB), and TIMESTAMP WITH TIME ZONE pattern.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/models/memory.py" kind="model" symbol="Memory, MemoryType" lines="1-50">
+        <reason>Shows JSONB metadata field pattern, enum usage (MemoryType), relationship pattern with cascade delete. Provides model for similar JSONB-heavy table design.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/models/base.py" kind="model" symbol="Base" lines="1-8">
+        <reason>Base class import pattern: from app.db.base import Base. All models inherit from this shared declarative base.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/db/migrations/versions/003_create_memory_tables.py" kind="migration" symbol="upgrade, downgrade" lines="1-120">
+        <reason>Alembic migration pattern for JSONB columns: metadata=sa.Column(sa.dialects.postgresql.JSONB, nullable=True, server_default=sa.text("'{}'::jsonb")). Shows array column pattern for unlocked_quests: sa.Column(sa.ARRAY(sa.dialects.postgresql.UUID(as_uuid=True)), nullable=False, server_default=sa.text("'{}'::uuid[]")). Demonstrates index creation and proper downgrade() for rollback.</reason>
+      </artifact>
+
+      <artifact path="packages/backend/app/models/__init__.py" kind="model" symbol="__all__" lines="1-8">
+        <reason>Model imports for Alembic autodiscovery. All new models must be imported here for migrations to detect them. Add: from app.models.narrative import ScenarioTemplate, NarrativeState</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <python>
+        <package name="sqlalchemy" version=">=2.0.0" usage="Async ORM, JSONB support, array types" />
+        <package name="alembic" version=">=1.13.0" usage="Database migrations" />
+        <package name="asyncpg" version=">=0.29.0" usage="Async PostgreSQL driver" />
+        <package name="pydantic" version=">=2.0.0" usage="Schema validation for API responses" />
+        <package name="psycopg2-binary" version=">=2.9.0" usage="PostgreSQL adapter for Alembic" />
+      </python>
+
+      <database>
+        <service name="Supabase" type="managed-postgresql">Managed PostgreSQL 16+ with automatic backups, connection pooling</service>
+        <extension name="uuid-ossp" status="enabled">Provides gen_random_uuid() for UUID primary keys</extension>
+      </database>
+
+      <frameworks>
+        <framework name="FastAPI" usage="API endpoints for narrative state and scenario queries" />
+        <framework name="SQLAlchemy 2.0" usage="Async ORM patterns, declarative base, JSONB column types, array types, relationship management" />
+        <framework name="Alembic" usage="Schema version control, migrations with JSONB support" />
+      </frameworks>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Use async SQLAlchemy 2.0 patterns (async with get_db() as db, await db.execute())</constraint>
+    <constraint type="pattern">UUID primary keys with server_default=sa.text("gen_random_uuid()")</constraint>
+    <constraint type="pattern">Foreign keys with ondelete="CASCADE" for user relationships</constraint>
+    <constraint type="pattern">Timestamps: created_at with server_default=sa.func.now(), updated_at with server_default=sa.func.now() and onupdate=sa.func.now()</constraint>
+    <constraint type="pattern">JSONB for flexible nested data with server_default=sa.text("'{}'::jsonb")</constraint>
+    <constraint type="pattern">Array columns: sa.ARRAY(postgresql.UUID(as_uuid=True)) with server_default=sa.text("'{}'::uuid[]")</constraint>
+    <constraint type="pattern">UNIQUE constraints on (user_id, scenario_id) for narrative_states</constraint>
+    <constraint type="naming">Model files: snake_case (narrative.py), Classes: PascalCase (ScenarioTemplate, NarrativeState)</constraint>
+    <constraint type="naming">Migration files: {revision}_description.py (e.g., 005_add_scenario_templates_table.py)</constraint>
+    <constraint type="naming">Table names: snake_case, plural (scenario_templates, narrative_states)</constraint>
+    <constraint type="testing">Follow pytest patterns: async tests with @pytest.mark.asyncio, markers for unit/integration/database</constraint>
+    <constraint type="testing">Coverage target: ≥70% for app/ (excludes migrations)</constraint>
+    <constraint type="security">Never commit .env files or database credentials - use environment variables only</constraint>
+    <constraint type="migration">Include downgrade() function for all migrations to enable rollback</constraint>
+    <constraint type="migration">Test migrations on separate Supabase project before applying to main database</constraint>
+    <constraint type="consistency">CRITICAL: Narrative generation must validate all references against world_state (items, locations, events, character knowledge)</constraint>
+    <constraint type="consistency">Document all consistency rules in model docstrings and schema documentation</constraint>
+    <constraint type="performance">JSONB queries should use appropriate indexes if performance testing shows need (defer for MVP)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="ScenarioTemplate Model" kind="sqlalchemy-model" path="packages/backend/app/models/narrative.py">
+      <signature>
+class ScenarioTemplate(Base):
+    __tablename__ = "scenario_templates"
+    id: UUID
+    name: str  # VARCHAR(100) NOT NULL
+    theme: str  # VARCHAR(50) NOT NULL - 'modern', 'medieval', 'scifi'
+    narrative_arc: Dict[str, Any]  # JSONB NOT NULL - acts, chapters, progression
+    character_prompts: Dict[str, Any]  # JSONB NOT NULL - personality definitions
+    hidden_quests: List[Dict[str, Any]]  # JSONB NOT NULL - pre-planned surprises
+    time_rules: Optional[Dict[str, Any]]  # JSONB - optional zone overrides
+    world_schema: Dict[str, Any]  # JSONB NOT NULL - defines all possible elements
+    created_at: datetime
+    updated_at: datetime
+    # Relationships
+    narrative_states = relationship("NarrativeState", back_populates="scenario")
+      </signature>
+    </interface>
+
+    <interface name="NarrativeState Model" kind="sqlalchemy-model" path="packages/backend/app/models/narrative.py">
+      <signature>
+class NarrativeState(Base):
+    __tablename__ = "narrative_states"
+    __table_args__ = (UniqueConstraint('user_id', 'scenario_id', name='uq_user_scenario'),)
+    id: UUID
+    user_id: UUID  # ForeignKey("users.id", ondelete="CASCADE")
+    scenario_id: UUID  # ForeignKey("scenario_templates.id")
+    current_act: int  # DEFAULT 1
+    current_chapter: int  # DEFAULT 1
+    unlocked_quests: List[UUID]  # UUID[] DEFAULT '{}'
+    story_progress: Dict[str, Any]  # JSONB DEFAULT '{}' - decisions, milestones, beat history
+    world_state: Dict[str, Any]  # JSONB DEFAULT '{}' - comprehensive world state
+    created_at: datetime
+    updated_at: datetime
+    # Relationships
+    user = relationship("User", back_populates="narrative_states")
+    scenario = relationship("ScenarioTemplate", back_populates="narrative_states")
+    # Helper methods
+    def get_current_chapter_data(self) -> Optional[Dict[str, Any]]: ...
+    def get_character_data(self, character_name: str) -> Optional[Dict[str, Any]]: ...
+    def has_discovered_location(self, location_key: str) -> bool: ...
+    def has_acquired_item(self, item_id: str) -> bool: ...
+      </signature>
+    </interface>
+
+    <interface name="User Model Updates" kind="sqlalchemy-relationship" path="packages/backend/app/models/user.py">
+      <signature>
+# Add to User class:
+narrative_states = relationship("NarrativeState", back_populates="user", cascade="all, delete-orphan")
+      </signature>
+    </interface>
+
+    <interface name="Alembic Migration - Scenario Templates" kind="migration" path="packages/backend/app/db/migrations/versions/{revision}_add_scenario_templates_table.py">
+      <signature>
+"""add scenario templates table
+
+Revision ID: {revision}
+Revises: {previous}
+Create Date: 2025-11-18
+"""
+
+def upgrade() -> None:
+    # CREATE TABLE scenario_templates (...)
+    # CREATE INDEX idx_scenario_theme ON scenario_templates(theme)
+
+def downgrade() -> None:
+    # DROP TABLE scenario_templates
+      </signature>
+    </interface>
+
+    <interface name="Alembic Migration - Narrative States" kind="migration" path="packages/backend/app/db/migrations/versions/{revision}_add_narrative_states_table.py">
+      <signature>
+"""add narrative states table
+
+Revision ID: {revision}
+Revises: {previous}
+Create Date: 2025-11-18
+"""
+
+def upgrade() -> None:
+    # CREATE TABLE narrative_states (...)
+    # CREATE INDEX idx_narrative_user ON narrative_states(user_id)
+    # CREATE INDEX idx_narrative_scenario ON narrative_states(scenario_id)
+    # CREATE UNIQUE INDEX uq_user_scenario ON narrative_states(user_id, scenario_id)
+
+def downgrade() -> None:
+    # DROP TABLE narrative_states
+      </signature>
+    </interface>
+
+    <interface name="Seed Script - Modern Reality Scenario" kind="seed-script" path="packages/backend/app/db/seeds/scenario_templates.py">
+      <signature>
+"""Seed scenario templates for narrative engine
+
+Creates "The Mirror's Edge" - Modern Reality scenario
+"""
+
+async def seed_modern_reality_scenario(db: AsyncSession) -> None:
+    """Create Modern Reality scenario template with 3 acts, 6 chapters, 5 hidden quests"""
+    scenario = ScenarioTemplate(
+        name="The Mirror's Edge",
+        theme="modern",
+        narrative_arc={...},  # 3 acts with chapters
+        character_prompts={...},  # Lyra, Thorne, Elara
+        hidden_quests=[...],  # 5 pre-planned quests
+        world_schema={...}  # locations, persons, items, events
+    )
+    db.add(scenario)
+    await db.commit()
+      </signature>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing follows pytest patterns with async support (pytest-asyncio). Test structure: tests/unit/ for fast isolated tests, tests/integration/ for database/API tests, tests/models/ for model-specific tests. Use markers: @pytest.mark.unit, @pytest.mark.integration, @pytest.mark.database, @pytest.mark.asyncio. Coverage target ≥70% (excludes migrations). Test database: SQLite with aiosqlite for unit tests, test Supabase project for integration tests. Fixtures in tests/conftest.py provide async db sessions, test users, mock data.
+    </standards>
+
+    <locations>
+      <location>packages/backend/tests/models/test_narrative.py - Model unit tests</location>
+      <location>packages/backend/tests/integration/test_scenario_seed.py - Seed data validation tests</location>
+      <location>packages/backend/tests/conftest.py - Shared fixtures (async_db_session, test_user, test_scenario_template, etc.)</location>
+    </locations>
+
+    <ideas>
+      <idea ac="AC1">Integration test: Run scenario_templates migration, verify table exists with all columns, verify index on theme column</idea>
+      <idea ac="AC1">Integration test: Test migration rollback (downgrade), verify table dropped</idea>
+      <idea ac="AC2">Integration test: Run narrative_states migration, verify table exists with all columns, verify indexes and UNIQUE constraint</idea>
+      <idea ac="AC2">Integration test: Test UNIQUE constraint violation when inserting duplicate (user_id, scenario_id)</idea>
+      <idea ac="AC3">Unit test: Create NarrativeState with world_state JSONB, verify all sections present (locations, events, persons, items, world_time, decisions)</idea>
+      <idea ac="AC3">Integration test: Update world_state (add location, add event, update person relationship), verify JSONB updates persist</idea>
+      <idea ac="AC4">Unit test: Create ScenarioTemplate with narrative_arc JSONB, verify acts and chapters structure</idea>
+      <idea ac="AC4">Unit test: Verify hidden_quests JSONB structure with trigger conditions and rewards</idea>
+      <idea ac="AC4">Unit test: Verify world_schema JSONB defines locations, persons, items, event_types</idea>
+      <idea ac="AC5">Integration test: After seed script runs, verify "The Mirror's Edge" scenario exists with theme='modern'</idea>
+      <idea ac="AC5">Integration test: Validate narrative_arc has 3 acts, verify chapter count per act, verify progression triggers exist</idea>
+      <idea ac="AC5">Integration test: Validate hidden_quests array has 3-5 quests, each with id, trigger, title, rewards</idea>
+      <idea ac="AC5">Integration test: Validate world_schema completeness (locations, persons, items, event_types)</idea>
+      <idea ac="AC6">Integration test: Insert scenario templates with themes 'modern', 'medieval', 'scifi', query by theme using index</idea>
+      <idea ac="AC6">Integration test: Verify theme index improves query performance (compare with/without index)</idea>
+      <idea ac="AC7">Unit test: Verify consistency rules documented in model docstrings</idea>
+      <idea ac="AC7">Code review: Check inline comments explain consistency enforcement (items, locations, events, character knowledge)</idea>
+      <idea ac="AC8">Unit test: Test ScenarioTemplate model CRUD operations (create, read, update, delete)</idea>
+      <idea ac="AC8">Unit test: Test NarrativeState model CRUD operations with JSONB fields</idea>
+      <idea ac="AC8">Unit test: Test helper methods: get_current_chapter_data(), get_character_data(), has_discovered_location(), has_acquired_item()</idea>
+      <idea ac="AC8">Integration test: Create User with narrative_states, delete User, verify cascade delete removes narrative states</idea>
+    </ideas>
+  </tests>
+</story-context>

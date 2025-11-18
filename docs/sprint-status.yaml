@@ -3,6 +3,10 @@
 # Updated: 2025-11-10 (Epic 1 contexted)
 # This file tracks all epics, stories, and retrospectives from epics.md
 
+# RECENT CHANGES (2025-11-18):
+# - Epic 4: Marked as "contexted" - tech spec generated (tech-spec-epic-4.md)
+# - Story 4.1: Marked as "drafted" - comprehensive story and context file created
+#
 # RECENT CHANGES (2025-11-11):
 # - Epic 2: Marked as "contexted" - tech spec generated (tech-spec-epic-2.md)
 #
@@ -85,8 +89,8 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: Narrative Engine
-  epic-4: backlog
-  4-1-create-comprehensive-narrative-state-schema: backlog # Comprehensive world state (locations, events, persons, items)
+  epic-4: contexted # ✅ Tech spec generated (tech-spec-epic-4.md) - 2025-11-18
+  4-1-create-comprehensive-narrative-state-schema: drafted # ✅ Story and context file created 2025-11-18 - Comprehensive world state (locations, events, persons, items)
   4-2-build-narrative-generation-agent-with-langgraph: backlog # Uses GPT-4o for premium writing quality
   4-3-implement-pre-planned-hidden-quest-system: backlog # Includes multiple endings + user-created endings
   4-4-create-story-viewing-interface-mvp: backlog # Beautiful book-like UI
