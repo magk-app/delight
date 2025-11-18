@@ -114,6 +114,11 @@ class GoalDrivenAgent:
 
     async def _initialize_node(self, state: GraphState) -> GraphState:
         """Initialize: Parse user request and identify goal"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.INITIALIZE
+        state["iterations"] = state.get("iterations", 0) + 1
+
         user_request = state["user_request"]
 
         # Parse the request to identify the goal
@@ -134,6 +139,11 @@ class GoalDrivenAgent:
 
     async def _planning_node(self, state: GraphState) -> GraphState:
         """Planning: Create a plan to achieve the goal"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.PLANNING
+        state["iterations"] = state.get("iterations", 0) + 1
+
         goal = state.get("goal")
 
         if not goal:
@@ -165,6 +175,11 @@ class GoalDrivenAgent:
 
     async def _clarifying_node(self, state: GraphState) -> GraphState:
         """Clarifying: Ask user for missing information"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.CLARIFYING
+        state["iterations"] = state.get("iterations", 0) + 1
+
         missing_info = StateManager.get_missing_information(state)
 
         questions = [
@@ -183,6 +198,11 @@ class GoalDrivenAgent:
 
     async def _tool_selection_node(self, state: GraphState) -> GraphState:
         """Tool Selection: Choose appropriate tools based on goal"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.TOOL_SELECTION
+        state["iterations"] = state.get("iterations", 0) + 1
+
         goal = state.get("goal")
         if not goal:
             state["selected_tools"] = []
@@ -214,6 +234,11 @@ class GoalDrivenAgent:
 
     async def _tool_execution_node(self, state: GraphState) -> GraphState:
         """Tool Execution: Execute selected tools"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.TOOL_EXECUTION
+        state["iterations"] = state.get("iterations", 0) + 1
+
         selected_tools = state.get("selected_tools", [])
         tool_outputs = state.get("tool_outputs", {})
 
@@ -262,6 +287,11 @@ class GoalDrivenAgent:
 
     async def _analysis_node(self, state: GraphState) -> GraphState:
         """Analysis: Analyze tool outputs and determine next steps"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.ANALYSIS
+        state["iterations"] = state.get("iterations", 0) + 1
+
         tool_outputs = state.get("tool_outputs", {})
         goal = state.get("goal")
 
@@ -289,6 +319,11 @@ class GoalDrivenAgent:
 
     async def _synthesis_node(self, state: GraphState) -> GraphState:
         """Synthesis: Combine information to form final response"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.SYNTHESIS
+        state["iterations"] = state.get("iterations", 0) + 1
+
         goal = state.get("goal")
         tool_outputs = state.get("tool_outputs", {})
         available_info = state.get("available_information", {})
@@ -317,11 +352,21 @@ class GoalDrivenAgent:
 
     async def _completion_node(self, state: GraphState) -> GraphState:
         """Completion: Finalize and prepare to return"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.COMPLETION
+        state["iterations"] = state.get("iterations", 0) + 1
+
         print("[COMPLETION] Task completed")
         return state
 
     async def _error_node(self, state: GraphState) -> GraphState:
         """Error: Handle errors gracefully"""
+        # Update state tracking
+        state["previous_state"] = state.get("current_state")
+        state["current_state"] = AgentState.ERROR
+        state["iterations"] = state.get("iterations", 0) + 1
+
         error_msg = state.get("error_message", "Unknown error occurred")
         print(f"[ERROR] {error_msg}")
         return state
@@ -437,7 +482,7 @@ class GoalDrivenAgent:
             return Goal(
                 description=f"Perform calculation: {user_request}",
                 constraints=[],
-                required_info=["calculation_parameters"],
+                required_info=[],  # No required info for simple calculations
                 sub_goals=[],
                 completion_criteria="Calculation result obtained"
             )

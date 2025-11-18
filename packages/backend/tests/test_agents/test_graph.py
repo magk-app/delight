@@ -93,7 +93,7 @@ class TestGoalDrivenAgent:
     @pytest.mark.asyncio
     async def test_tool_store_integration(self, agent):
         """Test that agent properly uses the tool store"""
-        tool_store = get_tool_store()
+        tool_store = await get_tool_store()
 
         # Clear any previous history
         tool_store.clear_history()
@@ -318,7 +318,9 @@ class TestGoalParsing:
 
         assert goal is not None
         assert "calculate" in goal.description.lower() or "calculation" in goal.description.lower()
-        assert len(goal.required_info) > 0
+        # Calculation goals don't require additional info - the numbers are in the request
+        assert len(goal.required_info) == 0
+        assert goal.completion_criteria == "Calculation result obtained"
 
     def test_parse_generic_goal(self, agent):
         """Test parsing generic goals"""

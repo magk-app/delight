@@ -77,7 +77,7 @@ class ToolExecution(BaseModel):
     """Record of a tool execution"""
     tool_name: str
     input_data: Dict[str, Any]
-    output: Optional[Dict[str, Any]] = None
+    output: Optional[Any] = None
     success: bool = False
     error: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.now)

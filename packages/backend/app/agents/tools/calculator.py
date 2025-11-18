@@ -48,8 +48,8 @@ class CalculatorTool(BaseTool):
     @property
     def description(self) -> str:
         return (
-            "Performs basic mathematical operations (add, subtract, multiply, divide, "
-            "power, sqrt, abs). Use this when you need to compute numerical results."
+            "Performs basic mathematical calculations and operations (add, subtract, multiply, divide, "
+            "power, sqrt, abs). Use this when you need to calculate or compute numerical results."
         )
 
     @property

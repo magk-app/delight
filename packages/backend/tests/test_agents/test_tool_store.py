@@ -364,10 +364,11 @@ class TestToolStore:
         tool_store.clear_history()
         assert len(tool_store.get_execution_history()) == 0
 
-    def test_global_tool_store(self):
+    @pytest.mark.asyncio
+    async def test_global_tool_store(self):
         """Test global tool store singleton"""
-        store1 = get_tool_store()
-        store2 = get_tool_store()
+        store1 = await get_tool_store()
+        store2 = await get_tool_store()
 
         assert store1 is store2
         assert "calculator" in store1.list_tools()  # Default tools loaded
