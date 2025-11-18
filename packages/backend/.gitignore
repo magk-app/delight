@@ -130,9 +130,6 @@ dmypy.json
 # Ruff cache
 .ruff_cache/
 
-# Poetry
-poetry.lock
-
 # IDEs
 .vscode/
 .idea/
