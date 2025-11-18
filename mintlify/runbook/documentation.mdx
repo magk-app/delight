@@ -1,6 +1,6 @@
 ---
 title: Documentation Runbook
-description: 'Operational guide for managing and maintaining documentation'
+description: "Operational guide for managing and maintaining documentation"
 ---
 
 # Documentation Runbook
@@ -37,6 +37,7 @@ mintlify/
     # Example: New architecture document
     touch mintlify/architecture/new-topic.mdx
     ```
+
   </Step>
 
   <Step title="Add frontmatter">
@@ -52,6 +53,7 @@ mintlify/
 
     Content goes here...
     ```
+
   </Step>
 
   <Step title="Update docs.json">
@@ -66,6 +68,7 @@ mintlify/
       ]
     }
     ```
+
   </Step>
 
   <Step title="Test locally">
@@ -75,6 +78,7 @@ mintlify/
     ```
 
     Verify the page appears in navigation and renders correctly.
+
   </Step>
 </Steps>
 
@@ -85,16 +89,17 @@ mintlify/
     Find the MDX file you want to update in the `mintlify/` directory.
   </Step>
 
-  <Step title="Make your changes">
-    Edit the file using Markdown and Mintlify components.
-  </Step>
+{" "}
 
-  <Step title="Test locally">
-    ```bash
-    cd mintlify
-    npx mintlify@latest dev
-    ```
-  </Step>
+<Step title="Make your changes">
+  Edit the file using Markdown and Mintlify components.
+</Step>
+
+{" "}
+
+<Step title="Test locally">
+  ```bash cd mintlify npx mintlify@latest dev ```
+</Step>
 
   <Step title="Commit changes">
     ```bash
@@ -125,39 +130,35 @@ Mintlify provides rich components for better documentation:
 ### Callouts
 
 ```mdx
-<Info>
-Informational message
-</Info>
+<Info>Informational message</Info>
 
-<Warning>
-Warning message
-</Warning>
+<Warning>Warning message</Warning>
 
-<Tip>
-Helpful tip
-</Tip>
+<Tip>Helpful tip</Tip>
 
-<Note>
-Important note
-</Note>
+<Note>Important note</Note>
 ```
 
 ### Code Groups
 
-```mdx
-<CodeGroup>
+````mdx
+&lt;CodeGroup&gt;
+
 ```python Python
 def hello():
     print("Hello, world!")
 ```
+````
 
 ```typescript TypeScript
 function hello() {
   console.log("Hello, world!");
 }
 ```
-</CodeGroup>
-```
+
+&lt;/CodeGroup&gt;
+
+````
 
 ### Steps
 
@@ -170,7 +171,7 @@ function hello() {
     Instructions for step 2
   </Step>
 </Steps>
-```
+````
 
 ### Checks
 
@@ -186,12 +187,8 @@ function hello() {
 
 ```mdx
 <AccordionGroup>
-  <Accordion title="Question 1">
-    Answer to question 1
-  </Accordion>
-  <Accordion title="Question 2">
-    Answer to question 2
-  </Accordion>
+  <Accordion title="Question 1">Answer to question 1</Accordion>
+  <Accordion title="Question 2">Answer to question 2</Accordion>
 </AccordionGroup>
 ```
 
@@ -224,6 +221,7 @@ This starts the Mintlify dev server at http://localhost:3000
     - Ensure all files are `.mdx`
     - Verify paths in `docs.json` match actual files (without `.mdx` extension)
     - Use `tabs → groups → pages` structure
+
   </Accordion>
 
   <Accordion title="Components not rendering">
@@ -235,6 +233,7 @@ This starts the Mintlify dev server at http://localhost:3000
     - Check component syntax in Mintlify docs
     - Ensure all tags are properly closed
     - Use proper capitalization (e.g., `<Card>` not `<card>`)
+
   </Accordion>
 
   <Accordion title="Code blocks not highlighting">
@@ -250,6 +249,7 @@ This starts the Mintlify dev server at http://localhost:3000
         pass
     ```
     ```
+
   </Accordion>
 </AccordionGroup>
 
@@ -260,11 +260,13 @@ This starts the Mintlify dev server at http://localhost:3000
 Documentation is automatically deployed when changes are pushed to the main branch.
 
 **Deployment Process:**
+
 1. Mintlify detects changes to `mintlify/` directory
 2. Builds the documentation site
 3. Deploys to production URL
 
 **Deployment Status:**
+
 - Check the Mintlify dashboard for build status
 - Build logs available in the dashboard
 
