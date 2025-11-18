@@ -36,8 +36,8 @@ export default function Home() {
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   An emotionally intelligent AI companion that remembers your
-                  journey, understands when you're stuck, and helps you build
-                  momentum when stress threatens to derail your ambitions.
+                  journey, understands when you&apos;re stuck, and helps you
+                  build momentum when stress threatens to derail your ambitions.
                 </p>
               </div>
 
@@ -78,7 +78,7 @@ export default function Home() {
               Built for ambitious people who stall
             </h2>
             <p className="text-lg text-muted-foreground">
-              You know what to do. You just can't start. Or you start and
+              You know what to do. You just can&apos;t start. Or you start and
               immediately drift. Delight meets you there.
             </p>
           </div>
@@ -97,9 +97,9 @@ export default function Home() {
                 stall when stress spikes and priorities blur.
               </p>
               <p className="text-sm text-foreground/80 italic">
-                "After a tough board meeting, Eliza helped me break down a
+                &quot;After a tough board meeting, Eliza helped me break down a
                 product launch into three focused missions. I shipped by
-                Friday."
+                Friday.&quot;
               </p>
             </div>
 
@@ -116,8 +116,8 @@ export default function Home() {
                 structure that adapts to exam stress and creative bursts.
               </p>
               <p className="text-sm text-foreground/80 italic">
-                "Between midterms and my startup, I was drowning. Delight helped
-                me maintain a 12-day streak without burning out."
+                &quot;Between midterms and my startup, I was drowning. Delight
+                helped me maintain a 12-day streak without burning out.&quot;
               </p>
             </div>
 
@@ -130,13 +130,14 @@ export default function Home() {
                 People in Transition
               </h3>
               <p className="text-muted-foreground mb-4">
-                Career changes, relocations, or relationship goals that don't
-                fit traditional task lists. You need nuanced coaching, not
-                checkboxes.
+                Career changes, relocations, or relationship goals that
+                don&apos;t fit traditional task lists. You need nuanced
+                coaching, not checkboxes.
               </p>
               <p className="text-sm text-foreground/80 italic">
-                "Moving to a new city felt abstract. Delight helped me decompose
-                'build community' into weekly coffee chats and hobby meetups."
+                &quot;Moving to a new city felt abstract. Delight helped me
+                decompose &apos;build community&apos; into weekly coffee chats
+                and hobby meetups.&quot;
               </p>
             </div>
           </div>
@@ -184,8 +185,8 @@ export default function Home() {
                       Learns your patterns
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      When you're most productive, what drains you, which goals
-                      matter most
+                      When you&apos;re most productive, what drains you, which
+                      goals matter most
                     </p>
                   </div>
                 </div>
@@ -204,11 +205,11 @@ export default function Home() {
                     Living memory that compounds
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Unlike chatbots that forget or productivity apps that don't
-                    connect dots, Delight maintains a three-tier memory system.
-                    Personal memories capture values and fears. Project memories
-                    track goal context. Task memories ensure mission-specific
-                    understanding.
+                    Unlike chatbots that forget or productivity apps that
+                    don&apos;t connect dots, Delight maintains a three-tier
+                    memory system. Personal memories capture values and fears.
+                    Project memories track goal context. Task memories ensure
+                    mission-specific understanding.
                   </p>
                 </div>
               </div>
@@ -240,8 +241,8 @@ export default function Home() {
                     Adaptive micro missions
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Abstract goals like "get healthier" don't translate to
-                    action. Delight excels at collaborative goal
+                    Abstract goals like &quot;get healthier&quot; don&apos;t
+                    translate to action. Delight excels at collaborative goal
                     decomposition—breaking overwhelming ambitions into concrete,
                     time-boxed missions that fit your current energy level.
                   </p>

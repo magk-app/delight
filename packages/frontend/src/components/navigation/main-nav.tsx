@@ -28,7 +28,9 @@ export function MainNav() {
               height={32}
               className="transition-transform group-hover:scale-105"
             />
-            <span className="text-xl font-semibold text-foreground">Delight</span>
+            <span className="text-xl font-semibold text-foreground">
+              Delight
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -163,4 +165,3 @@ export function MainNav() {
     </header>
   );
 }
-
