@@ -17,7 +17,13 @@
     "test:frontend": "pnpm --filter frontend test",
     "test:backend": "cd packages/backend && poetry run pytest",
     "test:e2e": "pnpm --filter frontend test:e2e",
-    "test:e2e:ui": "pnpm --filter frontend test:e2e:ui"
+    "test:e2e:ui": "pnpm --filter frontend test:e2e:ui",
+    "docs:dev": "cd mintlify && pnpm exec mint dev",
+    "docs:lint": "cd mintlify && pnpm exec mint broken-links",
+    "docs:deploy": "cd mintlify && pnpm exec mint deploy"
+  },
+  "dependencies": {
+    "mint": "latest"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

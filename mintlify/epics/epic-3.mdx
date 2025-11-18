@@ -1,0 +1,409 @@
+---
+title: "Epic 3 - Goal & Mission Management"
+description: "Enable goal creation, decomposition, and adaptive micro-mission execution"
+---
+
+# Epic 3: Goal & Mission Management
+
+## Epic Goal
+
+Enable users to create ambitious goals, decompose them collaboratively with Eliza, and work through adaptive micro-missions that respect their energy and time constraints.
+
+## Priority & Scope
+
+<Checks items={[
+  "P0 - Core productivity loop of Delight",
+  "7 stories with 5 MVP + 2 future features",
+  "Estimated 4-5 weeks of development",
+  "Integrates with Eliza for conversational goal planning"
+]} />
+
+## Architecture Components
+
+- **Mission Service**: Goal creation, decomposition, prioritization
+- **Priority Triads**: Algorithm for selecting 3 daily missions
+- **Mission Executor**: Timer, focus support, session tracking
+- **Quest Generation**: ARQ worker for adaptive mission creation
+- **Database Models**: Goals, missions, mission sessions, progress snapshots
+
+## Core Concepts
+
+### Goal Decomposition Flow
+
+1. User creates ambitious goal (e.g., "Build a mobile app")
+2. Eliza initiates collaborative conversation
+3. Eliza proposes breakdown into 3-7 milestones
+4. User approves/modifies suggestions
+5. System generates 10-20 micro-missions
+6. User works through missions systematically
+
+### Priority Triad System
+
+Each day, users see **3 prioritized missions** matched to their current energy:
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+  <Card title="High Priority" icon="flame">
+    **Urgent + Important** - Core progress on main goals
+  </Card>
+  <Card title="Medium Priority" icon="star">
+    **Important, Less Urgent** - Supporting skill development
+  </Card>
+  <Card title="Low Priority" icon="sparkles">
+    **Easy Win** - Quick accomplishment or exploration
+  </Card>
+</div>
+
+## Stories
+
+### Story 3.1: Create Goal Data Models and CRUD APIs
+
+Build goal storage and management infrastructure.
+
+<Card title="Story Type" icon="database">
+  Data Modeling
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Goals stored with title, description, type, category, target date",
+  "Full CRUD API: POST/GET/PATCH/DELETE /api/v1/goals",
+  "List API with filtering and pagination",
+  "Goals linked to user account",
+  "Status tracking: active/paused/completed/archived"
+]} />
+
+**Schema:**
+```sql
+-- goals table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+title VARCHAR NOT NULL
+description TEXT
+goal_type ENUM('abstract', 'concrete')
+value_category ENUM('health', 'craft', 'growth', 'connection')
+target_completion_date DATE (nullable)
+status ENUM('active', 'paused', 'completed', 'archived')
+created_at TIMESTAMP WITH TIME ZONE
+updated_at TIMESTAMP WITH TIME ZONE
+```
+
+**Value Categories:**
+- **Health**: Physical fitness, nutrition, sleep, wellness
+- **Craft**: Creative projects, skill-building, making
+- **Growth**: Learning, education, personal development
+- **Connection**: Relationships, community, social
+
+**Prerequisites:**
+- Story 1.3 (authentication system)
+
+---
+
+### Story 3.2: Implement Collaborative Goal Decomposition with Eliza
+
+Enable Eliza to help break down big goals.
+
+<Card title="Story Type" icon="chat">
+  AI-Assisted Planning
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Eliza initiates decomposition conversation",
+  "Asks clarifying questions about user's 'why'",
+  "Explores constraints (time, resources, dependencies)",
+  "Proposes 3-7 milestone steps",
+  "Generates 10-20 micro-quests per goal",
+  "User can approve, modify, or reject suggestions"
+]} />
+
+**Decomposition Process:**
+
+1. **Clarification Phase** - 3-4 questions about goal context
+2. **Exploration Phase** - Discover constraints and dependencies
+3. **Proposal Phase** - 3-7 milestone suggestions
+4. **Quest Generation** - 10-20 micro-quests aligned to milestones
+5. **Review & Approval** - User accepts, modifies, or rejects
+
+**Eliza Integration:**
+- Extend LangGraph agent with goal decomposition node
+- Use structured output parsing for quest suggestions
+- Store decomposition in database with timestamps
+
+**Storage:**
+```sql
+-- goal_decompositions table
+id UUID PRIMARY KEY
+goal_id UUID FK -> goals.id
+milestones JSONB  -- Array of milestone objects
+generated_quests JSONB  -- Array of quest suggestions
+approval_status ENUM('pending', 'approved', 'rejected')
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Prerequisites:**
+- Story 2.4 (Eliza chat API)
+- Story 3.1 (goal models)
+
+---
+
+### Story 3.3: Build Mission/Quest System with Priority Triads
+
+Implement core mission management and daily selection.
+
+<Card title="Story Type" icon="target">
+  Mission Management
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Display 3 prioritized missions daily (high/medium/low)",
+  "Each mission shows title, duration, energy level, category",
+  "User can choose mission, defer, or mark complete",
+  "Triad refreshes when missions completed or deferred",
+  "Missions linked to parent goal",
+  "Prioritization algorithm balances multiple factors"
+]} />
+
+**Schema:**
+```sql
+-- missions table
+id UUID PRIMARY KEY
+goal_id UUID FK -> goals.id
+user_id UUID FK -> users.id
+title VARCHAR NOT NULL
+description TEXT
+estimated_minutes INT
+energy_level ENUM('low', 'medium', 'high')
+value_category ENUM('health', 'craft', 'growth', 'connection')
+priority_score FLOAT
+status ENUM('pending', 'in_progress', 'completed', 'deferred', 'archived')
+created_at TIMESTAMP WITH TIME ZONE
+completed_at TIMESTAMP WITH TIME ZONE (nullable)
+```
+
+**Prioritization Algorithm:**
+```
+priority_score = (
+  goal_importance * 0.4 +
+  urgency_factor * 0.3 +
+  energy_match * 0.2 +
+  value_diversity * 0.1
+)
+```
+
+**Frontend Components:**
+- `MissionTriad.tsx` - Display 3 missions
+- `MissionCard.tsx` - Individual mission card
+- Goal and category icons with Tailwind styling
+
+**Prerequisites:**
+- Story 3.2 (missions generated from goals)
+
+---
+
+### Story 3.4: Implement Mission Execution Flow with Timer
+
+Create focused work environment for mission completion.
+
+<Card title="Story Type" icon="clock">
+  Mission Execution
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Timer starts based on estimated duration",
+  "UI shows mission details, timer, completion options",
+  "Gentle notification when timer ends (no aggressive alarms)",
+  "Users can complete early, extend, or log actual time",
+  "Celebration animation on completion",
+  "Streak updated and next mission suggested"
+]} />
+
+**Mission Executor Features:**
+- **Gentle Timer**: Visual only, no aggressive notifications
+- **Hide Option**: Users can hide timer if distracting
+- **Completion Options**: Done button, extend time, abandon
+- **Post-Completion**: Show actual time vs estimated
+- **Celebration**: Animation + encouragement from Eliza
+- **Continuation**: Immediately suggest next mission
+
+**Storage:**
+```sql
+-- mission_sessions table
+id UUID PRIMARY KEY
+mission_id UUID FK -> missions.id
+user_id UUID FK -> users.id
+started_at TIMESTAMP WITH TIME ZONE
+completed_at TIMESTAMP WITH TIME ZONE
+actual_minutes INT
+notes TEXT (nullable)
+reflection TEXT (nullable)
+```
+
+**Components:**
+- `MissionExecutor.tsx` - Main execution interface
+- `MissionTimer.tsx` - Timer display and controls
+- `CompletionModal.tsx` - Post-mission celebration and reflection
+
+**Prerequisites:**
+- Story 3.3 (mission triads)
+
+---
+
+### Story 3.5: Add Mission Session Notes and Reflection
+
+Capture learnings and turn them into memories.
+
+<Card title="Story Type" icon="notebook">
+  Reflection & Learning
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Users can add notes during or after mission",
+  "Notes saved to mission session",
+  "Notes become task-tier memory entries",
+  "View past mission notes in history",
+  "Eliza can recall notes in future conversations"
+]} />
+
+**Reflection Workflow:**
+1. Mission completed
+2. Reflection modal appears with optional prompts
+3. User writes notes (optional)
+4. Notes automatically converted to memory
+5. Notes linked to mission for history
+
+**Memory Integration:**
+- Create task-tier memory entry after mission completion
+- Tag memory with mission ID and goal ID
+- Expire after 30 days (standard task memory lifetime)
+- Include in context when retrieving task memories
+
+**Prompts (Optional):**
+- "What did you learn from this mission?"
+- "How do you feel about completing this?"
+- "What made this easier or harder than expected?"
+
+**Prerequisites:**
+- Story 3.4 (mission execution)
+- Story 2.2 (memory service)
+
+---
+
+### Story 3.6: Implement Adaptive Quest Generation Worker (Future)
+
+Auto-generate missions when queue drops.
+
+<Card title="Story Type" icon="sparkles">
+  Future Feature - Automation
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "ARQ worker monitors mission queue per user",
+  "Triggers when pending missions < 5",
+  "Analyzes user completion patterns",
+  "Generates 3-5 new missions aligned with goals",
+  "Considers time of day, duration preferences, value diversity"
+]} />
+
+**Worker Process:**
+1. Check mission queue for each user
+2. If < 5 pending, query Eliza agent
+3. Eliza generates contextual quest suggestions
+4. System prioritizes based on deadline and diversity
+5. Missions added to pool automatically
+
+**Pattern Analysis:**
+- Time of day preferences (when user completes missions)
+- Duration preferences (10min vs 1hr missions)
+- Value category patterns (health focus, etc.)
+- Completion rate by category
+
+**Prerequisites:**
+- Story 3.3 (missions system)
+- Story 2.3 (Eliza agent)
+
+---
+
+### Story 3.7: Add Collaborative Goals and Guild Missions (Future)
+
+Enable shared goals within accountability pods.
+
+<Card title="Story Type" icon="people">
+  Future Feature - Multiplayer
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Users can create shared goals with pods",
+  "All pod members see shared goal progress",
+  "Missions can be marked as guild quests",
+  "Progress visible to all pod members",
+  "Guild missions unlock shared rewards"
+]} />
+
+**Schema:**
+```sql
+-- shared_goals table
+id UUID PRIMARY KEY
+goal_id UUID FK -> goals.id
+pod_id UUID FK -> pods.id
+member_contributions JSONB
+created_at TIMESTAMP WITH TIME ZONE
+
+-- pods table
+id UUID PRIMARY KEY
+name VARCHAR
+members ARRAY OF UUID
+created_at TIMESTAMP WITH TIME ZONE
+```
+
+**Prerequisites:**
+- Story 3.3 (missions)
+- Future multiplayer infrastructure
+
+---
+
+## Epic Dependencies
+
+**Requires:**
+- Epic 1 (Foundation) - Auth and database
+- Epic 2 (Companion) - Eliza for goal decomposition
+
+**Enables:**
+- Epic 4 (Narrative quests)
+- Epic 5 (Progress tracking)
+- Epic 7 (Nudges based on missions)
+
+## Success Criteria
+
+When Epic 3 is complete:
+
+<Checks items={[
+  "Users can create and manage ambitious goals",
+  "Eliza helps decompose goals into concrete steps",
+  "Daily mission triad appears with balanced selection",
+  "Users can work through missions with gentle timer",
+  "Completion triggers celebration and memory storage",
+  "Mission notes become accessible memories",
+  "Prioritization algorithm selects diverse, achievable missions"
+]} />
+
+## Cost Estimation
+
+- **GPT-4o-mini for quest generation**: ~$0.005/user/day
+- **Mission processing and storage**: Included in database costs
+- **Total**: ~$0.005/user/day additional
+
+## Next Epic
+
+Once Epic 3 is complete, proceed to **Epic 5: Progress & Analytics** to help users see their consistency patterns and celebrate progress with streaks and DCI dashboards.

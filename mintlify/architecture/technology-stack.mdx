@@ -1,0 +1,113 @@
+---
+title: Technology Stack Details
+description: Complete overview of technologies used in the Delight platform including frontend, backend, AI/LLM, and infrastructure components.
+---
+
+## Core Technologies
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="react">
+    - **Next.js 15** - React framework with App Router, Server Components, streaming
+    - **React 19** - UI library with latest hooks (`useActionState`, `useOptimistic`)
+    - **TypeScript** - Type safety across frontend
+    - **Tailwind CSS** - Utility-first styling with theme system
+    - **shadcn/ui** - Accessible component primitives (Radix UI + Tailwind)
+    - **Framer Motion** - Animation library for character breathing, transitions
+  </Card>
+
+  <Card title="Backend" icon="server">
+    - **FastAPI** - Async Python web framework
+    - **SQLAlchemy 2.0 (async)** - ORM with async support
+    - **PostgreSQL 15+** - Primary database
+    - **Pydantic** - Data validation and settings
+    - **Uvicorn** - ASGI server
+  </Card>
+
+  <Card title="AI & Memory" icon="brain">
+    - **LangGraph** - Stateful agent orchestration
+    - **LangChain** - LLM integration, memory abstractions
+    - **PostgreSQL pgvector** - Vector storage extension (unified with main DB)
+    - **OpenAI GPT-4o-mini** - Primary LLM for chat, personas, quest generation (cost-effective)
+    - **OpenAI GPT-4o** - Premium narrative generation (less frequent, higher quality)
+    - **cardiffnlp/twitter-roberta-base-emotion** - Open source emotion classification (7 emotions)
+  </Card>
+
+  <Card title="Background & Real-Time" icon="bolt">
+    **Background Jobs:**
+    - **ARQ** - Async Redis queue
+    - **Redis** - Queue backend, caching
+
+    **Real-Time:**
+    - **Server-Sent Events (SSE)** - AI response streaming
+    - **HTTP REST** - User actions, CRUD operations
+
+    **File Storage:**
+    - **S3-compatible** (AWS S3, MinIO, etc.) - Evidence uploads
+  </Card>
+</CardGroup>
+
+## Integration Points
+
+### Frontend ↔ Backend
+
+REST API + SSE streaming for bidirectional communication.
+
+```
+REST: POST /api/v1/companion/chat, GET /api/v1/missions
+SSE: GET /api/v1/sse/companion/stream for token-by-token responses
+```
+
+### Backend ↔ AI
+
+LangGraph agents orchestrate LLM calls with stateful workflows.
+
+```
+Eliza agent: backend/app/agents/eliza_agent.py
+Character agents: backend/app/agents/character_agents.py
+Narrative agent: backend/app/agents/narrative_agent.py
+```
+
+### Backend ↔ Memory
+
+PostgreSQL pgvector for vector search, unified with structured data.
+
+```
+Memory service: backend/app/services/memory_service.py
+Vector collections: personal, project, task memories
+(stored in PostgreSQL tables with vector columns)
+```
+
+### Backend ↔ Background Jobs
+
+ARQ workers for async processing without blocking user requests.
+
+```
+Quest generation: backend/app/workers/quest_generator.py
+Nudge scheduling: backend/app/workers/nudge_scheduler.py
+```
+
+<Info>
+All integration points use async patterns for high-concurrency handling. The system is designed to handle multiple concurrent users with streaming AI responses without blocking operations.
+</Info>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Decision Records" href="/architecture/decision-records" icon="list-check">
+    Review key decisions that shaped the technology stack and their rationale.
+  </Card>
+
+  <Card title="Data Architecture" href="/architecture/data-architecture" icon="database">
+    Explore the data models, relationships, and vector storage strategy.
+  </Card>
+
+  <Card title="API Contracts" href="/architecture/api-contracts" icon="plug">
+    Understand the REST API endpoints and their request/response formats.
+  </Card>
+
+  <Card title="Back to Architecture" href="/architecture" icon="arrow-left">
+    Return to the main architecture documentation.
+  </Card>
+</CardGroup>

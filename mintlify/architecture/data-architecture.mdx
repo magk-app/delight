@@ -1,0 +1,324 @@
+---
+title: Data Architecture
+description: Data models, relationships, and vector storage strategy for the Delight platform.
+---
+
+## Core Models
+
+<CardGroup cols={2}>
+  <Card title="User" icon="person">
+    Primary user entity with authentication and preferences.
+
+    - `id` - Unique identifier
+    - `email` - User email address
+    - `password_hash` - Hashed password
+    - `timezone` - User's timezone
+    - `theme_preference` - Light/dark mode preference
+    - `created_at` - Account creation timestamp
+  </Card>
+
+  <Card title="Mission" icon="target">
+    Goals or tasks users work on to earn essence and progress.
+
+    - `id` - Unique identifier
+    - `user_id` - Foreign key to User
+    - `title` - Mission title
+    - `description` - Mission description
+    - `duration_minutes` - Expected duration
+    - `essence_reward` - Essence points awarded
+    - `attribute_type` - Growth/Health/Craft/Connection
+    - `status` - pending/active/completed
+    - `created_at` - Creation timestamp
+    - `completed_at` - Completion timestamp
+  </Card>
+
+  <Card title="Character" icon="sparkles">
+    NPCs that provide coaching and narrative context.
+
+    - `id` - Unique identifier
+    - `name` - Character name (Eliza, Lyra, Thorne, Elara)
+    - `personality_prompt` - LLM prompt for personality
+    - `attribute_focus` - Primary attribute character represents
+    - `scenario` - Setting context (medieval, sci-fi, etc.)
+  </Card>
+
+  <Card title="Character Relationship" icon="heart">
+    Tracks user interaction with each character.
+
+    - `id` - Unique identifier
+    - `user_id` - Foreign key to User
+    - `character_id` - Foreign key to Character
+    - `relationship_level` - Scale 0-10 (friendship strength)
+    - `last_interaction_at` - Last interaction timestamp
+  </Card>
+
+  <Card title="Narrative State" icon="book">
+    Tracks story progress and world state for user.
+
+    - `id` - Unique identifier
+    - `user_id` - Foreign key to User
+    - `scenario` - Current narrative scenario
+    - `current_chapter` - Story chapter number
+    - `hidden_quests` - JSON array of unlocked quests
+    - `story_progress` - JSON object with progress tracking
+  </Card>
+
+  <Card title="Progress" icon="chart-line">
+    Daily progress tracking and statistics.
+
+    - `id` - Unique identifier
+    - `user_id` - Foreign key to User
+    - `date` - Date of record
+    - `dci_score` - Daily Consistency Index score
+    - `missions_completed` - Count of completed missions
+    - `streak_days` - Current streak length
+    - `essence_earned` - Essence accumulated that day
+  </Card>
+</CardGroup>
+
+## Entity Relationships
+
+```
+User (1) ──── (N) Mission
+User (1) ──── (N) Character Relationship
+User (1) ──── (1) Narrative State
+User (1) ──── (N) Progress (daily records)
+Mission (1) ──── (N) Evidence (optional photos/notes)
+Character (1) ──── (N) Character Relationship
+```
+
+<Info>
+Users have one-to-many relationships with Missions, Character Relationships, and daily Progress records. Narrative State is one-to-one (one active story per user).
+</Info>
+
+---
+
+## Vector Storage (PostgreSQL pgvector)
+
+Vector embeddings power semantic search for:
+- Finding relevant memories for context
+- Matching user emotions to appropriate character responses
+- Retrieving similar past missions for inspiration
+
+### Tables with Vector Columns
+
+All vector tables store `embedding` column with dimension 1536 (from `text-embedding-3-small`).
+
+<CardGroup>
+  <Card title="personal_memories" icon="brain">
+    Personal context and emotional state memories.
+
+    Columns:
+    - `id` - Unique identifier
+    - `user_id` - User this memory belongs to
+    - `content` - Text content of memory
+    - `embedding` - Vector(1536) for semantic search
+    - `created_at` - When memory was created
+  </Card>
+
+  <Card title="project_memories" icon="briefcase">
+    Goal-related memories and project context.
+
+    Columns:
+    - `id` - Unique identifier
+    - `user_id` - User this memory belongs to
+    - `project_id` - Associated project
+    - `content` - Memory content
+    - `embedding` - Vector(1536) for semantic search
+    - `created_at` - When memory was created
+  </Card>
+
+  <Card title="task_memories" icon="clipboard-check">
+    Mission-specific context and learnings.
+
+    Columns:
+    - `id` - Unique identifier
+    - `user_id` - User this memory belongs to
+    - `mission_id` - Associated mission
+    - `content` - Memory content
+    - `embedding` - Vector(1536) for semantic search
+    - `created_at` - When memory was created
+  </Card>
+
+  <Card title="character_conversations" icon="message-square">
+    Per-character chat history with embeddings.
+
+    Columns:
+    - `id` - Unique identifier
+    - `user_id` - User in conversation
+    - `character_id` - Character in conversation
+    - `message` - Chat message content
+    - `embedding` - Vector(1536) for semantic search
+    - `created_at` - When message was sent
+  </Card>
+</CardGroup>
+
+### Vector Search Queries
+
+Retrieve similar memories for context:
+
+```python
+# Example: Find similar personal memories
+from sqlalchemy import text, func
+from app.db.session import get_db
+
+async def find_similar_memories(
+    db: AsyncSession,
+    user_id: str,
+    query_embedding: list[float],
+    limit: int = 5
+):
+    """Find personal memories most similar to query embedding."""
+    query = text("""
+        SELECT id, content, embedding <-> :embedding AS distance
+        FROM personal_memories
+        WHERE user_id = :user_id
+        ORDER BY embedding <-> :embedding
+        LIMIT :limit
+    """)
+
+    result = await db.execute(
+        query,
+        {
+            "user_id": user_id,
+            "embedding": query_embedding,
+            "limit": limit
+        }
+    )
+    return result.fetchall()
+```
+
+<Warning>
+Vector similarity requires the pgvector extension to be installed and enabled. Ensure your PostgreSQL instance has `CREATE EXTENSION pgvector` executed before running migrations.
+</Warning>
+
+---
+
+## Database Design Principles
+
+### UUID Primary Keys
+
+All tables use UUID primary keys generated by PostgreSQL:
+
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ...
+);
+```
+
+### Clerk Integration
+
+The `clerk_user_id` field is the authoritative user identifier:
+
+```python
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    clerk_user_id: Mapped[str] = mapped_column(unique=True, index=True)
+    email: Mapped[str] = mapped_column(unique=True)
+```
+
+### JSONB for Flexible Data
+
+JSONB columns store:
+- `custom_hours` - User's available hours
+- `communication_preferences` - How user prefers to be contacted
+- `personality_config` - Character personality overrides
+
+```python
+from sqlalchemy import JSON
+
+class Character(Base):
+    __tablename__ = "characters"
+
+    personality_config: Mapped[dict] = mapped_column(JSON)
+    scenario_data: Mapped[dict] = mapped_column(JSON)
+```
+
+### Timestamps with Timezone
+
+All timestamps are stored with timezone information:
+
+```python
+from sqlalchemy import DateTime
+from datetime import datetime, timezone
+
+class Entity(Base):
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+```
+
+---
+
+## Data Migration Strategy
+
+### Using Alembic for Schema Changes
+
+```bash
+# Create a new migration
+cd packages/backend
+poetry run alembic revision -m "add user preferences table" --autogenerate
+
+# Review the migration
+cat alembic/versions/001_add_user_preferences.py
+
+# Apply to database
+poetry run alembic upgrade head
+
+# Rollback if needed
+poetry run alembic downgrade -1
+```
+
+<Info>
+All models must be imported in `app/models/__init__.py` for Alembic's autogenerate to detect schema changes.
+</Info>
+
+---
+
+## Vector Embedding Strategy
+
+Embeddings are generated using OpenAI's `text-embedding-3-small` model:
+
+```python
+from openai import AsyncOpenAI
+
+async def generate_embedding(text: str) -> list[float]:
+    """Generate 1536-dimensional embedding for text."""
+    client = AsyncOpenAI()
+    response = await client.embeddings.create(
+        model="text-embedding-3-small",
+        input=text
+    )
+    return response.data[0].embedding
+```
+
+**Why 1536 dimensions?**
+- Optimal balance between semantic quality and storage/compute costs
+- Sufficient for semantic search across conversation/memory context
+- Compatible with all LangChain vector store integrations
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Contracts" href="/architecture/api-contracts" icon="plug">
+    See how these data models are exposed through REST endpoints.
+  </Card>
+
+  <Card title="Technology Stack" href="/architecture/technology-stack" icon="cube">
+    Learn about the ORM (SQLAlchemy), database (PostgreSQL), and migration tools.
+  </Card>
+
+  <Card title="Decision Records" href="/architecture/decision-records" icon="list-check">
+    Review architectural decisions related to data storage choices.
+  </Card>
+
+  <Card title="Back to Architecture" href="/architecture" icon="arrow-left">
+    Return to the main architecture documentation.
+  </Card>
+</CardGroup>

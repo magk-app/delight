@@ -1,0 +1,487 @@
+---
+title: "Epic 4 - Narrative Engine"
+description: "Create living narrative system with personalized stories and hidden quests"
+---
+
+# Epic 4: Narrative Engine
+
+## Epic Goal
+
+Create a living narrative system that generates personalized stories adapting to real-world user progress, with pre-planned hidden quests that unlock based on achievements.
+
+## Priority & Scope
+
+<Checks items={[
+  "P1 MVP → Enhanced post-MVP",
+  "7 stories with 2 MVP + 5 future features",
+  "Estimated 5-6 weeks of development",
+  "Transforms user progress into compelling narrative"
+]} />
+
+## Architecture Components
+
+- **Narrative Service**: Story generation and state management
+- **LangGraph Agent**: Personalized narrative generation
+- **Scenario Templates**: Theme-specific story frameworks
+- **Hidden Quest System**: Pre-planned unlock triggers
+- **Story Consistency**: JSONB world state tracking
+- **Character Integration**: Multi-character narrative support
+
+## Core Concepts
+
+### Living Narrative System
+
+Unlike traditional games, Delight's narrative is **data-driven**:
+- Responds to real user progress (missions completed, streaks, goal achievements)
+- Maintains story consistency across multiple characters and themes
+- Tracks comprehensive world state (locations, persons, items, events, time)
+- Generates personalized beats tied to user's specific journey
+
+### Story Beats and Acts
+
+The narrative divides into acts, chapters, and beats:
+- **Acts**: Major story movements (3-5 per scenario)
+- **Chapters**: Logical segments within acts (3-4 per act)
+- **Beats**: Individual story moments tied to user achievements
+
+## Stories
+
+### Story 4.1: Create Comprehensive Narrative State Schema and Scenario Templates
+
+Build the foundation for living narratives.
+
+<Card title="Story Type" icon="book">
+  Schema & Templates - COMPREHENSIVE SYSTEM
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "scenario_templates and narrative_states tables created",
+  "Comprehensive world_state JSONB tracking locations, persons, items, events",
+  "At least one complete scenario template (Modern Reality)",
+  "Support for multiple themes (medieval, sci-fi, etc.)",
+  "All narrative elements versioned and trackable"
+]} />
+
+**Schema:**
+```sql
+-- scenario_templates table
+id UUID PRIMARY KEY
+name VARCHAR  -- e.g., "Modern Reality", "Medieval Quest"
+theme VARCHAR
+narrative_arc JSONB  -- Story structure and beats
+character_prompts JSONB  -- Personality definitions
+hidden_quests JSONB  -- Unlock conditions and rewards
+time_rules JSONB  -- Story pacing and chapter progressions
+world_schema JSONB  -- Defines possible locations, persons, items
+
+-- narrative_states table
+id UUID PRIMARY KEY
+user_id UUID FK -> users.id
+scenario_id UUID FK -> scenario_templates.id
+current_chapter INT
+current_act INT
+unlocked_quests ARRAY OF UUID
+story_progress JSONB  -- Chapter status, beats read, decisions made
+world_state JSONB  -- User-specific world state (copy of template + modifications)
+created_at TIMESTAMP WITH TIME ZONE
+updated_at TIMESTAMP WITH TIME ZONE
+```
+
+**World State Structure:**
+```json
+{
+  "locations": {
+    "arena": {
+      "discovered": true,
+      "description": "...",
+      "npcs_present": ["Lyra", "Thorne"],
+      "unlocked_at": "2025-11-01"
+    },
+    "observatory": {
+      "discovered": false,
+      "unlock_condition": "complete_chapter_2"
+    }
+  },
+  "events": [
+    {
+      "event_id": "first_meeting_lyra",
+      "occurred_at": "2025-11-01",
+      "impact": {"lyra_relationship": 1}
+    }
+  ],
+  "persons": {
+    "Lyra": {
+      "relationship_level": 3,
+      "last_interaction": "2025-11-17",
+      "knows_about": ["user_craft_goals"]
+    }
+  },
+  "items": {
+    "essence": 450,
+    "titles": ["The Persistent"],
+    "artifacts": [
+      {
+        "id": "medallion_of_craft",
+        "acquired_at": "2025-11-10",
+        "description": "..."
+      }
+    ]
+  },
+  "world_time": {
+    "current_act": 1,
+    "current_chapter": 3,
+    "days_in_story": 45
+  }
+}
+```
+
+**Scenario Template Example (Modern Reality):**
+- 3 acts with progression triggers
+- 3-5 hidden quest templates
+- 4-5 locations (Arena, Observatory, Commons, etc.)
+- 4-6 character definitions
+- Event types and world rules
+
+**Prerequisites:**
+- Story 1.2 (database schema)
+
+---
+
+### Story 4.2: Build Narrative Generation Agent with LangGraph
+
+Create AI agent for personalized story writing.
+
+<Card title="Story Type" icon="sparkles">
+  AI Agent - Premium Quality
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "LangGraph state machine with narrative-specific nodes",
+  "Assesses user progress and mission history",
+  "Selects appropriate story beat based on data",
+  "Generates personalized narrative text (200-400 words)",
+  "Checks for hidden quest unlock conditions",
+  "Maintains story consistency against world state"
+]} />
+
+**Agent Nodes:**
+1. **assess_progress**: Analyze missions, streaks, value focus
+2. **select_beat**: Choose story beat from template
+3. **generate_content**: LLM creates narrative
+4. **check_unlocks**: Determine hidden quest unlocks
+5. **update_world**: Apply changes to world state
+
+**Generated Content Includes:**
+- Story text (200-400 words)
+- Emotional tone and pacing
+- Character dialogue and interactions
+- Optional quest unlock with narrative framing
+
+**LLM Specifications:**
+- **Model**: OpenAI GPT-4o (premium for high-quality writing)
+- **Rationale**: Narrative requires superior story quality
+- **Frequency**: 2-3 beats per week per user
+- **Cost**: $2.50/$10 per 1M tokens (~$0.02/user/day)
+
+**Critical Feature: Story Consistency**
+- Agent validates all changes against scenario template
+- Prevents inconsistencies (items not acquired, locations not discovered)
+- Tracks narrative elements in JSONB
+- Maintains character relationship continuity
+
+**Prerequisites:**
+- Story 4.1 (narrative schema)
+- Story 2.3 (LangGraph setup)
+
+---
+
+### Story 4.3: Implement Pre-Planned Hidden Quest System
+
+Enable surprise quests that unlock on achievements.
+
+<Card title="Story Type" icon="gift">
+  Quest Discovery System
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Hidden quests unlock when trigger conditions met",
+  "ARQ worker checks conditions nightly",
+  "Users notified with story context",
+  "Quests appear in mission pool marked as 'Special'",
+  "Unique rewards: Essence, titles, relationship boosts"
+]} />
+
+**Hidden Quest Examples:**
+```json
+{
+  "quest_id": "the_relentless_challenge",
+  "title": "The Relentless Challenge",
+  "trigger_conditions": {
+    "streak_days": 20,
+    "value_category": "craft"
+  },
+  "narrative_context": "Lyra challenges you to prove your commitment...",
+  "reward": {
+    "essence": 100,
+    "title": "The Relentless",
+    "lyra_relationship": 2
+  }
+}
+```
+
+**Trigger Types:**
+- Streak milestones (7, 14, 20, 30, 100 days)
+- Mission counts (50, 100, 250 completed)
+- Goal achievements (first goal completed, 5 goals active)
+- Value category focus (20 missions in one category)
+- Narrative progression (chapter unlocks)
+
+**Worker Integration:**
+- `backend/app/workers/quest_generator.py`
+- Runs nightly to check triggers
+- Queues unlock notifications
+- Stores unlocked quests in `narrative_states.unlocked_quests`
+
+**Prerequisites:**
+- Story 4.1 (narrative schema)
+- Story 3.3 (missions system)
+
+---
+
+### Story 4.4: Create Story Viewing Interface (MVP)
+
+Build immersive story reading experience.
+
+<Card title="Story Type" icon="palette">
+  Frontend - Story Display
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Current chapter/act title displayed",
+  "Latest story beat at top, previous chronologically below",
+  "Visual indicators for act/chapter progression",
+  "Immersive typography and theme-appropriate styling",
+  "Fade-in animations for new beats",
+  "Navigation between chapters",
+  "Optional bookmarking and sharing"
+]} />
+
+**Components:**
+- `StoryBeat.tsx` - Individual beat display with animations
+- `ChapterNav.tsx` - Chapter navigation and progress
+- `NarrativeView.tsx` - Main story reading interface
+
+**Features:**
+- Beautiful serif typography for story text
+- Theme-appropriate colors (Modern Reality, Medieval, etc.)
+- Framer Motion for smooth fade-in animations
+- Progress bar showing chapter/act completion
+- Responsive design for mobile and desktop
+- Optional text-to-speech (future)
+
+**API Endpoint:**
+```bash
+GET /api/v1/narrative/story
+# Returns array of story beats in chronological order
+# with metadata (chapter, act, character, date)
+```
+
+**Storage:**
+```sql
+-- story_beats table
+id UUID PRIMARY KEY
+narrative_state_id UUID FK
+act_number INT
+chapter_number INT
+beat_number INT
+content TEXT
+generated_at TIMESTAMP WITH TIME ZONE
+character_featured VARCHAR
+emotional_tone VARCHAR
+```
+
+**Prerequisites:**
+- Story 4.2 (narrative generation)
+
+---
+
+### Story 4.5: Implement Character-Initiated Story Events (Future)
+
+Enable characters to reach out with narrative developments.
+
+<Card title="Story Type" icon="chat">
+  Future Feature - Character Agency
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Characters initiate contact based on narrative triggers",
+  "Push notifications with story context",
+  "In-app messages: 'Lyra has a message for you'",
+  "Character messages include story revelations and advice",
+  "Scheduled at optimal engagement times",
+  "Respects quiet hours and spacing preferences"
+]} />
+
+**Event Types:**
+- Story revelations (new plot developments)
+- Relationship milestones (friendship deepens)
+- Warnings or advice (character provides guidance)
+- Celebration of achievements (characters acknowledge wins)
+
+**Worker Integration:**
+- Uses nudge system infrastructure (Epic 7)
+- Queries user optimal send times
+- Respects communication preferences
+- Tracks engagement metrics
+
+**Prerequisites:**
+- Story 4.2 (narrative agent)
+- Story 2.7 (character personas)
+- Story 7.2 (nudge scheduling)
+
+---
+
+### Story 4.6: Add Branching Narratives Based on User Choices (Future)
+
+Enable player agency in story direction.
+
+<Card title="Story Type" icon="branch">
+  Future Feature - Interactive Narrative
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Story decision points with 2-3 meaningful choices",
+  "Choices influence future narrative beats",
+  "Choices affect character relationships",
+  "Different hidden quests unlock per choice branch",
+  "Narrative maintains coherence across branches"
+]} />
+
+**Choice Types:**
+- Value focus (health vs craft vs growth)
+- Risk approach (cautious vs bold)
+- Social strategy (solo vs collaborative)
+- Location preference (Arena vs Observatory vs Commons)
+
+**Storage:**
+```sql
+-- Add to narrative_states
+story_progress JSONB
+# { decisions: [
+#   { decision_id: "act1_value_choice",
+#     choice: "craft",
+#     made_at: "..." }
+# ]}
+```
+
+**Prerequisites:**
+- Story 4.2 (narrative agent)
+- Story 4.4 (story interface)
+
+---
+
+### Story 4.7: Implement Lore Economy and Unlockable Content (Future)
+
+Enable Essence spending on story content.
+
+<Card title="Story Type" icon="scroll">
+  Future Feature - Cosmetics & Lore
+</Card>
+
+**Acceptance Criteria:**
+
+<Checks items={[
+  "Users unlock lore entries by spending Essence",
+  "Codex interface with categories and search",
+  "Character backstories and world history",
+  "Cosmetic customizations (avatars, themes)",
+  "Beautifully illustrated entries"
+]} />
+
+**Lore Categories:**
+- Character backstories
+- World history and setting details
+- Artifact origins and significance
+- Alternative timelines and branches
+- Achievement lore (context for accomplishments)
+
+**Schema:**
+```sql
+-- lore_entries table
+id UUID PRIMARY KEY
+scenario_id UUID FK
+category VARCHAR
+title VARCHAR
+content TEXT
+unlock_cost INT  -- Essence cost
+rarity ENUM('common', 'uncommon', 'rare', 'epic')
+created_at TIMESTAMP WITH TIME ZONE
+
+-- user_unlocks table
+id UUID PRIMARY KEY
+user_id UUID FK
+lore_entry_id UUID FK
+unlocked_at TIMESTAMP WITH TIME ZONE
+```
+
+**Prerequisites:**
+- Story 4.3 (hidden quests for Essence gain)
+- Story 5.1 (progress tracking for Essence)
+
+---
+
+## Epic Dependencies
+
+**Requires:**
+- Epic 1 (Foundation)
+- Epic 2 (Companion) - For character integration
+- Epic 3 (Goal & Missions) - For progress data
+
+**Enables:**
+- Epic 6 (World zones)
+- Epic 7 (Character-initiated nudges)
+
+## Success Criteria
+
+When Epic 4 is complete:
+
+<Checks items={[
+  "Story beats generate based on user progress",
+  "World state maintains consistency and detail",
+  "Users see personalized narrative tied to their work",
+  "Hidden quests unlock at meaningful moments",
+  "Story interface is beautiful and immersive",
+  "No narrative inconsistencies (items, locations, events)",
+  "World state supports future expansion to multiple themes"
+]} />
+
+## Narrative Quality Standards
+
+- **Consistency**: All story elements track to world state
+- **Personalization**: Each user's narrative unique to their progress
+- **Pacing**: Story beats spaced appropriately (2-3/week)
+- **Emotional Impact**: Narratives celebrate real achievements
+- **Coherence**: No contradictions across beats
+- **Character Continuity**: Characters behave consistently
+
+## Cost Estimation
+
+- **GPT-4o narrative generation**: ~$0.02/user/day
+- **Story processing and storage**: Included in database costs
+- **Total**: ~$0.02/user/day additional
+
+## Next Epic
+
+Once Epic 4 is complete, proceed to **Epic 6: World State & Time System** to create dynamic zones and time-aware availability for the narrative world.
