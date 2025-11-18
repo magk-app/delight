@@ -8,12 +8,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clerk_auth import get_current_user
 from app.db.session import get_db
 from app.models.user import User
-from app.models.workflow import WorkflowStatus
+from app.models.workflow import WorkflowEdge, WorkflowStatus
 from app.schemas.workflow import (
     WorkflowCreate,
     WorkflowDetailResponse,
@@ -268,11 +269,23 @@ async def delete_edge(
     """
     service = WorkflowService(db)
 
-    # TODO: Add ownership check
-    success = await service.delete_edge(edge_id)
-    if not success:
+    # Get edge to verify it exists and check workflow ownership
+    result = await db.execute(select(WorkflowEdge).where(WorkflowEdge.id == edge_id))
+    edge = result.scalar_one_or_none()
+
+    if not edge:
         raise HTTPException(status_code=404, detail="Edge not found")
 
+    # Verify workflow ownership
+    workflow = await service.get_workflow(edge.workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if workflow.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Delete the edge
+    success = await service.delete_edge(edge_id)
     return None
 
 

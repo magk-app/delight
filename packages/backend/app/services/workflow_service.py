@@ -3,11 +3,12 @@ Workflow service for managing node-based planning and execution.
 Handles workflow creation, modification, and state management.
 """
 
+from collections import defaultdict
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -432,8 +433,9 @@ class WorkflowService:
 
         errors = []
 
-        # Check for cycles (simple DFS-based cycle detection)
-        # TODO: Implement comprehensive cycle detection
+        # Check for cycles using DFS with color marking
+        if self._has_cycle(workflow.nodes, workflow.edges):
+            errors.append("Workflow contains a cycle (circular dependency)")
 
         # Check for orphaned nodes (no incoming or outgoing edges)
         for node in workflow.nodes:
@@ -443,6 +445,48 @@ class WorkflowService:
 
         return len(errors) == 0, errors
 
+    def _has_cycle(self, nodes: list[WorkflowNode], edges: list[WorkflowEdge]) -> bool:
+        """
+        Detect cycles in workflow graph using DFS with color marking.
 
-# Import func for count query
-from sqlalchemy import func
+        Color scheme:
+        - 0 (white): unvisited
+        - 1 (gray): currently being visited (in DFS stack)
+        - 2 (black): completely visited
+
+        A back edge (edge to a gray node) indicates a cycle.
+        """
+        # Build adjacency list
+        graph = defaultdict(list)
+        for edge in edges:
+            graph[edge.source_node_id].append(edge.target_node_id)
+
+        # Initialize colors: 0=white (unvisited), 1=gray (visiting), 2=black (visited)
+        color = {node.id: 0 for node in nodes}
+
+        def dfs(node_id: UUID) -> bool:
+            """DFS helper that returns True if a cycle is detected."""
+            if color[node_id] == 1:  # Gray node - back edge found (cycle!)
+                return True
+            if color[node_id] == 2:  # Black node - already fully processed
+                return False
+
+            # Mark as gray (visiting)
+            color[node_id] = 1
+
+            # Visit all neighbors
+            for neighbor_id in graph[node_id]:
+                if dfs(neighbor_id):
+                    return True
+
+            # Mark as black (visited)
+            color[node_id] = 2
+            return False
+
+        # Check from all nodes (handles disconnected components)
+        for node in nodes:
+            if color[node.id] == 0:  # Unvisited
+                if dfs(node.id):
+                    return True
+
+        return False

@@ -38,22 +38,37 @@ class WorkflowAPIError extends Error {
 
 /**
  * Get authentication token from Clerk
+ * This should be called from within React components/hooks where Clerk is available
  */
 async function getAuthToken(): Promise<string> {
-  // In a real implementation, get token from Clerk
-  // For now, this is a placeholder
-  // TODO: Integrate with Clerk auth
+  // Check if we're in a browser environment and Clerk is loaded
+  if (typeof window !== 'undefined' && (window as any).Clerk) {
+    try {
+      const clerk = (window as any).Clerk;
+      const session = await clerk.session;
+      if (session) {
+        return await session.getToken();
+      }
+    } catch (error) {
+      console.warn('Failed to get Clerk token:', error);
+    }
+  }
   return '';
 }
 
 /**
  * Make authenticated API request
+ *
+ * For better auth integration, consider using this from within React components
+ * where you can access useAuth() hook and pass the token explicitly.
  */
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  authToken?: string
 ): Promise<T> {
-  const token = await getAuthToken();
+  // Use provided token or try to get from Clerk
+  const token = authToken || await getAuthToken();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -261,14 +276,21 @@ export function subscribeToExecutionProgress(
   executionId: string,
   onProgress: ProgressCallback,
   onError?: (error: Error) => void,
-  onComplete?: () => void
+  onComplete?: () => void,
+  authToken?: string
 ): () => void {
-  const token = ''; // TODO: Get from Clerk
-
   const url = new URL(
     `/api/v1/workflows/sse/executions/${executionId}/progress`,
     API_BASE_URL
   );
+
+  // Note: EventSource doesn't support custom headers (e.g., Authorization: Bearer)
+  // Options for authentication:
+  // 1. Use cookie-based auth (recommended for SSE with Clerk)
+  // 2. Pass token as query parameter (less secure): url.searchParams.set('token', authToken)
+  // 3. Configure Clerk to use cookies for session management
+  //
+  // For production, ensure backend SSE endpoint validates session cookies
 
   const eventSource = new EventSource(url.toString());
 
@@ -317,12 +339,16 @@ export function subscribeToWorkflowLive(
   workflowId: string,
   onProgress: ProgressCallback,
   onError?: (error: Error) => void,
-  onComplete?: () => void
+  onComplete?: () => void,
+  authToken?: string
 ): () => void {
   const url = new URL(
     `/api/v1/workflows/sse/workflows/${workflowId}/live`,
     API_BASE_URL
   );
+
+  // Note: SSE authentication relies on cookie-based session
+  // See subscribeToExecutionProgress for auth details
 
   const eventSource = new EventSource(url.toString());
 

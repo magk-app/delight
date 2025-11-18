@@ -330,8 +330,17 @@ class WorkflowExecutor:
         # Resolve any references to execution context
         resolved_input = self._resolve_context_references(input_data, execution_context)
 
-        # Execute tool
-        result = await tool_func(resolved_input)
+        # Get timeout from input_schema or use default (5 minutes)
+        timeout = input_data.get("timeout", 300)
+
+        # Execute tool with timeout protection
+        try:
+            result = await asyncio.wait_for(
+                tool_func(resolved_input),
+                timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            raise ValueError(f"Node execution timed out after {timeout} seconds")
 
         return {
             "status": "success",

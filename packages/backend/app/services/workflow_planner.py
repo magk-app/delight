@@ -21,6 +21,7 @@ from app.schemas.workflow import (
     WorkflowCreate,
     WorkflowEdgeCreate,
     WorkflowNodeCreate,
+    WorkflowUpdate,
 )
 from app.services.workflow_service import WorkflowService
 
@@ -333,7 +334,3 @@ Generate the refined workflow plan in JSON format."""
                 for edge in workflow.edges
             ],
         }
-
-
-# Import WorkflowUpdate
-from app.schemas.workflow import WorkflowUpdate
