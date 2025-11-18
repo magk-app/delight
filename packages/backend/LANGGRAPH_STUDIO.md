@@ -1,10 +1,10 @@
 # LangGraph Studio Setup Guide
 
-**Purpose:** Visual debugging and testing of the Eliza AI agent using LangGraph Studio.
+**Purpose:** Testing and debugging the Eliza AI agent using LangGraph API.
 
 ---
 
-## Quick Start (5 minutes)
+## Quick Start (2 minutes)
 
 ### 1. Prerequisites
 
@@ -12,30 +12,42 @@
 - **OpenAI API key** configured in `packages/backend/.env`
 - **Backend dependencies installed**: `poetry install`
 
-### 2. Start LangGraph Studio
+### 2. Start LangGraph Dev Server
 
 ```bash
 # Navigate to backend package
 cd packages/backend
 
-# Start Studio server
+# Start development server
 poetry run langgraph dev
 
-# Opens at: http://localhost:8123
+# API runs at: http://127.0.0.1:2024
 ```
 
-### 3. What You'll See
+### 3. Access the API
 
-**Visual Graph:**
-- `recall_context` → `analyze_emotion` → `generate_response`
-- Click nodes to inspect code
-- See state transitions in real-time
+**Option A: Swagger UI (Recommended - Works Immediately)**
+```
+http://127.0.0.1:2024/docs
+```
+- Interactive API testing
+- Test your Eliza graph with real inputs
+- See request/response directly
+- No CORS issues
 
-**Test Interface:**
-- Send test messages to Eliza
-- See retrieved memories (currently mocked)
-- Monitor token usage per node
-- Debug state at each step
+**Option B: Cloud Studio (Requires LangSmith Account)**
+```
+https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
+```
+- ⚠️ May have browser CORS/mixed-content issues
+- Requires allowing localhost connections in browser
+- Visual graph editor (when working)
+
+**Option C: Direct API Calls**
+```bash
+# Test via curl
+curl http://127.0.0.1:2024/threads
+```
 
 ---
 
@@ -203,6 +215,44 @@ Once tested in Studio:
 ---
 
 ## Troubleshooting
+
+### Issue: Studio UI "Failed to fetch"
+
+**Problem:** Cloud-hosted Studio UI (`https://smith.langchain.com`) cannot connect to localhost due to browser security (CORS/mixed content).
+
+**Solution 1 (Recommended):** Use Swagger UI instead:
+```
+http://127.0.0.1:2024/docs
+```
+
+**Solution 2:** Allow localhost in browser (Chrome):
+1. Navigate to: `chrome://flags/#block-insecure-private-network-requests`
+2. Set to "Disabled"
+3. Restart Chrome
+4. Try Studio UI again
+
+**Solution 3:** Use direct API calls:
+```bash
+# List available graphs
+curl http://127.0.0.1:2024/assistants
+
+# Create a thread
+curl -X POST http://127.0.0.1:2024/threads
+
+# Run the agent
+curl -X POST http://127.0.0.1:2024/threads/{thread_id}/runs \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id": "eliza", "input": {"messages": [{"role": "user", "content": "Hello"}]}}'
+```
+
+### Issue: `Required package 'langgraph-api' is not installed`
+
+**Solution:**
+```bash
+cd packages/backend
+poetry lock    # Update lock file
+poetry install # Install langgraph-api and runtime
+```
 
 ### Issue: `langgraph: command not found`
 
