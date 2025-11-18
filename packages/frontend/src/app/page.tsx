@@ -32,28 +32,29 @@ export default function Home() {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                     adaptive daily missions
                   </span>
-        </h1>
+                </h1>
+
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   An emotionally intelligent AI companion that remembers your
-                  journey, understands when you&apos;re stuck, and helps you build
+                  journey, understands when you're stuck, and helps you build
                   momentum when stress threatens to derail your ambitions.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-          <Link
+                <Link
                   href="/waitlist"
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-          >
+                >
                   Join Waitlist
-          </Link>
-          <Link
+                </Link>
+                <Link
                   href="/why"
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
-          >
+                >
                   Why we&apos;re building this
-          </Link>
-        </div>
+                </Link>
+              </div>
 
               <p className="text-sm text-muted-foreground">
                 For founders, students, and ambitious people navigating life
@@ -77,7 +78,7 @@ export default function Home() {
               Built for ambitious people who stall
             </h2>
             <p className="text-lg text-muted-foreground">
-              You know what to do. You just can&apos;t start. Or you start and
+              You know what to do. You just can't start. Or you start and
               immediately drift. Delight meets you there.
             </p>
           </div>
@@ -96,9 +97,9 @@ export default function Home() {
                 stall when stress spikes and priorities blur.
               </p>
               <p className="text-sm text-foreground/80 italic">
-                &quot;After a tough board meeting, Eliza helped me break down a
+                "After a tough board meeting, Eliza helped me break down a
                 product launch into three focused missions. I shipped by
-                Friday.&quot;
+                Friday."
               </p>
             </div>
 
@@ -115,8 +116,8 @@ export default function Home() {
                 structure that adapts to exam stress and creative bursts.
               </p>
               <p className="text-sm text-foreground/80 italic">
-                &quot;Between midterms and my startup, I was drowning. Delight helped
-                me maintain a 12-day streak without burning out.&quot;
+                "Between midterms and my startup, I was drowning. Delight helped
+                me maintain a 12-day streak without burning out."
               </p>
             </div>
 
@@ -129,13 +130,13 @@ export default function Home() {
                 People in Transition
               </h3>
               <p className="text-muted-foreground mb-4">
-                Career changes, relocations, or relationship goals that don&apos;t
+                Career changes, relocations, or relationship goals that don't
                 fit traditional task lists. You need nuanced coaching, not
                 checkboxes.
               </p>
               <p className="text-sm text-foreground/80 italic">
-                &quot;Moving to a new city felt abstract. Delight helped me decompose
-                &apos;build community&apos; into weekly coffee chats and hobby meetups.&quot;
+                "Moving to a new city felt abstract. Delight helped me decompose
+                'build community' into weekly coffee chats and hobby meetups."
               </p>
             </div>
           </div>
@@ -183,7 +184,7 @@ export default function Home() {
                       Learns your patterns
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      When you&apos;re most productive, what drains you, which goals
+                      When you're most productive, what drains you, which goals
                       matter most
                     </p>
                   </div>
@@ -203,7 +204,7 @@ export default function Home() {
                     Living memory that compounds
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Unlike chatbots that forget or productivity apps that don&apos;t
+                    Unlike chatbots that forget or productivity apps that don't
                     connect dots, Delight maintains a three-tier memory system.
                     Personal memories capture values and fears. Project memories
                     track goal context. Task memories ensure mission-specific
@@ -239,7 +240,7 @@ export default function Home() {
                     Adaptive micro missions
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Abstract goals like &quot;get healthier&quot; don&apos;t translate to
+                    Abstract goals like "get healthier" don't translate to
                     action. Delight excels at collaborative goal
                     decomposition—breaking overwhelming ambitions into concrete,
                     time-boxed missions that fit your current energy level.
@@ -296,10 +297,10 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground mb-2">
                   Highlight Reels
                 </h3>
-            <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Proof of work with notes and photos
-            </p>
-          </div>
+                </p>
+              </div>
 
               <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-all">
                 <div className="inline-flex w-12 h-12 rounded-full bg-success/10 items-center justify-center mb-4">
@@ -308,10 +309,10 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground mb-2">
                   Constellation
                 </h3>
-            <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Growth across four dimensions
-            </p>
-          </div>
+                </p>
+              </div>
 
               <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-all">
                 <div className="inline-flex w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-4">
@@ -320,12 +321,12 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground mb-2">
                   Consistency Index
                 </h3>
-            <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Nuanced scoring beyond streaks
-            </p>
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </div>
       </section>
 
