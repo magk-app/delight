@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MainNav } from "@/components/navigation/main-nav";
 import "./globals.css";
-
 export const metadata: Metadata = {
   title: "Delight - AI-Powered Self-Improvement Companion",
   description:
