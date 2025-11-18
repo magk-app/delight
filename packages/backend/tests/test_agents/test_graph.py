@@ -9,12 +9,12 @@ class TestGoalDrivenAgent:
     """Test the complete goal-driven agent workflow"""
 
     @pytest.fixture
-    def agent(self):
+    async def agent(self):
         """Create agent instance for testing"""
         # Reset tool store to ensure clean state
-        store = get_tool_store()
+        store = await get_tool_store()
         store.clear_history()
-        return GoalDrivenAgent()
+        return GoalDrivenAgent(tool_store=store)
 
     @pytest.mark.asyncio
     async def test_simple_calculation_request(self, agent):
@@ -112,9 +112,10 @@ class TestAgentNodes:
     """Test individual agent node functions"""
 
     @pytest.fixture
-    def agent(self):
+    async def agent(self):
         """Create agent instance"""
-        return GoalDrivenAgent()
+        tool_store = await get_tool_store()
+        return GoalDrivenAgent(tool_store=tool_store)
 
     @pytest.mark.asyncio
     async def test_initialize_node(self, agent):
@@ -206,9 +207,10 @@ class TestAgentRouting:
     """Test agent routing logic"""
 
     @pytest.fixture
-    def agent(self):
+    async def agent(self):
         """Create agent instance"""
-        return GoalDrivenAgent()
+        tool_store = await get_tool_store()
+        return GoalDrivenAgent(tool_store=tool_store)
 
     def test_route_from_initialize_with_goal(self, agent):
         """Test routing from initialize when goal is clear"""
@@ -305,9 +307,10 @@ class TestGoalParsing:
     """Test goal parsing logic"""
 
     @pytest.fixture
-    def agent(self):
+    async def agent(self):
         """Create agent instance"""
-        return GoalDrivenAgent()
+        tool_store = await get_tool_store()
+        return GoalDrivenAgent(tool_store=tool_store)
 
     def test_parse_calculation_goal(self, agent):
         """Test parsing calculation-related goals"""
@@ -329,9 +332,10 @@ class TestToolInputGeneration:
     """Test tool input generation"""
 
     @pytest.fixture
-    def agent(self):
+    async def agent(self):
         """Create agent instance"""
-        return GoalDrivenAgent()
+        tool_store = await get_tool_store()
+        return GoalDrivenAgent(tool_store=tool_store)
 
     def test_generate_calculator_input_add(self, agent):
         """Test generating calculator input for addition"""
@@ -370,11 +374,11 @@ class TestEndToEndScenarios:
     """End-to-end integration tests for complete scenarios"""
 
     @pytest.fixture
-    def agent(self):
+    async def agent(self):
         """Create agent instance"""
-        store = get_tool_store()
+        store = await get_tool_store()
         store.clear_history()
-        return GoalDrivenAgent()
+        return GoalDrivenAgent(tool_store=store)
 
     @pytest.mark.asyncio
     async def test_complete_calculation_workflow(self, agent):

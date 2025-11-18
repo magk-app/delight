@@ -1,8 +1,12 @@
 """Tool Store - Central registry for agent tools"""
 from typing import Dict, List, Optional, Type, Any
 from collections import defaultdict
+from asyncio import Lock
+import logging
 
 from .base import BaseTool, ToolCategory, ToolOutput
+
+logger = logging.getLogger(__name__)
 
 
 class ToolStore:
@@ -158,6 +162,7 @@ class ToolStore:
             )
 
         # Validate and execute
+        logger.debug(f"Executing tool '{tool_name}' with input: {input_data}")
         try:
             validated_input = tool.validate_input(input_data)
             result = await tool._execute_with_tracking(validated_input, context)
@@ -171,8 +176,14 @@ class ToolStore:
                 "metadata": result.metadata
             })
 
+            if result.success:
+                logger.info(f"Tool '{tool_name}' executed successfully: {result.result}")
+            else:
+                logger.warning(f"Tool '{tool_name}' failed: {result.error}")
+
             return result
         except Exception as e:
+            logger.exception(f"Unexpected error executing tool '{tool_name}'")
             error_result = ToolOutput(
                 success=False,
                 result=None,
@@ -225,14 +236,22 @@ class ToolStore:
 
 # Global tool store instance
 _global_tool_store: Optional[ToolStore] = None
+_tool_store_lock = Lock()
 
 
-def get_tool_store() -> ToolStore:
-    """Get the global tool store instance"""
+async def get_tool_store() -> ToolStore:
+    """Get the global tool store instance
+
+    Thread-safe singleton pattern using double-check locking.
+    Must be called with await.
+    """
     global _global_tool_store
     if _global_tool_store is None:
-        _global_tool_store = ToolStore()
-        _initialize_default_tools()
+        async with _tool_store_lock:
+            # Double-check after acquiring lock
+            if _global_tool_store is None:
+                _global_tool_store = ToolStore()
+                _initialize_default_tools()
     return _global_tool_store
 
 

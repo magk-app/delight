@@ -25,9 +25,29 @@ class GoalDrivenAgent:
     - Avoiding redundant tool calls
     """
 
-    def __init__(self):
-        self.tool_store = get_tool_store()
+    def __init__(self, tool_store=None):
+        """Initialize the agent
+
+        Args:
+            tool_store: Optional ToolStore instance. If None, will be loaded
+                       asynchronously on first use via create() factory method.
+        """
+        self.tool_store = tool_store
         self.graph = self._build_graph()
+
+    @classmethod
+    async def create(cls):
+        """Factory method to create agent with async tool store initialization
+
+        Returns:
+            Initialized GoalDrivenAgent instance
+
+        Example:
+            agent = await GoalDrivenAgent.create()
+            result = await agent.run("calculate 5 + 3")
+        """
+        tool_store = await get_tool_store()
+        return cls(tool_store=tool_store)
 
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph workflow

@@ -27,7 +27,7 @@ async def demo_simple_calculation():
     print("DEMO 1: Simple Calculation")
     print("=" * 70)
 
-    agent = GoalDrivenAgent()
+    agent = await GoalDrivenAgent.create()
     result = await agent.run("calculate 5 + 3")
 
     print("\n📊 Result Summary:")
@@ -44,7 +44,7 @@ async def demo_multiplication():
     print("DEMO 2: Multiplication")
     print("=" * 70)
 
-    agent = GoalDrivenAgent()
+    agent = await GoalDrivenAgent.create()
     result = await agent.run("multiply 7 by 6")
 
     print("\n📊 Result Summary:")
@@ -60,7 +60,7 @@ async def demo_square_root():
     print("DEMO 3: Square Root (Unary Operation)")
     print("=" * 70)
 
-    agent = GoalDrivenAgent()
+    agent = await GoalDrivenAgent.create()
     result = await agent.run("calculate square root of 16")
 
     print("\n📊 Result Summary:")
@@ -199,7 +199,7 @@ async def demo_goal_parsing():
     print("DEMO 7: Goal Parsing")
     print("=" * 70)
 
-    agent = GoalDrivenAgent()
+    agent = await GoalDrivenAgent.create()
 
     test_requests = [
         "calculate 10 + 20",

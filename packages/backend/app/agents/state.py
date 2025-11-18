@@ -4,6 +4,9 @@ from enum import Enum
 from pydantic import BaseModel, Field
 from datetime import datetime
 import operator
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AgentState(str, Enum):
@@ -233,10 +236,19 @@ class StateManager:
         current = AgentState(state["current_state"])
 
         if not StateManager.is_valid_transition(current, new_state):
+            logger.error(
+                f"Invalid state transition attempted: {current} -> {new_state}. "
+                f"Valid transitions: {StateManager.get_next_states(current)}"
+            )
             raise ValueError(
                 f"Invalid state transition: {current} -> {new_state}. "
                 f"Valid transitions from {current}: {StateManager.get_next_states(current)}"
             )
+
+        logger.info(
+            f"State transition: {current} -> {new_state} (iteration {state['iterations'] + 1}). "
+            f"Reason: {reasoning}"
+        )
 
         state["previous_state"] = state["current_state"]
         state["current_state"] = new_state
@@ -265,15 +277,15 @@ class StateManager:
     def was_tool_used(state: GraphState, tool_name: str) -> bool:
         """Check if a tool was already used (avoid redundancy)"""
         executions = state.get("tool_executions", [])
-        return any(exec["tool_name"] == tool_name for exec in executions)
+        return any(exec.tool_name == tool_name for exec in executions)
 
     @staticmethod
     def get_tool_result(state: GraphState, tool_name: str) -> Optional[Dict[str, Any]]:
         """Get the result of a previous tool execution"""
         executions = state.get("tool_executions", [])
         for exec in reversed(executions):  # Get most recent
-            if exec["tool_name"] == tool_name and exec["success"]:
-                return exec["output"]
+            if exec.tool_name == tool_name and exec.success:
+                return exec.output
         return None
 
     @staticmethod
