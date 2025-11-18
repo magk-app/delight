@@ -145,8 +145,8 @@ function switchTab(tabName) {
 function updateHybridWeights(vectorWeight) {
     const keywordWeight = (1 - parseFloat(vectorWeight)).toFixed(1);
     document.getElementById('vector-weight-value').textContent = vectorWeight;
-    document.getElementById('keyword-weight').value = keywordWeight;
-    document.getElementById('keyword-weight-value').textContent = keywordWeight;
+    // Note: keyword-weight elements removed from new config layout
+    // Keyword weight is automatically calculated as (1 - vector weight)
 }
 
 // ============================================================================
