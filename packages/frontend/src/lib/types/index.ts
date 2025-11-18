@@ -12,7 +12,7 @@ import type {
   MemoryTier as MemoryTierType,
   NarrativeAct,
   Priority,
-} from '../constants';
+} from "../constants";
 
 // Re-export types
 export type MemoryTier = MemoryTierType;
@@ -30,7 +30,7 @@ export interface User {
 export interface UserPreferences {
   userId: string;
   customHours?: Record<string, any>;
-  theme: 'modern' | 'medieval' | 'scifi' | 'cyberpunk' | 'zombie';
+  theme: "modern" | "medieval" | "scifi" | "cyberpunk" | "zombie";
   communicationPreferences: {
     inApp: boolean;
     email: boolean;
@@ -143,7 +143,7 @@ export interface PersonState {
   relationshipLevel: number;
   lastInteraction: string;
   knowsAbout: string[];
-  status: 'friendly' | 'neutral' | 'distant';
+  status: "friendly" | "neutral" | "distant";
 }
 
 export interface Artifact {
@@ -184,7 +184,7 @@ export interface DCISnapshot {
   userId: string;
   date: string;
   score: number;
-  status: 'Fragile' | 'Steady' | 'Strong' | 'Excellent';
+  status: "Fragile" | "Steady" | "Strong" | "Excellent";
   breakdown: {
     streakFactor: number;
     completionRate: number;
@@ -223,7 +223,7 @@ export interface ZoneState {
 // Companion and Characters
 export interface CompanionMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: string;
   emotionalContext?: {
@@ -246,7 +246,7 @@ export interface Evidence {
   id: string;
   userId: string;
   missionId: string;
-  fileType: 'image' | 'document';
+  fileType: "image" | "document";
   fileSize: number;
   caption?: string;
   uploadedAt: string;
