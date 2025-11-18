@@ -36,6 +36,12 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    agent_preferences = relationship(
+        "AgentPreferences",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
     memories = relationship(
         "Memory",
         back_populates="user",
@@ -43,6 +49,16 @@ class User(Base):
     )
     memory_collections = relationship(
         "MemoryCollection",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    knowledge_entities = relationship(
+        "KnowledgeEntity",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    knowledge_relationships = relationship(
+        "KnowledgeRelationship",
         back_populates="user",
         cascade="all, delete-orphan",
     )
