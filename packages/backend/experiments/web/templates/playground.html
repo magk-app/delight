@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="playground-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>🎮 Interactive Playground</h1>
+        <p class="subtitle">Test search strategies, memory creation, and agent behavior</p>
+    </div>
+
+    <!-- Playground Grid -->
+    <div class="playground-grid">
+        <!-- Search Testing -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🔍 Search Testing</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="pg-search-query">Query:</label>
+                    <textarea id="pg-search-query" class="form-textarea" rows="3" placeholder="What are my programming preferences?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="pg-search-strategy">Strategy:</label>
+                    <select id="pg-search-strategy" class="select-input">
+                        <option value="auto">Auto (Recommended)</option>
+                        <option value="semantic">Semantic (Vector)</option>
+                        <option value="keyword">Keyword (BM25)</option>
+                        <option value="categorical">Categorical</option>
+                        <option value="temporal">Temporal</option>
+                        <option value="hybrid">Hybrid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pg-search-limit">Limit:</label>
+                    <input type="number" id="pg-search-limit" class="form-input" value="5" min="1" max="50">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="runSearchTest()">
+                    🚀 Run Search
+                </button>
+                <div id="search-results-playground" class="results-container">
+                    <!-- Results appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Memory Creation -->
+        <div class="card">
+            <div class="card-header">
+                <h2>➕ Create Test Memory</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="pg-memory-content">Content:</label>
+                    <textarea id="pg-memory-content" class="form-textarea" rows="3" placeholder="Enter memory content..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="pg-memory-type">Type:</label>
+                    <select id="pg-memory-type" class="select-input">
+                        <option value="fact">Fact</option>
+                        <option value="preference">Preference</option>
+                        <option value="context">Context</option>
+                        <option value="episodic">Episodic</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pg-memory-categories">Categories (comma-separated):</label>
+                    <input type="text" id="pg-memory-categories" class="form-input" placeholder="programming, python, preferences">
+                </div>
+                <button class="btn btn-success btn-block" onclick="createTestMemory()">
+                    💾 Create Memory
+                </button>
+                <div id="create-memory-result" class="results-container">
+                    <!-- Result appears here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Fact Extraction Test -->
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2>📝 Fact Extraction Test</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="pg-extract-text">Text to Extract From:</label>
+                    <textarea id="pg-extract-text" class="form-textarea" rows="5" placeholder="I love programming in Python. I prefer dark mode in my IDE. I usually work best in the mornings..."></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="extractFacts()">
+                    🔬 Extract Facts
+                </button>
+                <div id="extracted-facts-result" class="results-container">
+                    <!-- Extracted facts appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Benchmark -->
+        <div class="card">
+            <div class="card-header">
+                <h2>⚡ Performance Benchmark</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="pg-bench-queries">Test Queries (one per line):</label>
+                    <textarea id="pg-bench-queries" class="form-textarea" rows="5" placeholder="Query 1&#10;Query 2&#10;Query 3"></textarea>
+                </div>
+                <button class="btn btn-warning btn-block" onclick="runBenchmark()">
+                    🏃 Run Benchmark
+                </button>
+                <div id="benchmark-results" class="results-container">
+                    <!-- Benchmark results appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Console -->
+        <div class="card">
+            <div class="card-header">
+                <h2>💬 Live Console</h2>
+                <button class="btn btn-sm" onclick="clearConsole()">Clear</button>
+            </div>
+            <div class="card-body">
+                <div id="live-console" class="console-output">
+                    <div class="console-line">
+                        <span class="console-timestamp">[00:00:00]</span>
+                        <span class="console-message">Console ready. Run tests to see output...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WebSocket Status -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🔌 WebSocket Status</h2>
+            </div>
+            <div class="card-body">
+                <div class="status-indicator">
+                    <div id="ws-status-dot" class="status-dot status-disconnected"></div>
+                    <span id="ws-status-text">Disconnected</span>
+                </div>
+                <button class="btn btn-secondary btn-block" onclick="toggleWebSocket()">
+                    <span id="ws-toggle-text">Connect</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/playground.js"></script>
+{% endblock %}

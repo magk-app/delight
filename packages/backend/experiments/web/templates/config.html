@@ -111,20 +111,6 @@
                         </select>
                         <p class="help-text">Used for: Final outputs, creative writing, important summaries</p>
                     </div>
-                    <div class="model-info">
-                        <div class="info-row">
-                            <span>💰 Cost:</span>
-                            <span id="expensive-model-cost">~$2.50 / 1M tokens</span>
-                        </div>
-                        <div class="info-row">
-                            <span>⚡ Speed:</span>
-                            <span id="expensive-model-speed">Fast</span>
-                        </div>
-                        <div class="info-row">
-                            <span>🎯 Quality:</span>
-                            <span id="expensive-model-quality">Very High</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -143,67 +129,7 @@
                         </select>
                         <p class="help-text">Used for: Semantic search, similarity matching, memory embeddings</p>
                     </div>
-                    <div class="model-info">
-                        <div class="info-row">
-                            <span>💰 Cost:</span>
-                            <span id="embedding-model-cost">~$0.02 / 1M tokens</span>
-                        </div>
-                        <div class="info-row">
-                            <span>📏 Dimensions:</span>
-                            <span id="embedding-dimensions">1536</span>
-                        </div>
-                    </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Model Comparison -->
-        <div class="card card-wide">
-            <div class="card-header">
-                <h2>📊 Model Comparison</h2>
-            </div>
-            <div class="card-body">
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Model</th>
-                            <th>Speed</th>
-                            <th>Cost (Input)</th>
-                            <th>Cost (Output)</th>
-                            <th>Best For</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>gpt-4o-mini</strong></td>
-                            <td><span class="badge badge-success">Very Fast</span></td>
-                            <td>$0.15 / 1M</td>
-                            <td>$0.60 / 1M</td>
-                            <td>General chat, fact extraction</td>
-                        </tr>
-                        <tr>
-                            <td><strong>gpt-4o</strong></td>
-                            <td><span class="badge badge-info">Fast</span></td>
-                            <td>$2.50 / 1M</td>
-                            <td>$10.00 / 1M</td>
-                            <td>High-quality outputs, balanced</td>
-                        </tr>
-                        <tr>
-                            <td><strong>o1-preview</strong></td>
-                            <td><span class="badge badge-warning">Slower</span></td>
-                            <td>$15.00 / 1M</td>
-                            <td>$60.00 / 1M</td>
-                            <td>Complex reasoning, planning</td>
-                        </tr>
-                        <tr>
-                            <td><strong>o1-mini</strong></td>
-                            <td><span class="badge badge-info">Medium</span></td>
-                            <td>$3.00 / 1M</td>
-                            <td>$12.00 / 1M</td>
-                            <td>STEM, coding tasks</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -237,11 +163,6 @@
                         <label for="default-search-limit">Default Limit:</label>
                         <input type="number" id="default-search-limit" class="form-input" min="1" max="100" value="10">
                     </div>
-                    <div class="form-group">
-                        <label for="max-search-limit">Maximum Limit:</label>
-                        <input type="number" id="max-search-limit" class="form-input" min="1" max="500" value="100" disabled>
-                        <p class="help-text">Hard limit for API requests</p>
-                    </div>
                 </div>
             </div>
 
@@ -257,27 +178,6 @@
                                    oninput="updateHybridWeights(this.value)">
                             <span id="vector-weight-value" class="range-value">0.7</span>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Keyword Search Weight:</label>
-                        <div class="range-input-group">
-                            <input type="range" id="keyword-weight" min="0" max="1" step="0.1" value="0.3" disabled>
-                            <span id="keyword-weight-value" class="range-value">0.3</span>
-                        </div>
-                        <p class="help-text">Automatically calculated: 1 - vector weight</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2>🌐 Graph Traversal</h2>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="graph-max-depth">Maximum Depth:</label>
-                        <input type="number" id="graph-max-depth" class="form-input" min="1" max="10" value="3">
-                        <p class="help-text">How many relationship hops to follow</p>
                     </div>
                 </div>
             </div>
@@ -340,49 +240,6 @@
                         <div class="info-item">
                             <span class="info-label">Location:</span>
                             <span class="info-value">experiments/data/memories.json</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2>⚡ Performance</h2>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="max-parallel-tasks">Max Parallel Tasks:</label>
-                        <input type="number" id="max-parallel-tasks" class="form-input" min="1" max="10" value="5">
-                    </div>
-                    <div class="form-group">
-                        <label for="max-sequential-depth">Max Sequential Depth:</label>
-                        <input type="number" id="max-sequential-depth" class="form-input" min="1" max="20" value="10">
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2>🔒 Safety</h2>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="read-only-mode">
-                            <label for="read-only-mode">Read-Only Mode</label>
-                        </div>
-                        <p class="help-text">Prevent database writes for testing</p>
-                    </div>
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="enable-cost-tracking" checked>
-                            <label for="enable-cost-tracking">Enable Cost Tracking</label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="warn-expensive-ops" checked>
-                            <label for="warn-expensive-ops">Warn Before Expensive Operations</label>
                         </div>
                     </div>
                 </div>
