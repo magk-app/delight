@@ -2,14 +2,14 @@
 
 ## Problem
 
-Railway was detecting the root `package.json` and trying to use Railpack (Node.js packer) instead of Nixpacks (Python packer).
+Railway was detecting the root `package.json` and trying to use Railpack for Node.js instead of Railpack for Python.
 
 ## Solution
 
-Root-level configuration files have been added to force Railway to use Nixpacks:
+Root-level configuration files have been added to force Railway to use Railpack:
 
-- **`railway.json`** (root) - Forces Nixpacks builder and points to Python backend
-- **`nixpacks.toml`** (root) - Nixpacks build configuration
+- **`railway.json`** (root) - Forces Railpack builder and points to Python backend
+- **`railpack.json`** (root) - Railpack build configuration
 - **`runtime.txt`** (root) - Python version specification
 
 ## Deployment Steps
@@ -34,8 +34,8 @@ Root-level configuration files have been added to force Railway to use Nixpacks:
 
 ## How It Works
 
-1. Railway detects root `railway.json` → Uses Nixpacks builder
-2. Nixpacks reads root `nixpacks.toml` → Installs Python 3.11 and Poetry
+1. Railway detects root `railway.json` → Uses Railpack builder
+2. Railpack reads root `railpack.json` → Installs Python 3.11 and Poetry
 3. Build command: `cd packages/backend && poetry install --no-dev`
 4. Start command: `cd packages/backend && poetry run python -m experiments.web.dashboard_server`
 
@@ -43,8 +43,8 @@ Root-level configuration files have been added to force Railway to use Nixpacks:
 
 ```
 /
-├── railway.json          # Root config - forces Nixpacks
-├── nixpacks.toml         # Root build config
+├── railway.json          # Root config - forces Railpack
+├── railpack.json         # Root build config
 ├── runtime.txt           # Python version
 ├── package.json          # Node.js config (ignored by Railway due to railway.json)
 └── packages/
@@ -53,15 +53,15 @@ Root-level configuration files have been added to force Railway to use Nixpacks:
             └── web/
                 ├── dashboard_server.py  # The actual server
                 ├── railway.json         # Alternative config (if using subdirectory)
-                └── nixpacks.toml        # Alternative config (if using subdirectory)
+                └── railpack.json        # Alternative config (if using subdirectory)
 ```
 
 ## Troubleshooting
 
-**If Railway still uses Railpack:**
+**If Railway still uses Nixpacks (old deprecated system):**
 
-- Check that `railway.json` exists at root
-- Verify `nixpacks.toml` exists at root
+- Check that `railway.json` exists at root with `"builder": "RAILPACK"`
+- Verify `railpack.json` exists at root
 - Make sure Root Directory is NOT set in Railway settings
 
 **If build fails:**

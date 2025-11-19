@@ -1,8 +1,7 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "cd packages/backend && poetry install --no-dev"
+    "builder": "RAILPACK"
   },
   "deploy": {
     "startCommand": "cd packages/backend && poetry run python -m experiments.web.dashboard_server",
