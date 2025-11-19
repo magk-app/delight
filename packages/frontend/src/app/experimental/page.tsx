@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   Code,
 } from "lucide-react";
-import { ChatInterface } from "@/components/experimental/ChatInterface";
+import { ChatInterfaceWithSidebar } from "@/components/experimental/ChatInterfaceWithSidebar";
 import { MemoryVisualization } from "@/components/experimental/MemoryVisualization";
 import { AnalyticsDashboard } from "@/components/experimental/AnalyticsDashboard";
 import { ConfigurationPanel } from "@/components/experimental/ConfigurationPanel";
@@ -57,13 +57,15 @@ export default function ExperimentalPage() {
             </div>
 
             {/* Backend Status & User Switcher */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative z-50">
               {/* User Switcher */}
               {userId && !userLoading && (
-                <UserSwitcher
-                  currentUserId={userId}
-                  onUserChange={handleUserChange}
-                />
+                <div className="relative z-[99999]">
+                  <UserSwitcher
+                    currentUserId={userId}
+                    onUserChange={handleUserChange}
+                  />
+                </div>
               )}
 
               {/* Backend Status Indicator */}
@@ -183,7 +185,7 @@ export default function ExperimentalPage() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {activeTab === "chat" && <ChatInterface userId={userId} />}
+              {activeTab === "chat" && <ChatInterfaceWithSidebar userId={userId} />}
               {activeTab === "memories" && <MemoryVisualization userId={userId} />}
               {activeTab === "analytics" && <AnalyticsDashboard userId={userId} />}
               {activeTab === "config" && <ConfigurationPanel />}
