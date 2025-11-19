@@ -3,11 +3,12 @@ Chat API endpoint for experimental agent
 Connects the Next.js frontend to the chatbot functionality
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID, uuid4
 from datetime import datetime
+import asyncio
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -112,37 +113,41 @@ try:
             await db.flush()  # Flush to make user available for foreign key
             return user_id
 
-        async def process_message(
+        async def process_message_fast(
             self,
             message: str,
             user_id: UUID,
             conversation_history: List[dict]
-        ) -> ChatResponse:
-            """Process a chat message and return response with memories"""
+        ) -> tuple[ChatResponse, list]:
+            """
+            Process message with fast response (returns before memory processing).
+
+            Returns:
+                tuple: (ChatResponse, relevant_memories) for background processing
+            """
 
             async with AsyncSessionLocal() as db:
-                try:
-                    # Step 0: Ensure user exists in database
-                    await self._ensure_user_exists(user_id, db)
+                # Step 0: Ensure user exists
+                await self._ensure_user_exists(user_id, db)
 
-                    # Step 1: Retrieve relevant memories
-                    relevant_memories = await self.memory_service.search_memories(
-                        user_id=user_id,
-                        query=message,
-                        db=db,
-                        auto_route=True,
-                        limit=5,
-                        memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]
-                    )
+                # Step 1: Retrieve relevant memories (FAST - only search)
+                relevant_memories = await self.memory_service.search_memories(
+                    user_id=user_id,
+                    query=message,
+                    db=db,
+                    auto_route=True,
+                    limit=5,
+                    memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]
+                )
 
-                    # Step 2: Build context and generate response
-                    memory_context = ""
-                    if relevant_memories:
-                        memory_context = "\n\nRelevant memories about the user:\n"
-                        for result in relevant_memories:
-                            memory_context += f"- {result.content} (relevance: {result.score:.2f})\n"
+                # Step 2: Build context and generate AI response (FAST - no memory creation)
+                memory_context = ""
+                if relevant_memories:
+                    memory_context = "\n\nRelevant memories about the user:\n"
+                    for result in relevant_memories:
+                        memory_context += f"- {result.content} (relevance: {result.score:.2f})\n"
 
-                    system_prompt = f"""You are a helpful AI assistant with access to the user's personal memories.
+                system_prompt = f"""You are a helpful AI assistant with access to the user's personal memories.
 
 Use the provided memories to give personalized, contextual responses.
 Be conversational and natural.
@@ -150,22 +155,53 @@ Reference specific memories when relevant.
 If no memories are provided, respond naturally without making assumptions.
 {memory_context}"""
 
-                    # Create messages for OpenAI
-                    messages = [{"role": "system", "content": system_prompt}]
-                    messages.extend(conversation_history[-10:])  # Last 10 messages
-                    messages.append({"role": "user", "content": message})
+                # Create messages for OpenAI
+                messages = [{"role": "system", "content": system_prompt}]
+                messages.extend(conversation_history[-10:])  # Last 10 messages
+                messages.append({"role": "user", "content": message})
 
-                    # Generate response
-                    response = await self.openai.chat.completions.create(
-                        model=self.config.chat_model,
-                        messages=messages,
-                        temperature=0.7,
-                        max_tokens=500
-                    )
+                # Generate response (BLOCKING - but fast, ~800ms)
+                response = await self.openai.chat.completions.create(
+                    model=self.config.chat_model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=500
+                )
 
-                    assistant_message = response.choices[0].message.content
+                assistant_message = response.choices[0].message.content
 
-                    # Step 3: Extract facts and create memories
+                # Return response immediately (don't wait for memory creation)
+                return (
+                    ChatResponse(
+                        response=assistant_message,
+                        memories_retrieved=[
+                            MemoryInfo(
+                                id=str(m.id) if hasattr(m, 'id') else str(uuid4()),
+                                content=m.content,
+                                memory_type=m.memory_type if hasattr(m, 'memory_type') else "unknown",
+                                score=m.score if hasattr(m, 'score') else None,
+                                categories=m.metadata.get("categories", []) if hasattr(m, 'metadata') else []
+                            )
+                            for m in relevant_memories
+                        ],
+                        memories_created=[],  # Empty - will be processed in background
+                        timestamp=datetime.now().isoformat()
+                    ),
+                    relevant_memories  # Pass to background task
+                )
+
+        async def process_memories_background(
+            self,
+            user_id: UUID,
+            message: str
+        ):
+            """Background task to process and create memories (SLOW - 1-2 seconds)"""
+
+            async with AsyncSessionLocal() as db:
+                try:
+                    print(f"[Background] Processing memories for user {user_id}...")
+
+                    # Extract facts and create memories (SLOW - but user doesn't wait!)
                     created_memories = await self.memory_service.create_memory_from_message(
                         user_id=user_id,
                         message=message,
@@ -179,34 +215,11 @@ If no memories are provided, respond naturally without making assumptions.
 
                     await db.commit()
 
-                    # Format response
-                    return ChatResponse(
-                        response=assistant_message,
-                        memories_retrieved=[
-                            MemoryInfo(
-                                id=str(m.id) if hasattr(m, 'id') else str(uuid4()),
-                                content=m.content,
-                                memory_type=m.memory_type if hasattr(m, 'memory_type') else "unknown",
-                                score=m.score if hasattr(m, 'score') else None,
-                                categories=m.metadata.get("categories", []) if hasattr(m, 'metadata') else []
-                            )
-                            for m in relevant_memories
-                        ],
-                        memories_created=[
-                            MemoryInfo(
-                                id=str(m.id),
-                                content=m.content,
-                                memory_type=str(m.memory_type.value) if hasattr(m.memory_type, 'value') else str(m.memory_type),
-                                categories=m.extra_data.get("categories", []) if m.extra_data else []
-                            )
-                            for m in created_memories
-                        ],
-                        timestamp=datetime.now().isoformat()
-                    )
+                    print(f"[Background] Created {len(created_memories)} memories for user {user_id}")
 
                 except Exception as e:
+                    print(f"[Background] Error processing memories: {e}")
                     await db.rollback()
-                    raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
 
     chat_service = ChatService()
     print("✅ Real ChatService loaded with OpenAI + PostgreSQL")
@@ -220,8 +233,13 @@ except ImportError as e:
 # ============================================================================
 
 @router.post("/message", response_model=ChatResponse)
-async def send_message(request: ChatRequest):
-    """Send a message and get AI response with memory context"""
+async def send_message(request: ChatRequest, background_tasks: BackgroundTasks):
+    """
+    Send a message and get FAST AI response.
+
+    Memory processing happens in background (async).
+    User gets response in ~1 second instead of ~3 seconds!
+    """
 
     # Use provided user_id or create a test one
     user_id = UUID(request.user_id) if request.user_id else uuid4()
@@ -232,11 +250,30 @@ async def send_message(request: ChatRequest):
         for msg in request.conversation_history
     ]
 
-    return await chat_service.process_message(
-        message=request.message,
-        user_id=user_id,
-        conversation_history=conversation_history
-    )
+    # Get fast response (doesn't wait for memory creation)
+    if hasattr(chat_service, 'process_message_fast'):
+        # Use fast async method
+        response, _ = await chat_service.process_message_fast(
+            message=request.message,
+            user_id=user_id,
+            conversation_history=conversation_history
+        )
+
+        # Process memories in background
+        background_tasks.add_task(
+            chat_service.process_memories_background,
+            user_id=user_id,
+            message=request.message
+        )
+
+        return response
+    else:
+        # Fallback to mock service (no background processing)
+        return await chat_service.process_message(
+            message=request.message,
+            user_id=user_id,
+            conversation_history=conversation_history
+        )
 
 @router.get("/health")
 async def chat_health():
