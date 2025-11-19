@@ -51,6 +51,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   const [recentMemories, setRecentMemories] = useState<Memory[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -157,7 +158,10 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   };
 
   const handleNewConversation = async () => {
+    if (isCreatingConversation) return; // Prevent duplicate creation
+
     try {
+      setIsCreatingConversation(true);
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
       const newConversation = await experimentalAPI.createConversation(
         userId,
@@ -177,6 +181,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       setRefreshKey(prev => prev + 1); // Trigger conversation list refresh
     } catch (error) {
       console.error('Failed to create conversation:', error);
+    } finally {
+      setIsCreatingConversation(false);
     }
   };
 
@@ -287,11 +293,11 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       {/* Left Sidebar - Conversation List */}
       <div className="w-80 flex-shrink-0">
         <ConversationList
-          key={refreshKey}
           userId={userId}
           currentConversationId={conversationId}
           onConversationSelect={handleConversationSelect}
           onNewConversation={handleNewConversation}
+          refreshTrigger={refreshKey}
         />
       </div>
 

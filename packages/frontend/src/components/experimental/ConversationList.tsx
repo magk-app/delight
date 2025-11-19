@@ -35,6 +35,7 @@ interface ConversationListProps {
   currentConversationId: string | null;
   onConversationSelect: (conversationId: string) => void;
   onNewConversation: () => void;
+  refreshTrigger?: number; // Add refresh trigger
 }
 
 export function ConversationList({
@@ -42,6 +43,7 @@ export function ConversationList({
   currentConversationId,
   onConversationSelect,
   onNewConversation,
+  refreshTrigger,
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export function ConversationList({
 
   useEffect(() => {
     loadConversations();
-  }, [userId]);
+  }, [userId, refreshTrigger]); // Also refresh when refreshTrigger changes
 
   const loadConversations = async () => {
     try {
