@@ -78,14 +78,36 @@ class FactExtractor:
 
 Your task is to identify and extract individual facts that can be stored separately in a knowledge base.
 
+**CRITICAL: ONLY extract facts from STATEMENTS, not QUESTIONS!**
+
 Guidelines:
-1. **Discrete Facts**: Extract independent facts that make sense on their own
-2. **Atomic**: Each fact should contain ONE piece of information
-3. **Non-Redundant**: Don't extract duplicate or highly overlapping facts
-4. **Meaningful**: Skip trivial or obvious facts (e.g., "I use words")
-5. **Preserve Context**: Include minimal context for clarity (e.g., "Prefers X over Y" not just "Likes X")
-6. **Classify Accurately**: Assign the most specific fact type
-7. **Source Tracking**: Note where each fact appears in the original text
+1. **Statements Only**: NEVER extract facts from questions. Questions don't provide information, they request it.
+   - ❌ WRONG: "what is my favorite city?" → "user has a favorite city" (NO!)
+   - ✅ RIGHT: "what is my favorite city?" → [] (extract nothing)
+   - ✅ RIGHT: "my favorite city is Tokyo" → "favorite city is Tokyo" (extract this!)
+
+2. **Concrete Information Only**: Only extract when user PROVIDES actual data, not when they ask about it
+   - ❌ WRONG: "do I like coffee?" → "user likes coffee" (NO!)
+   - ✅ RIGHT: "I love coffee" → "likes coffee" (extract this!)
+
+3. **Discrete Facts**: Extract independent facts that make sense on their own
+
+4. **Atomic**: Each fact should contain ONE piece of information
+
+5. **Non-Redundant**: Don't extract duplicate or highly overlapping facts
+
+6. **Meaningful**: Skip trivial or obvious facts (e.g., "I use words")
+
+7. **Preserve Context**: Include minimal context for clarity (e.g., "Prefers X over Y" not just "Likes X")
+
+8. **Classify Accurately**: Assign the most specific fact type
+
+9. **Source Tracking**: Note where each fact appears in the original text
+
+**Question Detection Rules:**
+- If message contains question words (what, where, when, why, how, who, which, do, does, did, can, could, would, should) AND ends with "?" → likely a question, extract NOTHING
+- If message is requesting information rather than providing it → extract NOTHING
+- If message contains vague assertions without concrete details → extract NOTHING
 
 Fact Types:
 - identity: Name, age, gender, role
@@ -104,6 +126,7 @@ Fact Types:
 
 Examples:
 
+**Example 1: VALID - Statement with information**
 Input: "I'm Jack, a software developer in San Francisco. I'm working on Delight, an AI companion app built with Python and React. My goal is to launch by Q1 2025."
 
 Output:
@@ -119,6 +142,27 @@ Output:
     {"content": "Launch goal: Q1 2025", "fact_type": "timeline", "confidence": 0.95}
   ],
   "reasoning": "Extracted 8 discrete facts covering identity, profession, location, project details, technology stack, and timeline"
+}
+
+**Example 2: INVALID - Question (extract NOTHING)**
+Input: "What is my favorite city? Do I like Tokyo or Boston?"
+
+Output:
+{
+  "facts": [],
+  "reasoning": "Message contains only questions, no factual information provided. Cannot extract facts from queries."
+}
+
+**Example 3: VALID - Mixed statement and answer**
+Input: "My favorite city is Tokyo. I also really enjoy visiting Boston for the culture."
+
+Output:
+{
+  "facts": [
+    {"content": "Favorite city is Tokyo", "fact_type": "preference", "confidence": 0.95},
+    {"content": "Enjoys visiting Boston for culture", "fact_type": "preference", "confidence": 0.90}
+  ],
+  "reasoning": "Extracted 2 preference facts. User explicitly states favorites, not asking questions."
 }
 
 Now extract facts from the user's message."""
