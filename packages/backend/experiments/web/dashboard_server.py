@@ -274,6 +274,20 @@ async def playground_page(request: Request):
 @app.get("/api/config")
 async def get_config() -> SystemConfig:
     """Get current system configuration"""
+    # Try to load saved config
+    config_file = Path(__file__).parent / "data" / "system_config.json"
+
+    if config_file.exists():
+        try:
+            import json
+            with open(config_file, 'r') as f:
+                saved_config = json.load(f)
+            return SystemConfig(**saved_config)
+        except Exception as e:
+            print(f"⚠️  Failed to load saved config: {e}")
+            # Fall through to default config
+
+    # Return default config
     return SystemConfig(
         models=SystemConfig.ModelsConfig(
             chat_model="gpt-4o-mini",
@@ -299,8 +313,20 @@ async def get_config() -> SystemConfig:
 @app.post("/api/config")
 async def update_config_api(new_config: SystemConfig) -> dict:
     """Update system configuration"""
-    # In a real implementation, this would update the actual config
-    return {"status": "success", "message": "Configuration updated"}
+    try:
+        # Save config to JSON file for persistence
+        config_file = Path(__file__).parent / "data" / "system_config.json"
+        config_file.parent.mkdir(exist_ok=True)
+
+        with open(config_file, 'w') as f:
+            import json
+            f.write(json.dumps(new_config.model_dump(), indent=2))
+
+        print(f"✅ Config saved to {config_file}")
+        return {"status": "success", "message": "Configuration saved successfully"}
+    except Exception as e:
+        print(f"❌ Failed to save config: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save configuration: {str(e)}")
 
 
 @app.get("/api/models/available")
@@ -637,18 +663,6 @@ except Exception as e:
     print(f"⚠️  Setup API not available: {e}")
     import traceback
     traceback.print_exc()
-
-# ============================================================================
-# Config Save Endpoint
-# ============================================================================
-
-@app.post("/api/config")
-async def save_config(config: dict):
-    """Save system configuration"""
-    # For now, just accept and return the config
-    # TODO: Persist to database or file
-    print(f"Config updated: {config}")
-    return {"status": "success", "message": "Configuration saved"}
 
 # ============================================================================
 # User Auto-Creation Endpoint

@@ -83,10 +83,13 @@ export function ConversationList({
       // If deleted current conversation, create new one
       if (conversationId === currentConversationId) {
         onNewConversation();
+      } else {
+        // Reload conversations to ensure sync
+        await loadConversations();
       }
     } catch (err: any) {
       console.error('Failed to delete conversation:', err);
-      alert('Failed to delete conversation');
+      alert(`Failed to delete conversation: ${err.message || 'Unknown error'}`);
     }
   };
 
