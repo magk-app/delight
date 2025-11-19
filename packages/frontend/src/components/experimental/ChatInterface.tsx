@@ -1,16 +1,28 @@
 /**
- * Chat Interface Component
+ * Chat Interface Component (Modernized)
  *
- * Provides a chat interface similar to the CLI chatbot but in a web UI
- * - Chat with AI agent
- * - View retrieved memories
- * - See new memories created
- * - Real-time updates
+ * Modern, minimalistic chat interface with:
+ * - Lucide React icons (no emojis)
+ * - Dark theme with glassmorphism
+ * - Framer Motion animations
+ * - Async memory processing indicator
+ * - Progress bars for relevance scores
  */
 
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  User,
+  Bot,
+  AlertCircle,
+  Send,
+  Brain,
+  Sparkles,
+  Loader2,
+  Database,
+} from 'lucide-react';
 import { SearchResult, Memory } from '@/lib/api/experimental-client';
 
 interface Message {
@@ -21,6 +33,7 @@ interface Message {
   memories_retrieved?: SearchResult[];
   memories_created?: Memory[];
   loading?: boolean;
+  processing_memories?: boolean; // For async memory processing
 }
 
 export function ChatInterface() {
@@ -72,7 +85,7 @@ export function ChatInterface() {
       {
         id: loadingId,
         role: 'assistant',
-        content: 'Thinking...',
+        content: '',
         timestamp: new Date(),
         loading: true,
       },
@@ -128,10 +141,7 @@ export function ChatInterface() {
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         role: 'system',
-        content: `⚠️ Error: ${error instanceof Error ? error.message : 'Failed to connect to backend'}
-
-Make sure the experimental backend server is running on port 8001:
-cd packages/backend && poetry run python experiments/web/dashboard_server.py`,
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to connect to backend'}\n\nMake sure the experimental backend server is running on port 8001:\ncd packages/backend && poetry run python experiments/web/dashboard_server.py`,
         timestamp: new Date(),
       };
 
@@ -149,106 +159,204 @@ cd packages/backend && poetry run python experiments/web/dashboard_server.py`,
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
-      {/* Header */}
-      <div className="border-b border-gray-200 px-6 py-4">
-        <h2 className="text-xl font-semibold text-gray-800">Chat with AI Companion</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          I can remember our conversations and use that context to help you
-        </p>
+    <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+      {/* Header with glassmorphism */}
+      <div className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+            <Brain className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">AI Companion</h2>
+            <p className="text-sm text-slate-400">
+              Powered by memory-augmented intelligence
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.map((message) => (
-          <div key={message.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* Message Bubble */}
-            <div
-              className={`flex ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              } mb-2`}
+      {/* Messages Area with custom scrollbar */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <AnimatePresence mode="popLayout">
+          {messages.map((message) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
             >
+              {/* Message Bubble */}
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-indigo-600 text-white'
-                    : message.role === 'system'
-                    ? 'bg-gray-100 text-gray-800 border border-gray-200'
-                    : 'bg-gray-50 text-gray-800 border border-gray-200'
-                }`}
+                className={`flex ${
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                } mb-3`}
               >
-                <div className="flex items-start gap-2">
-                  <span className="text-lg">
-                    {message.role === 'user'
-                      ? '👤'
+                <div
+                  className={`max-w-[85%] rounded-2xl px-5 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
                       : message.role === 'system'
-                      ? 'ℹ️'
-                      : '🤖'}
-                  </span>
-                  <div className="flex-1">
-                    {message.loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
-                      </div>
-                    ) : (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    )}
+                      ? 'bg-slate-800/50 backdrop-blur-sm text-slate-300 border border-slate-700/50'
+                      : 'bg-slate-800/80 backdrop-blur-sm text-slate-100 border border-slate-700/50 shadow-lg'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Icon */}
+                    <div className={`mt-0.5 ${message.role === 'user' ? 'text-white' : 'text-slate-400'}`}>
+                      {message.role === 'user' ? (
+                        <User className="w-5 h-5" />
+                      ) : message.role === 'system' ? (
+                        <AlertCircle className="w-5 h-5" />
+                      ) : (
+                        <Bot className="w-5 h-5" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      {message.loading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                          <span className="text-sm text-slate-400">Thinking...</span>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                          {message.content}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Retrieved Memories */}
-            {message.memories_retrieved && message.memories_retrieved.length > 0 && (
-              <div className="ml-12 mt-2 space-y-2">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  🧠 Memories Used ({message.memories_retrieved.length})
-                </p>
-                <div className="space-y-1">
-                  {message.memories_retrieved.map((memory, idx) => (
-                    <div
-                      key={idx}
-                      className="text-sm bg-purple-50 border border-purple-200 rounded px-3 py-2"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="text-green-600 font-medium text-xs mt-0.5">
-                          {memory.score.toFixed(2)}
-                        </span>
-                        <span className="text-gray-700">{memory.content}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              {/* Retrieved Memories */}
+              {message.memories_retrieved && message.memories_retrieved.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  transition={{ delay: 0.2 }}
+                  className="ml-14 mt-3 space-y-2"
+                >
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <Brain className="w-3.5 h-3.5" />
+                    <span>Context Retrieved ({message.memories_retrieved.length})</span>
+                  </div>
+                  <div className="space-y-2">
+                    {message.memories_retrieved.map((memory, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * idx }}
+                        className="group relative bg-slate-800/60 backdrop-blur-sm border border-purple-500/20 rounded-lg px-4 py-3 hover:border-purple-500/40 transition-all"
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Relevance Score with Progress Bar */}
+                          <div className="flex flex-col items-center gap-1 min-w-[48px]">
+                            <span className="text-xs font-mono font-semibold text-purple-400">
+                              {(memory.score * 100).toFixed(0)}%
+                            </span>
+                            <div className="w-full h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${memory.score * 100}%` }}
+                                transition={{ duration: 0.6, delay: 0.2 * idx }}
+                                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                              />
+                            </div>
+                          </div>
 
-            {/* Created Memories */}
-            {message.memories_created && message.memories_created.length > 0 && (
-              <div className="ml-12 mt-2 space-y-2">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  ✨ New Memories Created ({message.memories_created.length})
-                </p>
-                <div className="space-y-1">
-                  {message.memories_created.map((memory, idx) => (
-                    <div
-                      key={idx}
-                      className="text-sm bg-cyan-50 border border-cyan-200 rounded px-3 py-2"
-                    >
-                      <span className="text-gray-700">{memory.content}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+                          {/* Memory Content */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-slate-300 leading-relaxed">
+                              {memory.content}
+                            </p>
+                            {memory.metadata?.categories && memory.metadata.categories.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {memory.metadata.categories.slice(0, 3).map((cat, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md"
+                                  >
+                                    {cat}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Created Memories */}
+              {message.memories_created && message.memories_created.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  transition={{ delay: 0.4 }}
+                  className="ml-14 mt-3 space-y-2"
+                >
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Knowledge Added ({message.memories_created.length})</span>
+                  </div>
+                  <div className="space-y-2">
+                    {message.memories_created.map((memory, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * idx }}
+                        className="bg-slate-800/60 backdrop-blur-sm border border-cyan-500/20 rounded-lg px-4 py-3 hover:border-cyan-500/40 transition-all"
+                      >
+                        <div className="flex items-start gap-2">
+                          <Database className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-slate-300 leading-relaxed">
+                            {memory.content}
+                          </p>
+                        </div>
+                        {memory.metadata?.categories && memory.metadata.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2 ml-6">
+                            {memory.metadata.categories.slice(0, 3).map((cat, i) => (
+                              <span
+                                key={i}
+                                className="text-xs px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-md"
+                              >
+                                {cat}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Async Memory Processing Indicator */}
+              {message.processing_memories && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="ml-14 mt-3"
+                >
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Processing memories in background...</span>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 px-6 py-4">
+      <div className="bg-slate-800/50 backdrop-blur-xl border-t border-slate-700/50 px-6 py-4">
         <div className="flex gap-3">
           <input
             ref={inputRef}
@@ -256,43 +364,41 @@ cd packages/backend && poetry run python experiments/web/dashboard_server.py`,
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message... (Press Enter to send)"
+            placeholder="Type your message..."
             disabled={isProcessing}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 px-5 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl
+                     text-slate-100 placeholder-slate-500
+                     focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-all"
           />
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() || isProcessing}
-            className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium rounded-xl
+                     hover:from-purple-500 hover:to-indigo-500
+                     focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-slate-900
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-all duration-200
+                     shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30
+                     flex items-center gap-2"
           >
             {isProcessing ? (
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="hidden sm:inline">Sending...</span>
+              </>
             ) : (
-              'Send'
+              <>
+                <Send className="w-5 h-5" />
+                <span className="hidden sm:inline">Send</span>
+              </>
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          💡 Tip: I&apos;ll remember facts from our conversation and use them in future responses
+        <p className="text-xs text-slate-500 mt-3 flex items-center gap-2">
+          <AlertCircle className="w-3.5 h-3.5" />
+          <span>I&apos;ll remember facts from our conversation and use them in future responses</span>
         </p>
       </div>
     </div>
