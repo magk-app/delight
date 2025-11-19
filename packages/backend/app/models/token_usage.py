@@ -48,7 +48,7 @@ class TokenUsage(Base):
     total_cost = Column(Float, nullable=False, default=0.0)
 
     # Metadata
-    metadata = Column(JSONB, nullable=True)  # Additional context (conversation_id, memory_id, etc.)
+    usage_metadata = Column(JSONB, nullable=True)  # Additional context (conversation_id, memory_id, etc.)
 
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
@@ -75,6 +75,6 @@ class TokenUsage(Base):
             "cost_input": self.cost_input,
             "cost_output": self.cost_output,
             "total_cost": self.total_cost,
-            "metadata": self.metadata or {},
+            "metadata": self.usage_metadata or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

@@ -97,7 +97,7 @@ class TokenTracker:
             cost_input=cost_input,
             cost_output=cost_output,
             total_cost=total_cost,
-            metadata=metadata or {}
+            usage_metadata=metadata or {}
         )
 
         db.add(usage)
