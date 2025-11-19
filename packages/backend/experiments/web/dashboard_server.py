@@ -613,6 +613,19 @@ except Exception as e:
     traceback.print_exc()
 
 # ============================================================================
+# Include Setup API Router
+# ============================================================================
+
+try:
+    from setup_api import router as setup_router
+    app.include_router(setup_router)
+    print("✅ Setup API enabled")
+except Exception as e:
+    print(f"⚠️  Setup API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
+# ============================================================================
 # Startup
 # ============================================================================
 
