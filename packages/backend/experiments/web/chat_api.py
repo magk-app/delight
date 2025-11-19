@@ -86,6 +86,32 @@ try:
             self.memory_service = MemoryService()
             self.openai = AsyncOpenAI(api_key=self.config.openai_api_key)
 
+        async def _ensure_user_exists(self, user_id: UUID, db) -> UUID:
+            """Ensure user exists in database, create if needed"""
+            from sqlalchemy import select
+            from app.models.user import User
+
+            # Check if user exists
+            stmt = select(User).where(User.id == user_id)
+            result = await db.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if user:
+                return user_id
+
+            # Create test user for experimental chat
+            test_clerk_id = f"experimental_chat_{user_id}"
+            new_user = User(
+                id=user_id,
+                clerk_user_id=test_clerk_id,
+                email=f"experimental-{user_id.hex[:8]}@delight.local",
+                display_name="Experimental Chat User"
+            )
+
+            db.add(new_user)
+            await db.flush()  # Flush to make user available for foreign key
+            return user_id
+
         async def process_message(
             self,
             message: str,
@@ -96,6 +122,9 @@ try:
 
             async with AsyncSessionLocal() as db:
                 try:
+                    # Step 0: Ensure user exists in database
+                    await self._ensure_user_exists(user_id, db)
+
                     # Step 1: Retrieve relevant memories
                     relevant_memories = await self.memory_service.search_memories(
                         user_id=user_id,
