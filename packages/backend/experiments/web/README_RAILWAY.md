@@ -8,7 +8,7 @@ All Railway configuration files have been created in this directory (`packages/b
 
 1. **`railway.json`** - Railway deployment configuration
 2. **`Procfile`** - Process definition for Railway
-3. **`nixpacks.toml`** - Nixpacks build configuration  
+3. **`nixpacks.toml`** - Nixpacks build configuration
 4. **`runtime.txt`** - Python version specification (3.11)
 5. **`railway_start.sh`** - Optional startup script
 6. **`RAILWAY_DEPLOYMENT.md`** - Complete deployment guide
@@ -23,6 +23,7 @@ All Railway configuration files have been created in this directory (`packages/b
 ## Quick Start
 
 1. **In Railway Dashboard:**
+
    - Set **Root Directory** to: `packages/backend/experiments/web`
    - Add PostgreSQL service (if using database)
    - Configure environment variables (see `RAILWAY_DEPLOYMENT.md`)
@@ -34,10 +35,12 @@ All Railway configuration files have been created in this directory (`packages/b
 ## Environment Variables Needed
 
 ### Required
+
 - `DATABASE_URL` - PostgreSQL connection (auto-provided if you add PostgreSQL service)
 - `PORT` - Server port (auto-set by Railway)
 
 ### Recommended
+
 - `CORS_ORIGINS` - Comma-separated allowed origins
 - `OPENAI_API_KEY` - For AI features
 - `CLERK_SECRET_KEY` - For authentication
@@ -57,6 +60,7 @@ poetry run python -m experiments.web.dashboard_server
 ## Health Check
 
 Once deployed, check health at:
+
 ```
 https://your-railway-app.railway.app/health
 ```
@@ -67,4 +71,3 @@ https://your-railway-app.railway.app/health
 - The build process navigates to `packages/backend` to run Poetry
 - The server automatically handles Railway's PORT environment variable
 - CORS is configured to work with Railway domains automatically
-

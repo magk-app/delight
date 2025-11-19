@@ -11,16 +11,19 @@ This guide explains how to deploy the experimental web server to Railway.
 ## Quick Deploy
 
 1. **Connect Repository to Railway**
+
    - Go to Railway dashboard
    - Click "New Project" → "Deploy from GitHub repo"
    - Select your repository
    - Railway will auto-detect the configuration
 
 2. **Set Root Directory**
+
    - In Railway project settings, set the **Root Directory** to: `packages/backend/experiments/web`
    - This tells Railway where to find the deployment files
 
 3. **Configure Environment Variables**
+
    - Go to your Railway service → Variables tab
    - Add the following required variables:
      ```
@@ -32,6 +35,7 @@ This guide explains how to deploy the experimental web server to Railway.
      ```
 
 4. **Add PostgreSQL Service (if needed)**
+
    - In Railway, click "+ New" → "Database" → "Add PostgreSQL"
    - Railway will automatically create a `DATABASE_URL` variable
    - The app will use this automatically
@@ -53,10 +57,12 @@ This directory contains the following Railway configuration files:
 ## Environment Variables
 
 ### Required
+
 - `DATABASE_URL` - PostgreSQL connection string (Railway auto-provides if you add PostgreSQL service)
 - `PORT` - Server port (Railway auto-sets, but defaults to 8001)
 
 ### Optional
+
 - `CORS_ORIGINS` - Comma-separated list of allowed CORS origins
 - `OPENAI_API_KEY` - OpenAI API key for AI features
 - `CLERK_SECRET_KEY` - Clerk authentication secret key
@@ -66,6 +72,7 @@ This directory contains the following Railway configuration files:
 ## Build Process
 
 Railway will:
+
 1. Detect Python project
 2. Install Poetry dependencies from `packages/backend/pyproject.toml`
 3. Run the start command: `poetry run python -m experiments.web.dashboard_server`
@@ -73,6 +80,7 @@ Railway will:
 ## Health Check
 
 The server exposes a health check endpoint at `/health`:
+
 ```bash
 curl https://your-railway-app.railway.app/health
 ```
@@ -80,21 +88,25 @@ curl https://your-railway-app.railway.app/health
 ## Troubleshooting
 
 ### Build Fails
+
 - Check that `packages/backend/pyproject.toml` exists
 - Verify Poetry is installed (Railway auto-installs)
 - Check build logs in Railway dashboard
 
 ### Server Won't Start
+
 - Verify `PORT` environment variable is set (Railway auto-sets this)
 - Check that `DATABASE_URL` is correct if using database
 - Review startup logs in Railway dashboard
 
 ### Database Connection Issues
+
 - Ensure PostgreSQL service is added to Railway project
 - Verify `DATABASE_URL` is correctly formatted
 - Check that database migrations have run (if needed)
 
 ### CORS Errors
+
 - Add your frontend domain to `CORS_ORIGINS`
 - Railway domain is auto-added if `RAILWAY_PUBLIC_DOMAIN` is set
 
@@ -125,4 +137,3 @@ railway run bash packages/backend/experiments/web/railway_start.sh
 - [ ] Database migrations run (if needed)
 - [ ] API keys and secrets configured
 - [ ] Custom domain configured (optional)
-

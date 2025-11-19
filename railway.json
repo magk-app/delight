@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd ../../ && poetry install --no-dev"
+    "buildCommand": "cd packages/backend && poetry install --no-dev"
   },
   "deploy": {
-    "startCommand": "cd ../../ && poetry run python -m experiments.web.dashboard_server",
+    "startCommand": "cd packages/backend && poetry run python -m experiments.web.dashboard_server",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
