@@ -59,18 +59,22 @@ export function useMemories(filters?: {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Stringify filters to prevent infinite loop from object reference changes
+  const filtersString = JSON.stringify(filters || {});
+
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await experimentalAPI.getMemories(filters);
+      const parsedFilters = filtersString ? JSON.parse(filtersString) : undefined;
+      const data = await experimentalAPI.getMemories(parsedFilters);
       setMemories(data);
     } catch (err) {
       setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filtersString]); // Use stringified version to prevent object reference issues
 
   const deleteMemory = useCallback(async (memoryId: string) => {
     try {

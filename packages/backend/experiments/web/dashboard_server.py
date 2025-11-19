@@ -540,11 +540,13 @@ async def health_check():
 # ============================================================================
 
 try:
-    from .chat_api import router as chat_router
+    from chat_api import router as chat_router
     app.include_router(chat_router)
     print("✅ Chat API enabled")
-except ImportError as e:
+except Exception as e:
     print(f"⚠️  Chat API not available: {e}")
+    import traceback
+    traceback.print_exc()
 
 # ============================================================================
 # Startup
