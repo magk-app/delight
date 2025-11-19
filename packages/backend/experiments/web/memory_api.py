@@ -141,11 +141,11 @@ async def get_memories(
             user_id=str(m.user_id),
             content=m.content,
             memory_type=m.memory_type.value if hasattr(m.memory_type, 'value') else m.memory_type,
-            importance=m.importance,
-            metadata=m.metadata or {},
+            importance=0.5,  # Default importance (not stored in DB yet)
+            metadata=m.extra_data or {},  # extra_data maps to metadata column
             embedding=None,  # Don't send embeddings to frontend
             created_at=m.created_at.isoformat() if m.created_at else datetime.now().isoformat(),
-            updated_at=m.updated_at.isoformat() if m.updated_at else datetime.now().isoformat(),
+            updated_at=m.accessed_at.isoformat() if m.accessed_at else m.created_at.isoformat(),  # Use accessed_at as updated_at
         )
         for m in memories
     ]
@@ -172,11 +172,11 @@ async def update_memory(memory_id: str, updates: MemoryUpdateRequest):
         user_id=str(memory.user_id),
         content=memory.content,
         memory_type=memory.memory_type.value if hasattr(memory.memory_type, 'value') else memory.memory_type,
-        importance=memory.importance,
-        metadata=memory.metadata or {},
+        importance=0.5,  # Default importance
+        metadata=memory.extra_data or {},  # extra_data maps to metadata column
         embedding=None,
         created_at=memory.created_at.isoformat() if memory.created_at else datetime.now().isoformat(),
-        updated_at=memory.updated_at.isoformat() if memory.updated_at else datetime.now().isoformat(),
+        updated_at=memory.accessed_at.isoformat() if memory.accessed_at else memory.created_at.isoformat(),
     )
 
 
