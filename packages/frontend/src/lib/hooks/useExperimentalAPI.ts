@@ -154,7 +154,7 @@ export function useConfig() {
 // useTokenUsage - Get token usage analytics
 // ============================================================================
 
-export function useTokenUsage(hours: number = 24, autoRefresh?: boolean, refreshInterval?: number) {
+export function useTokenUsage(hours: number = 24, userId?: string, autoRefresh?: boolean, refreshInterval?: number) {
   const [usage, setUsage] = useState<TokenUsageSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -163,14 +163,14 @@ export function useTokenUsage(hours: number = 24, autoRefresh?: boolean, refresh
     try {
       setLoading(true);
       setError(null);
-      const data = await experimentalAPI.getTokenUsage(hours);
+      const data = await experimentalAPI.getTokenUsage(hours, userId);
       setUsage(data);
     } catch (err) {
       setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [hours]);
+  }, [hours, userId]);
 
   useEffect(() => {
     refresh();

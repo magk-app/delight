@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useMemories } from '@/lib/hooks/useExperimentalAPI';
 import { Memory } from '@/lib/api/experimental-client';
+import { EditMemoryModal } from './EditMemoryModal';
 
 type ViewMode = 'list' | 'graph';
 
@@ -37,6 +38,7 @@ export function MemoryVisualization({ userId }: { userId: string }) {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
 
   const { memories, loading, error, refresh, deleteMemory } = useMemories({
     user_id: userId,
@@ -59,6 +61,21 @@ export function MemoryVisualization({ userId }: { userId: string }) {
       } catch (err) {
         alert('Failed to delete memory: ' + (err as Error).message);
       }
+    }
+  };
+
+  const handleEdit = (memory: Memory) => {
+    setEditingMemory(memory);
+  };
+
+  const handleUpdate = async (memoryId: string, content: string) => {
+    try {
+      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+      await experimentalAPI.updateMemory(memoryId, { content });
+      setEditingMemory(null);
+      refresh(); // Refresh the list
+    } catch (err) {
+      alert('Failed to update memory: ' + (err as Error).message);
     }
   };
 
@@ -201,11 +218,20 @@ export function MemoryVisualization({ userId }: { userId: string }) {
             </div>
           </div>
         ) : viewMode === 'list' ? (
-          <ListView memories={filteredMemories} onDelete={handleDelete} />
+          <ListView memories={filteredMemories} onDelete={handleDelete} onEdit={handleEdit} />
         ) : (
           <GraphViewPlaceholder />
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingMemory && (
+        <EditMemoryModal
+          memory={editingMemory}
+          onClose={() => setEditingMemory(null)}
+          onSave={handleUpdate}
+        />
+      )}
     </div>
   );
 }
@@ -217,9 +243,11 @@ export function MemoryVisualization({ userId }: { userId: string }) {
 function ListView({
   memories,
   onDelete,
+  onEdit,
 }: {
   memories: Memory[];
   onDelete: (id: string) => void;
+  onEdit: (memory: Memory) => void;
 }) {
   return (
     <div className="p-6 space-y-4">
@@ -268,7 +296,7 @@ function ListView({
             {/* Actions */}
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
-                onClick={() => {/* TODO: Edit functionality */}}
+                onClick={() => onEdit(memory)}
                 className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all"
                 title="Edit memory"
               >

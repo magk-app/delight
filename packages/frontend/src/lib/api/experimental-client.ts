@@ -252,8 +252,11 @@ class ExperimentalAPIClient {
     return this.get(`/api/analytics/stats${params}`);
   }
 
-  async getTokenUsage(hours: number = 24): Promise<TokenUsageSummary> {
-    return this.get(`/api/analytics/token-usage?hours=${hours}`);
+  async getTokenUsage(hours: number = 24, userId?: string): Promise<TokenUsageSummary> {
+    const params = new URLSearchParams();
+    params.append('hours', hours.toString());
+    if (userId) params.append('user_id', userId);
+    return this.get(`/api/analytics/token-usage?${params.toString()}`);
   }
 
   async getSearchPerformance(limit: number = 100): Promise<any[]> {
@@ -288,6 +291,17 @@ class ExperimentalAPIClient {
     return this.get(`/api/memories/${memoryId}`);
   }
 
+  async updateMemory(memoryId: string, updates: {
+    content?: string;
+    importance?: number;
+    metadata?: Record<string, any>;
+  }): Promise<Memory> {
+    return this.request(`/api/memories/${memoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
   async deleteMemory(memoryId: string): Promise<{ status: string; message: string }> {
     return this.delete(`/api/memories/${memoryId}`);
   }
@@ -319,6 +333,14 @@ class ExperimentalAPIClient {
 
   async checkChatHealth(): Promise<{ status: string; service: string; timestamp: string }> {
     return this.get('/api/chat/health');
+  }
+
+  // ============================================================================
+  // User API
+  // ============================================================================
+
+  async ensureUser(userId: string): Promise<{ status: string; user_id: string; message: string }> {
+    return this.post('/api/users/ensure', { user_id: userId });
   }
 
   // ============================================================================

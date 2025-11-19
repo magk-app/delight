@@ -24,24 +24,46 @@ export function usePersistentUser() {
       return;
     }
 
-    // Get or create persistent user ID
-    let stored = localStorage.getItem(USER_ID_KEY);
+    const initializeUser = async () => {
+      // Get or create persistent user ID
+      let stored = localStorage.getItem(USER_ID_KEY);
 
-    if (!stored) {
-      // Generate new UUID
-      stored = crypto.randomUUID();
-      localStorage.setItem(USER_ID_KEY, stored);
-    }
+      if (!stored) {
+        // Generate new UUID
+        stored = crypto.randomUUID();
+        localStorage.setItem(USER_ID_KEY, stored);
+      }
 
-    setUserId(stored);
-    setIsLoading(false);
+      // Ensure user exists in database
+      try {
+        const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+        await experimentalAPI.ensureUser(stored);
+      } catch (error) {
+        console.error('Failed to ensure user exists:', error);
+        // Continue anyway - user might be using mock mode
+      }
+
+      setUserId(stored);
+      setIsLoading(false);
+    };
+
+    initializeUser();
   }, []);
 
-  const clearUser = () => {
+  const clearUser = async () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(USER_ID_KEY);
       const newId = crypto.randomUUID();
       localStorage.setItem(USER_ID_KEY, newId);
+
+      // Ensure new user exists in database
+      try {
+        const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+        await experimentalAPI.ensureUser(newId);
+      } catch (error) {
+        console.error('Failed to ensure new user exists:', error);
+      }
+
       setUserId(newId);
     }
   };

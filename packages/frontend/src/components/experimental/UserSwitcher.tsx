@@ -61,7 +61,16 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
     }
   }, [isOpen]);
 
-  const switchToUser = (userId: string) => {
+  const switchToUser = async (userId: string) => {
+    // Ensure user exists in database
+    try {
+      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+      await experimentalAPI.ensureUser(userId);
+    } catch (error) {
+      console.error('Failed to ensure user exists:', error);
+      // Continue anyway - might be in mock mode
+    }
+
     localStorage.setItem('experimental_user_id', userId);
 
     // Update recent users
@@ -73,9 +82,9 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
     onUserChange(); // Trigger page reload
   };
 
-  const createNewUser = () => {
+  const createNewUser = async () => {
     const newId = crypto.randomUUID();
-    switchToUser(newId);
+    await switchToUser(newId);
   };
 
   const copyUserId = () => {

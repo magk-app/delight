@@ -651,6 +651,65 @@ async def save_config(config: dict):
     return {"status": "success", "message": "Configuration saved"}
 
 # ============================================================================
+# User Auto-Creation Endpoint
+# ============================================================================
+
+try:
+    from app.db.session import AsyncSessionLocal
+    from app.models.user import User
+    from sqlalchemy import select
+
+    @app.post("/api/users/ensure")
+    async def ensure_user(request: dict):
+        """
+        Ensure user exists in database, create if not.
+        For experimental frontend that generates test user IDs.
+        """
+        user_id_str = request.get("user_id")
+        if not user_id_str:
+            raise HTTPException(status_code=400, detail="user_id is required")
+
+        user_id = UUID(user_id_str)
+
+        async with AsyncSessionLocal() as db:
+            # Check if user exists
+            query = select(User).where(User.id == user_id)
+            result = await db.execute(query)
+            existing_user = result.scalar_one_or_none()
+
+            if existing_user:
+                return {
+                    "status": "exists",
+                    "user_id": str(existing_user.id),
+                    "message": "User already exists"
+                }
+
+            # Create new user
+            new_user = User(
+                id=user_id,
+                clerk_user_id=f"experimental_{user_id}",  # Mock clerk ID for experimental users
+                email=None,
+                display_name=f"Test User {user_id_str[:8]}"
+            )
+
+            db.add(new_user)
+            await db.commit()
+            await db.refresh(new_user)
+
+            return {
+                "status": "created",
+                "user_id": str(new_user.id),
+                "message": "User created successfully"
+            }
+
+    print("✅ User auto-creation API enabled")
+
+except Exception as e:
+    print(f"⚠️  User auto-creation API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
+# ============================================================================
 # Startup
 # ============================================================================
 
