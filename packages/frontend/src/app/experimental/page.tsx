@@ -38,7 +38,7 @@ export default function ExperimentalPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header with glassmorphism */}
-      <header className="bg-slate-900/50 backdrop-blur-xl shadow-2xl border-b border-slate-700/50">
+      <header className="bg-slate-900/50 backdrop-blur-xl shadow-2xl border-b border-slate-700/50 relative z-40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -57,15 +57,13 @@ export default function ExperimentalPage() {
             </div>
 
             {/* Backend Status & User Switcher */}
-            <div className="flex items-center gap-3 relative z-50">
+            <div className="flex items-center gap-3">
               {/* User Switcher */}
               {userId && !userLoading && (
-                <div className="relative z-[99999]">
-                  <UserSwitcher
-                    currentUserId={userId}
-                    onUserChange={handleUserChange}
-                  />
-                </div>
+                <UserSwitcher
+                  currentUserId={userId}
+                  onUserChange={handleUserChange}
+                />
               )}
 
               {/* Backend Status Indicator */}
