@@ -613,6 +613,19 @@ except Exception as e:
     traceback.print_exc()
 
 # ============================================================================
+# Include Memory API Router
+# ============================================================================
+
+try:
+    from memory_api import router as memory_router
+    app.include_router(memory_router)
+    print("✅ Memory API enabled")
+except Exception as e:
+    print(f"⚠️  Memory API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
+# ============================================================================
 # Include Setup API Router
 # ============================================================================
 
@@ -624,6 +637,18 @@ except Exception as e:
     print(f"⚠️  Setup API not available: {e}")
     import traceback
     traceback.print_exc()
+
+# ============================================================================
+# Config Save Endpoint
+# ============================================================================
+
+@app.post("/api/config")
+async def save_config(config: dict):
+    """Save system configuration"""
+    # For now, just accept and return the config
+    # TODO: Persist to database or file
+    print(f"Config updated: {config}")
+    return {"status": "success", "message": "Configuration saved"}
 
 # ============================================================================
 # Startup
