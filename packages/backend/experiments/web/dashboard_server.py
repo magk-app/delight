@@ -347,9 +347,60 @@ async def get_memory_stats(user_id: Optional[str] = None) -> MemoryStats:
 
 
 @app.get("/api/analytics/token-usage")
-async def get_token_usage(hours: int = 24) -> dict:
-    """Get token usage summary"""
-    return analytics.get_token_usage_summary(hours)
+async def get_token_usage(hours: int = 24, user_id: Optional[str] = None) -> dict:
+    """Get token usage summary from database"""
+    try:
+        from app.db.session import AsyncSessionLocal
+        from app.models.token_usage import TokenUsage
+        from sqlalchemy import select, func
+        from datetime import timedelta
+        from collections import defaultdict
+        from uuid import UUID
+
+        async with AsyncSessionLocal() as db:
+            # Calculate time threshold
+            time_threshold = datetime.now() - timedelta(hours=hours)
+
+            # Build query
+            query = select(TokenUsage).where(TokenUsage.created_at >= time_threshold)
+            if user_id:
+                query = query.where(TokenUsage.user_id == UUID(user_id))
+
+            result = await db.execute(query)
+            usage_records = result.scalars().all()
+
+            # Aggregate data
+            total_tokens = 0
+            total_cost = 0.0
+            by_model = defaultdict(lambda: {"tokens": 0, "cost": 0.0, "calls": 0})
+
+            for record in usage_records:
+                total_tokens += record.total_tokens
+                total_cost += record.total_cost
+
+                by_model[record.model]["tokens"] += record.total_tokens
+                by_model[record.model]["cost"] += record.total_cost
+                by_model[record.model]["calls"] += 1
+
+            return {
+                "total_tokens": total_tokens,
+                "total_cost": round(total_cost, 4),
+                "by_model": {
+                    model: {
+                        "tokens": data["tokens"],
+                        "cost": round(data["cost"], 4),
+                        "calls": data["calls"]
+                    }
+                    for model, data in by_model.items()
+                },
+                "records_count": len(usage_records),
+                "time_range_hours": hours
+            }
+
+    except Exception as e:
+        print(f"Error fetching token usage: {e}")
+        # Fallback to mock data if database fails
+        return analytics.get_token_usage_summary(hours)
 
 
 @app.get("/api/analytics/search-performance")

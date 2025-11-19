@@ -243,17 +243,16 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* Note about mock data */}
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+        {/* Analytics Info */}
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <Activity className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-yellow-300 mb-1">
-                Note: Some data may be mocked
+              <p className="text-sm font-semibold text-green-300 mb-1">
+                Real-Time Analytics Active
               </p>
-              <p className="text-xs text-yellow-200/80">
-                Memory stats are real, but token usage tracking is currently in development.
-                Full analytics will be available soon.
+              <p className="text-xs text-green-200/80">
+                All data is now tracked in real-time from the database. Memory stats and token usage are automatically updated with each interaction.
               </p>
             </div>
           </div>

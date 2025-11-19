@@ -108,7 +108,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-[9999] overflow-hidden"
           >
             {/* Current User Section */}
             <div className="p-4 border-b border-slate-700/50">

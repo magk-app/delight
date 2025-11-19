@@ -7,6 +7,7 @@ from app.db.base import Base
 from app.models.user import User, UserPreferences
 from app.models.memory import Memory, MemoryCollection, MemoryType
 from app.models.conversation import Conversation, ChatMessage
+from app.models.token_usage import TokenUsage, OperationType
 
 __all__ = [
     "Base",
@@ -17,4 +18,6 @@ __all__ = [
     "MemoryType",
     "Conversation",
     "ChatMessage",
+    "TokenUsage",
+    "OperationType",
 ]

@@ -170,6 +170,30 @@ If no memories are provided, respond naturally without making assumptions.
 
                 assistant_message = response.choices[0].message.content
 
+                # Track token usage
+                try:
+                    import sys
+                    from pathlib import Path
+                    sys.path.insert(0, str(Path(__file__).parent.parent))
+                    from services.token_tracker import TokenTracker
+
+                    tokens_input = response.usage.prompt_tokens
+                    tokens_output = response.usage.completion_tokens
+
+                    await TokenTracker.track_usage(
+                        db=db,
+                        user_id=user_id,
+                        operation_type="chat",
+                        model=self.config.chat_model,
+                        tokens_input=tokens_input,
+                        tokens_output=tokens_output,
+                        metadata={"message_preview": message[:100]}
+                    )
+                    await db.commit()  # Commit token usage immediately
+                except Exception as e:
+                    print(f"[Warning] Failed to track token usage: {e}")
+                    # Don't fail the request if token tracking fails
+
                 # Return response immediately (don't wait for memory creation)
                 return (
                     ChatResponse(
