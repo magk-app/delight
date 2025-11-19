@@ -161,9 +161,9 @@ export function ChatInterface({ userId }: { userId: string }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+    <div className="flex flex-col h-full max-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
       {/* Header with glassmorphism */}
-      <div className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
+      <div className="flex-shrink-0 bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
@@ -183,7 +183,7 @@ export function ChatInterface({ userId }: { userId: string }) {
       </div>
 
       {/* Messages Area with custom scrollbar */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
         <AnimatePresence mode="popLayout">
           {messages.map((message) => (
             <motion.div
@@ -363,7 +363,7 @@ export function ChatInterface({ userId }: { userId: string }) {
       </div>
 
       {/* Input Area */}
-      <div className="bg-slate-800/50 backdrop-blur-xl border-t border-slate-700/50 px-6 py-4">
+      <div className="flex-shrink-0 bg-slate-800/50 backdrop-blur-xl border-t border-slate-700/50 px-6 py-4">
         <div className="flex gap-3">
           <input
             ref={inputRef}
