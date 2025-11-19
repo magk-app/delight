@@ -157,6 +157,58 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
     }
   };
 
+  // Poll for newly created memories (created in background)
+  const pollForNewMemories = async (userId: string) => {
+    let pollCount = 0;
+    const maxPolls = 5; // Poll for 10 seconds (5 polls * 2 seconds)
+    let lastMemoryCount = 0;
+
+    const poll = async () => {
+      try {
+        const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+        const memories = await experimentalAPI.getMemories({ user_id: userId, limit: 10 });
+
+        // Check if new memories were created
+        if (memories.length > lastMemoryCount) {
+          const newMemories = memories.slice(0, memories.length - lastMemoryCount);
+          setRecentMemories(newMemories);
+          setIsProcessingMemories(false);
+
+          // Hide notification after 5 seconds
+          setTimeout(() => {
+            setRecentMemories([]);
+          }, 5000);
+
+          return; // Stop polling
+        }
+
+        pollCount++;
+        if (pollCount < maxPolls) {
+          // Continue polling
+          setTimeout(poll, 2000);
+        } else {
+          // Stop polling after max attempts
+          setIsProcessingMemories(false);
+        }
+      } catch (error) {
+        console.error('Error polling for memories:', error);
+        setIsProcessingMemories(false);
+      }
+    };
+
+    // Get initial memory count
+    try {
+      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+      const initialMemories = await experimentalAPI.getMemories({ user_id: userId, limit: 10 });
+      lastMemoryCount = initialMemories.length;
+    } catch (error) {
+      console.error('Error getting initial memory count:', error);
+    }
+
+    // Start polling after 2 seconds (give background task time to start)
+    setTimeout(poll, 2000);
+  };
+
   const handleNewConversation = async () => {
     if (isCreatingConversation) return; // Prevent duplicate creation
 
@@ -244,6 +296,10 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
           setIsProcessingMemories(false);
           setTimeout(() => setRecentMemories([]), 300);
         }, 5000);
+      } else {
+        // Memories are created in background - poll for them
+        setIsProcessingMemories(true);
+        pollForNewMemories(userId);
       }
 
       // Save both messages to database

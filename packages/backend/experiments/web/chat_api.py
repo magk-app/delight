@@ -239,10 +239,14 @@ If no memories are provided, respond naturally without making assumptions.
 
                     await db.commit()
 
-                    print(f"[Background] Created {len(created_memories)} memories for user {user_id}")
+                    print(f"[Background] ✅ Created {len(created_memories)} memories for user {user_id}")
+                    for mem in created_memories:
+                        print(f"  - {mem.content[:80]}...")
 
                 except Exception as e:
-                    print(f"[Background] Error processing memories: {e}")
+                    print(f"[Background] ❌ Error processing memories: {e}")
+                    import traceback
+                    traceback.print_exc()
                     await db.rollback()
 
     chat_service = ChatService()
