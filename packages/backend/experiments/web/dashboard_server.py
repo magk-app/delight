@@ -652,6 +652,19 @@ except Exception as e:
     traceback.print_exc()
 
 # ============================================================================
+# Include Graph API Router (Phase 3)
+# ============================================================================
+
+try:
+    from graph_api import router as graph_router
+    app.include_router(graph_router)
+    print("✅ Graph API enabled (Phase 3)")
+except Exception as e:
+    print(f"⚠️  Graph API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
+# ============================================================================
 # User Auto-Creation Endpoint
 # ============================================================================
 

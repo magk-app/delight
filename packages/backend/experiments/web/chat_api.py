@@ -259,29 +259,81 @@ If no memories are provided, respond naturally without making assumptions.
             user_id: UUID,
             message: str
         ):
-            """Background task to process and create memories (SLOW - 1-2 seconds)"""
+            """Background task to process and create memories with Phase 3 features (SLOW - 1-2 seconds)"""
 
             async with AsyncSessionLocal() as db:
                 try:
                     print(f"[Background] Processing memories for user {user_id}...")
 
-                    # Extract facts and create memories (SLOW - but user doesn't wait!)
-                    created_memories = await self.memory_service.create_memory_from_message(
-                        user_id=user_id,
-                        message=message,
-                        memory_type=MemoryType.PERSONAL,
-                        db=db,
-                        extract_facts=True,
-                        auto_categorize=True,
-                        generate_embeddings=True,
-                        link_facts=True
-                    )
+                    # === PHASE 3: Try hierarchical memory creation first ===
+                    hierarchical_memories = []
+                    try:
+                        from experiments.memory.hierarchical_memory import HierarchicalMemoryService
+                        from experiments.memory.memory_graph import MemoryGraph, RelationshipType
+
+                        hierarchical_service = HierarchicalMemoryService()
+
+                        print(f"[Background] 🌳 Attempting hierarchical memory extraction...")
+                        hierarchical_memories = await hierarchical_service.create_hierarchical_memories(
+                            user_id=user_id,
+                            message=message,
+                            memory_type=MemoryType.PERSONAL,
+                            db=db
+                        )
+
+                        if hierarchical_memories:
+                            print(f"[Background] ✅ Created {len(hierarchical_memories)} hierarchical memories")
+
+                            # === PHASE 3: Create graph relationships between entities ===
+                            if len(hierarchical_memories) > 1:
+                                print(f"[Background] 🕸️  Creating graph relationships...")
+                                graph = MemoryGraph()
+
+                                # Link all entities as related (they came from same message)
+                                for i, mem1 in enumerate(hierarchical_memories):
+                                    for mem2 in hierarchical_memories[i+1:]:
+                                        await graph.create_relationship(
+                                            from_memory_id=mem1.id,
+                                            to_memory_id=mem2.id,
+                                            relationship_type=RelationshipType.RELATED_TO,
+                                            strength=0.8,
+                                            metadata={"source": "same_message"},
+                                            bidirectional=True,
+                                            db=db
+                                        )
+
+                                print(f"[Background] ✅ Created {len(hierarchical_memories) * (len(hierarchical_memories) - 1) // 2} relationships")
+
+                    except Exception as e:
+                        print(f"[Background] ⚠️  Hierarchical extraction failed: {e}")
+                        hierarchical_memories = []
+
+                    # === FALLBACK: Regular fact extraction if no hierarchical memories ===
+                    created_memories = []
+                    if not hierarchical_memories:
+                        print(f"[Background] 📝 Falling back to regular fact extraction...")
+                        created_memories = await self.memory_service.create_memory_from_message(
+                            user_id=user_id,
+                            message=message,
+                            memory_type=MemoryType.PERSONAL,
+                            db=db,
+                            extract_facts=True,
+                            auto_categorize=True,
+                            generate_embeddings=True,
+                            link_facts=True
+                        )
+                    else:
+                        created_memories = hierarchical_memories
 
                     await db.commit()
 
-                    print(f"[Background] ✅ Created {len(created_memories)} memories for user {user_id}")
-                    for mem in created_memories:
-                        print(f"  - {mem.content[:80]}...")
+                    print(f"[Background] ✅ Total memories created: {len(created_memories)}")
+                    for mem in created_memories[:3]:  # Show first 3
+                        content_preview = mem.content[:80] if len(mem.content) > 80 else mem.content
+                        if mem.extra_data and "entity_id" in mem.extra_data:
+                            print(f"  - [Entity: {mem.extra_data['entity_id']}] {content_preview}...")
+                        else:
+                            print(f"  - {content_preview}...")
 
                 except Exception as e:
                     print(f"[Background] ❌ Error processing memories: {e}")
