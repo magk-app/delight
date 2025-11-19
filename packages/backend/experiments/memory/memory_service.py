@@ -28,6 +28,7 @@ Example:
     ... )
 """
 
+import re
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -44,6 +45,89 @@ from experiments.memory.categorizer import DynamicCategorizer
 from experiments.memory.embedding_service import EmbeddingService
 from experiments.memory.search_router import SearchRouter
 from experiments.memory.types import SearchResult, SearchStrategy
+
+
+# ============================================================================
+# Memory Quality Validation Functions
+# ============================================================================
+
+def is_question(content: str) -> bool:
+    """Check if content is a question.
+
+    Questions don't provide information, they request it.
+    We should NOT create memories from questions.
+    """
+    question_patterns = [
+        r'\?$',  # Ends with question mark
+        r'^(what|where|when|why|how|who|which)\b',  # Question words at start
+        r'^(do|does|did|can|could|would|should|will|won\'t|wouldn\'t)\s+(i|you|we|they)',  # Auxiliary verbs
+        r'^(is|are|was|were)\s+(this|that|there|it)',  # Be verbs
+    ]
+    content_lower = content.lower().strip()
+    return any(re.search(p, content_lower, re.IGNORECASE) for p in question_patterns)
+
+
+def is_vague(content: str) -> bool:
+    """Check if content is vague/incomplete.
+
+    Vague statements lack specific, actionable information.
+    Examples: "User has a favorite", "User likes something", "User is asking about"
+    """
+    vague_patterns = [
+        r'^user (has|had) a (favorite|preferred)',  # "User has a favorite city"
+        r'^user (likes|prefers|wants|dislikes)',  # Generic preferences without specifics
+        r'^user is (asking|wondering|curious) about',  # Meta-statements about questions
+        r'^user (attended|visited|went to) (some|a|an)\b',  # Generic locations/events
+        r'^user has (never|not) (been|visited|attended)',  # Negative/absence statements
+        r'(something|someone|somewhere|somehow)',  # Vague pronouns
+        r'^user (may|might|could) (have|be)',  # Uncertain statements
+    ]
+    content_lower = content.lower().strip()
+    return any(re.search(p, content_lower, re.IGNORECASE) for p in vague_patterns)
+
+
+def is_trivial(content: str) -> bool:
+    """Check if content is trivial.
+
+    Trivial memories lack meaningful information.
+    """
+    # Too short
+    if len(content.strip()) < 10:
+        return True
+
+    # Single word
+    if len(content.split()) <= 2:
+        return True
+
+    # Generic/obvious statements
+    trivial_patterns = [
+        r'^user uses (words|language|text)',
+        r'^user is (a person|human|someone)',
+        r'^user can (speak|type|write)',
+    ]
+    content_lower = content.lower().strip()
+    return any(re.search(p, content_lower, re.IGNORECASE) for p in trivial_patterns)
+
+
+def is_valid_memory(content: str) -> bool:
+    """Check if content is valid for memory creation.
+
+    Returns True if content should be saved as a memory.
+    Returns False if content is a question, vague, or trivial.
+    """
+    if is_question(content):
+        print(f"  ❌ Rejected (question): {content[:80]}")
+        return False
+
+    if is_vague(content):
+        print(f"  ❌ Rejected (vague): {content[:80]}")
+        return False
+
+    if is_trivial(content):
+        print(f"  ❌ Rejected (trivial): {content[:80]}")
+        return False
+
+    return True
 
 
 class MemoryService:
@@ -182,7 +266,8 @@ class MemoryService:
                         "session_id": str(session_id) if session_id else None,
                     }
                 )
-                memories_created.append(memory)
+                if memory is not None:
+                    memories_created.append(memory)
             else:
                 print(f"✅ Extracted {len(extraction_result.facts)} facts")
                 self.total_facts_extracted += len(extraction_result.facts)
@@ -208,7 +293,8 @@ class MemoryService:
                         }
                     )
 
-                    memories_created.append(memory)
+                    if memory is not None:
+                        memories_created.append(memory)
 
                 # Link facts together in graph
                 if link_facts and len(memories_created) > 1:
@@ -229,7 +315,8 @@ class MemoryService:
                     "session_id": str(session_id) if session_id else None,
                 }
             )
-            memories_created.append(memory)
+            if memory is not None:
+                memories_created.append(memory)
 
         self.total_memories_created += len(memories_created)
         print(f"✅ Created {len(memories_created)} memories\n")
@@ -245,8 +332,11 @@ class MemoryService:
         generate_embeddings: bool,
         db: AsyncSession,
         metadata: Optional[dict] = None
-    ) -> Memory:
+    ) -> Optional[Memory]:
         """Create a single memory with categorization and embedding.
+
+        IMPORTANT: This method validates memory quality before creation.
+        It will return None if the content is a question, vague, or trivial.
 
         Args:
             user_id: User ID
@@ -258,8 +348,13 @@ class MemoryService:
             metadata: Optional metadata dict
 
         Returns:
-            Created Memory object
+            Created Memory object, or None if content is invalid
         """
+        # Validate memory quality BEFORE processing
+        if not is_valid_memory(content):
+            print(f"  ⚠️  Skipping invalid memory creation")
+            return None
+
         if metadata is None:
             metadata = {}
 
