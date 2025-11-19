@@ -369,7 +369,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
         {(isProcessingMemories || recentMemories.length > 0) && (
           <div className="w-80 flex-shrink-0">
             <MemoryNotifications
-              isProcessing={false}
+              isProcessing={isProcessingMemories}
               recentMemories={recentMemories}
             />
           </div>
