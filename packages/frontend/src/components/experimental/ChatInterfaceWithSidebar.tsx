@@ -195,35 +195,65 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   // Poll for newly created memories (created in background)
   const pollForNewMemories = async (userId: string) => {
     let pollCount = 0;
-    const maxPolls = 5; // Poll for 10 seconds (5 polls * 2 seconds)
-    let lastMemoryCount = 0;
+    const maxPolls = 10; // Poll for 20 seconds (10 polls * 2 seconds) - increased from 5
+    let lastMemoryIds = new Set<string>(); // Track memory IDs instead of count
 
     const poll = async () => {
       try {
         const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
-        const memories = await experimentalAPI.getMemories({ user_id: userId, limit: 10 });
+        const memories = await experimentalAPI.getMemories({ user_id: userId, limit: 20 });
 
-        // Check if new memories were created
-        if (memories.length > lastMemoryCount) {
-          const newMemories = memories.slice(0, memories.length - lastMemoryCount);
-          setRecentMemories(newMemories);
-          setIsProcessingMemories(false);
+        // Find truly new memories by comparing IDs
+        const newMemories = memories.filter(m => !lastMemoryIds.has(m.id));
 
-          // Hide notification after 5 seconds
+        if (newMemories.length > 0) {
+          console.log(`📥 Detected ${newMemories.length} new memories, adding incrementally...`);
+
+          // Add memories one at a time with animation delay
+          for (let i = 0; i < newMemories.length; i++) {
+            const mem = newMemories[i];
+            setTimeout(() => {
+              setRecentMemories(prev => {
+                // Avoid duplicates
+                if (prev.find(m => m.id === mem.id)) return prev;
+                console.log(`✨ Adding memory: ${mem.content.substring(0, 50)}...`);
+                return [mem, ...prev]; // Add to beginning for newest-first display
+              });
+            }, i * 500); // 500ms delay between each memory for smooth animation
+          }
+
+          // Update tracking set
+          memories.forEach(m => lastMemoryIds.add(m.id));
+
+          // Calculate notification duration based on number of memories
+          // Base: 5 seconds, +2 seconds per memory, max 15 seconds
+          const notificationDuration = Math.min(5000 + (newMemories.length * 2000), 15000);
+
+          // Stop processing indicator after all memories are added
+          setTimeout(() => {
+            setIsProcessingMemories(false);
+          }, newMemories.length * 500);
+
+          // Hide notification after appropriate duration
           setTimeout(() => {
             setRecentMemories([]);
-          }, 5000);
+          }, notificationDuration);
 
-          return; // Stop polling
-        }
-
-        pollCount++;
-        if (pollCount < maxPolls) {
-          // Continue polling
-          setTimeout(poll, 2000);
+          // Continue polling in case more memories are created
+          pollCount++;
+          if (pollCount < maxPolls) {
+            setTimeout(poll, 2000);
+          }
         } else {
-          // Stop polling after max attempts
-          setIsProcessingMemories(false);
+          // No new memories yet, continue polling
+          pollCount++;
+          if (pollCount < maxPolls) {
+            setTimeout(poll, 2000);
+          } else {
+            // Stop polling after max attempts
+            console.log('⏹️ Stopped polling for memories (timeout)');
+            setIsProcessingMemories(false);
+          }
         }
       } catch (error) {
         console.error('Error polling for memories:', error);
@@ -231,17 +261,18 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       }
     };
 
-    // Get initial memory count
+    // Get initial memory IDs
     try {
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
-      const initialMemories = await experimentalAPI.getMemories({ user_id: userId, limit: 10 });
-      lastMemoryCount = initialMemories.length;
+      const initialMemories = await experimentalAPI.getMemories({ user_id: userId, limit: 20 });
+      initialMemories.forEach(m => lastMemoryIds.add(m.id));
+      console.log(`📊 Initial memory count: ${initialMemories.length}`);
     } catch (error) {
-      console.error('Error getting initial memory count:', error);
+      console.error('Error getting initial memories:', error);
     }
 
-    // Start polling after 2 seconds (give background task time to start)
-    setTimeout(poll, 2000);
+    // Start polling after 1.5 seconds (give background task time to start)
+    setTimeout(poll, 1500);
   };
 
   const handleNewConversation = async () => {
@@ -332,16 +363,35 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
 
       // Show memory processing notification
       if (response.memories_created && response.memories_created.length > 0) {
+        console.log(`📥 Received ${response.memories_created.length} memories in response, adding incrementally...`);
         setIsProcessingMemories(true);
-        setRecentMemories(response.memories_created);
 
-        // Hide notification after 5 seconds
+        // Add memories one at a time for transparency
+        response.memories_created.forEach((mem, index) => {
+          setTimeout(() => {
+            setRecentMemories(prev => {
+              // Avoid duplicates
+              if (prev.find(m => m.id === mem.id)) return prev;
+              console.log(`✨ Adding memory ${index + 1}/${response.memories_created.length}: ${mem.content.substring(0, 50)}...`);
+              return [mem, ...prev]; // Add to beginning for newest-first display
+            });
+          }, index * 500); // 500ms delay between each memory
+        });
+
+        // Stop processing indicator after all memories are added
+        const addDuration = response.memories_created.length * 500;
         setTimeout(() => {
           setIsProcessingMemories(false);
-          setTimeout(() => setRecentMemories([]), 300);
-        }, 5000);
+        }, addDuration);
+
+        // Calculate notification duration: base 5s + 2s per memory, max 15s
+        const notificationDuration = Math.min(5000 + (response.memories_created.length * 2000), 15000);
+        setTimeout(() => {
+          setRecentMemories([]);
+        }, addDuration + notificationDuration);
       } else {
         // Memories are created in background - poll for them
+        console.log('📋 Memories being created in background, starting polling...');
         setIsProcessingMemories(true);
         pollForNewMemories(userId);
       }

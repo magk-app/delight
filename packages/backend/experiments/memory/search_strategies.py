@@ -456,7 +456,7 @@ class TemporalSearch(BaseSearchStrategy):
         """Parse relative time string to datetime.
 
         Args:
-            relative_time: String like "1 week", "3 days", "2 hours"
+            relative_time: String like "1 week", "3 days", "2 hours", "now", "today"
 
         Returns:
             Datetime in the past
@@ -465,7 +465,28 @@ class TemporalSearch(BaseSearchStrategy):
             >>> search._parse_relative_time("1 week")
             datetime.datetime(2024, 11, 11, ...)  # 1 week ago
         """
-        parts = relative_time.lower().split()
+        relative_time_lower = relative_time.lower().strip()
+
+        # Handle special cases first
+        if relative_time_lower in ['now', 'right now', 'currently', 'current']:
+            # Return very recent (last hour) for "now" queries
+            return datetime.now() - timedelta(hours=1)
+
+        if relative_time_lower in ['today']:
+            # Return start of today
+            return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        if relative_time_lower in ['yesterday']:
+            return datetime.now() - timedelta(days=1)
+
+        if relative_time_lower in ['this week', 'week']:
+            return datetime.now() - timedelta(weeks=1)
+
+        if relative_time_lower in ['this month', 'month']:
+            return datetime.now() - timedelta(days=30)
+
+        # Parse standard "N unit" format
+        parts = relative_time_lower.split()
         if len(parts) != 2:
             raise ValueError(f"Invalid relative time format: {relative_time}")
 

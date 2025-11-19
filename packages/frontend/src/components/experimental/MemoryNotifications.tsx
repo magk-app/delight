@@ -113,11 +113,11 @@ export function MemoryNotifications({
                           {memory.memory_type}
                         </span>
 
-                        {memory.metadata?.categories && memory.metadata.categories.length > 0 && (
+                        {memory.categories && memory.categories.length > 0 && (
                           <div className="flex items-center gap-1">
                             <Tag className="w-3 h-3 text-slate-500" />
                             <span className="text-xs text-slate-500">
-                              {memory.metadata.categories.slice(0, 2).join(', ')}
+                              {memory.categories.slice(0, 2).join(', ')}
                             </span>
                           </div>
                         )}
