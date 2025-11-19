@@ -383,12 +383,16 @@ async def debug_memories(user_id: str):
         # Get sample of memories
         sample_memories = []
         for m in all_memories[:10]:
+            # FIXED: Check if embedding exists (it's a numpy array, so use 'is not None')
+            has_embedding = m.embedding is not None
+            embedding_dim = len(m.embedding) if has_embedding else 0
+
             sample_memories.append({
                 "id": str(m.id),
                 "content": m.content[:100],
                 "memory_type": m.memory_type.value if hasattr(m.memory_type, 'value') else str(m.memory_type),
-                "has_embedding": m.embedding is not None,
-                "embedding_dim": len(m.embedding) if m.embedding else 0,
+                "has_embedding": has_embedding,
+                "embedding_dim": embedding_dim,
                 "categories": m.extra_data.get("categories", []) if m.extra_data else [],
                 "created_at": m.created_at.isoformat() if m.created_at else None
             })

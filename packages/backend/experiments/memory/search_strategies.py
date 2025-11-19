@@ -202,8 +202,28 @@ class KeywordSearch(BaseSearchStrategy):
             ... )
         """
         # Prepare search query (tsquery format)
-        # Convert "typescript fastapi" → "typescript & fastapi"
-        search_terms = " & ".join(query.strip().split())
+        # Remove common stop words and use OR for better recall
+        stop_words = {
+            'hi', 'hello', 'hey', 'do', 'does', 'did', 'you', 'your', 'the', 'a', 'an',
+            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+            'can', 'could', 'will', 'would', 'should', 'may', 'might', 'must',
+            'i', 'me', 'my', 'mine', 'we', 'us', 'our', 'ours',
+            'what', 'which', 'who', 'when', 'where', 'why', 'how',
+            'remember', 'recall', 'know', 'tell', 'show', 'find'
+        }
+
+        # Extract meaningful words (remove stop words)
+        words = [w.lower() for w in query.strip().split() if w.lower() not in stop_words]
+
+        # If no meaningful words left, use original query
+        if not words:
+            words = query.strip().split()
+
+        # Use OR (|) instead of AND (&) for better recall
+        # "city like" → "city | like" (matches memories containing EITHER word)
+        search_terms = " | ".join(words)
+
+        print(f"      🔤 Keyword search: '{query}' → '{search_terms}'")
 
         # Build full-text search query
         # Uses to_tsvector for text indexing and ts_rank_cd for BM25-like scoring
