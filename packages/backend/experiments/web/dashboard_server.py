@@ -25,13 +25,13 @@ import sys
 # Add parent directory to path to import from experiments
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import from experimental agent (adjust imports based on your structure)
+# Import from experimental agent (old JSON system - only for legacy HTML dashboard)
 try:
     from agent_config import AgentConfig
     from storage import JSONMemoryStorage
     from schemas import Memory, TokenUsage, SearchBenchmark, MemoryStats
 except ImportError:
-    print("Warning: Could not import experimental agent modules. Using mock data.")
+    # This is expected - old modules not needed for React frontend
     AgentConfig = None
     JSONMemoryStorage = None
 
@@ -203,7 +203,7 @@ app.mount("/static", StaticFiles(directory=str(config.static_dir)), name="static
 # Setup templates
 templates = Jinja2Templates(directory=str(config.templates_dir))
 
-# Initialize storage and analytics (use mock if real modules unavailable)
+# Initialize storage and analytics (legacy HTML dashboard only - React uses real DB)
 try:
     if AgentConfig and JSONMemoryStorage:
         agent_config = AgentConfig()
@@ -213,7 +213,8 @@ try:
     else:
         raise ImportError("Using mock storage")
 except:
-    print("Using mock storage and analytics")
+    # Mock storage for legacy HTML dashboard pages only
+    # React frontend uses real PostgreSQL through chat_api, memory_api, conversation_api
     storage = MockStorage()
     analytics = MockAnalytics()
 
