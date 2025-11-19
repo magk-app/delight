@@ -91,10 +91,10 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[9999]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 hover:text-white hover:border-purple-500/50 transition-all"
+        className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 hover:text-white hover:border-purple-500/50 transition-all relative z-[9999]"
       >
         <User className="w-4 h-4" />
         <span className="text-xs font-mono">{currentUserId.slice(0, 8)}...</span>
@@ -108,7 +108,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-[9999] overflow-hidden"
+            className="fixed right-4 top-20 w-80 bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-[99999] overflow-hidden"
           >
             {/* Current User Section */}
             <div className="p-4 border-b border-slate-700/50">
