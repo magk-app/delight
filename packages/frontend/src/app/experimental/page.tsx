@@ -16,6 +16,7 @@ import { ChatInterface } from "@/components/experimental/ChatInterface";
 import { MemoryVisualization } from "@/components/experimental/MemoryVisualization";
 import { AnalyticsDashboard } from "@/components/experimental/AnalyticsDashboard";
 import { ConfigurationPanel } from "@/components/experimental/ConfigurationPanel";
+import { UserSwitcher } from "@/components/experimental/UserSwitcher";
 import { useHealthCheck } from "@/lib/hooks/useExperimentalAPI";
 import { usePersistentUser } from "@/lib/hooks/usePersistentUser";
 
@@ -28,6 +29,11 @@ export default function ExperimentalPage() {
   const [activeTab, setActiveTab] = useState<TabType>("chat");
   const { healthy, checking } = useHealthCheck();
   const { userId, isLoading: userLoading } = usePersistentUser();
+
+  const handleUserChange = () => {
+    // Reload page to reinitialize with new user
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -50,8 +56,17 @@ export default function ExperimentalPage() {
               </div>
             </div>
 
-            {/* Backend Status Indicator */}
+            {/* Backend Status & User Switcher */}
             <div className="flex items-center gap-3">
+              {/* User Switcher */}
+              {userId && !userLoading && (
+                <UserSwitcher
+                  currentUserId={userId}
+                  onUserChange={handleUserChange}
+                />
+              )}
+
+              {/* Backend Status Indicator */}
               <div
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
                   checking
