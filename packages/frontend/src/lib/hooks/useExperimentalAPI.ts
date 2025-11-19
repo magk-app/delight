@@ -20,7 +20,7 @@ import experimentalAPI, {
 // useMemoryStats - Get memory statistics
 // ============================================================================
 
-export function useMemoryStats(userId?: string) {
+export function useMemoryStats(userId?: string, autoRefresh?: boolean, refreshInterval?: number) {
   const [stats, setStats] = useState<MemoryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -40,7 +40,13 @@ export function useMemoryStats(userId?: string) {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+
+    // Auto-refresh if enabled
+    if (autoRefresh) {
+      const interval = setInterval(refresh, refreshInterval || 5000);
+      return () => clearInterval(interval);
+    }
+  }, [refresh, autoRefresh, refreshInterval]);
 
   return { stats, loading, error, refresh };
 }
@@ -54,6 +60,8 @@ export function useMemories(filters?: {
   memory_type?: string;
   category?: string;
   limit?: number;
+  autoRefresh?: boolean;
+  refreshInterval?: number; // in milliseconds
 }) {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +95,13 @@ export function useMemories(filters?: {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+
+    // Auto-refresh if enabled
+    if (filters?.autoRefresh) {
+      const interval = setInterval(refresh, filters.refreshInterval || 5000);
+      return () => clearInterval(interval);
+    }
+  }, [refresh, filters?.autoRefresh, filters?.refreshInterval]);
 
   return { memories, loading, error, refresh, deleteMemory };
 }
@@ -140,7 +154,7 @@ export function useConfig() {
 // useTokenUsage - Get token usage analytics
 // ============================================================================
 
-export function useTokenUsage(hours: number = 24) {
+export function useTokenUsage(hours: number = 24, autoRefresh?: boolean, refreshInterval?: number) {
   const [usage, setUsage] = useState<TokenUsageSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -160,7 +174,13 @@ export function useTokenUsage(hours: number = 24) {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+
+    // Auto-refresh if enabled
+    if (autoRefresh) {
+      const interval = setInterval(refresh, refreshInterval || 5000);
+      return () => clearInterval(interval);
+    }
+  }, [refresh, autoRefresh, refreshInterval]);
 
   return { usage, loading, error, refresh };
 }
