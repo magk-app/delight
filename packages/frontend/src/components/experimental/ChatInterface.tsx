@@ -36,7 +36,8 @@ interface Message {
   processing_memories?: boolean; // For async memory processing
 }
 
-export function ChatInterface() {
+export function ChatInterface({ userId }: { userId: string }) {
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
@@ -104,9 +105,10 @@ export function ChatInterface() {
           timestamp: m.timestamp.toISOString(),
         }));
 
-      // Call the chat API
+      // Call the chat API with persistent user ID
       const response = await experimentalAPI.sendChatMessage({
         message: userMessage.content,
+        user_id: userId,
         conversation_history: conversationHistory,
       });
 
@@ -162,15 +164,20 @@ export function ChatInterface() {
     <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
       {/* Header with glassmorphism */}
       <div className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
-            <Brain className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+              <Brain className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">AI Companion</h2>
+              <p className="text-sm text-slate-400">
+                Powered by memory-augmented intelligence
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-white">AI Companion</h2>
-            <p className="text-sm text-slate-400">
-              Powered by memory-augmented intelligence
-            </p>
+          <div className="text-xs text-slate-500 font-mono">
+            Session: {userId.slice(0, 8)}...
           </div>
         </div>
       </div>

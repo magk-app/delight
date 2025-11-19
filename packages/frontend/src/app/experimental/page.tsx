@@ -17,6 +17,7 @@ import { MemoryVisualization } from "@/components/experimental/MemoryVisualizati
 import { AnalyticsDashboard } from "@/components/experimental/AnalyticsDashboard";
 import { ConfigurationPanel } from "@/components/experimental/ConfigurationPanel";
 import { useHealthCheck } from "@/lib/hooks/useExperimentalAPI";
+import { usePersistentUser } from "@/lib/hooks/usePersistentUser";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ type TabType = "chat" | "memories" | "analytics" | "config";
 export default function ExperimentalPage() {
   const [activeTab, setActiveTab] = useState<TabType>("chat");
   const { healthy, checking } = useHealthCheck();
+  const { userId, isLoading: userLoading } = usePersistentUser();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -150,18 +152,28 @@ export default function ExperimentalPage() {
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="h-[calc(100vh-16rem)]">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {activeTab === "chat" && <ChatInterface />}
-            {activeTab === "memories" && <MemoryVisualization />}
-            {activeTab === "analytics" && <AnalyticsDashboard />}
-            {activeTab === "config" && <ConfigurationPanel />}
-          </motion.div>
+          {userLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-slate-400">Loading user session...</div>
+            </div>
+          ) : !userId ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-red-400">Error: Could not initialize user session</div>
+            </div>
+          ) : (
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {activeTab === "chat" && <ChatInterface userId={userId} />}
+              {activeTab === "memories" && <MemoryVisualization userId={userId} />}
+              {activeTab === "analytics" && <AnalyticsDashboard userId={userId} />}
+              {activeTab === "config" && <ConfigurationPanel />}
+            </motion.div>
+          )}
         </div>
       </main>
 
