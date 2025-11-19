@@ -130,18 +130,43 @@ try:
                 # Step 0: Ensure user exists
                 await self._ensure_user_exists(user_id, db)
 
-                # Step 1: Retrieve relevant memories (FAST - only search)
-                print(f"\n🔍 Searching for memories related to: '{message}'")
+                # Step 1: Preprocess query to handle multiple questions
+                from experiments.memory.query_preprocessor import QueryPreprocessor
+
+                preprocessor = QueryPreprocessor()
+                sub_queries = await preprocessor.extract_search_queries(message)
+
+                # Step 2: Retrieve relevant memories for each sub-query
+                print(f"\n🔍 Searching for memories (split into {len(sub_queries)} sub-queries)")
                 print(f"   User ID: {user_id}")
 
-                relevant_memories = await self.memory_service.search_memories(
-                    user_id=user_id,
-                    query=message,
-                    db=db,
-                    auto_route=True,
-                    limit=5,
-                    memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]
-                )
+                all_relevant_memories = []
+                seen_ids = set()
+
+                for sub_query in sub_queries:
+                    print(f"\n   Sub-query: '{sub_query}'")
+
+                    sub_results = await self.memory_service.search_memories(
+                        user_id=user_id,
+                        query=sub_query,
+                        db=db,
+                        auto_route=True,
+                        limit=10,  # 10 per sub-query
+                        memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]
+                    )
+
+                    # Deduplicate across sub-queries
+                    for mem in sub_results:
+                        mem_id = mem.memory_id if hasattr(mem, 'memory_id') else mem.id
+                        if mem_id not in seen_ids:
+                            all_relevant_memories.append(mem)
+                            seen_ids.add(mem_id)
+
+                    print(f"      Found {len(sub_results)} memories (total unique: {len(all_relevant_memories)})")
+
+                # Sort by score and limit to top 15
+                all_relevant_memories.sort(key=lambda m: m.score if hasattr(m, 'score') else 0, reverse=True)
+                relevant_memories = all_relevant_memories[:15]
 
                 print(f"   📊 Search returned {len(relevant_memories)} memories")
                 if relevant_memories:

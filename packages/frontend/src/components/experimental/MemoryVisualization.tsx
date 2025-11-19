@@ -31,6 +31,7 @@ import {
 import { useMemories } from '@/lib/hooks/useExperimentalAPI';
 import { Memory } from '@/lib/api/experimental-client';
 import { EditMemoryModal } from './EditMemoryModal';
+import { CleanupPanel } from './CleanupPanel';
 
 type ViewMode = 'list' | 'graph';
 
@@ -39,11 +40,13 @@ export function MemoryVisualization({ userId }: { userId: string }) {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
+  const [memoryLimit, setMemoryLimit] = useState<number>(50);
+  const [showCleanupPanel, setShowCleanupPanel] = useState(false);
 
   const { memories, loading, error, refresh, deleteMemory } = useMemories({
     user_id: userId,
     memory_type: selectedType === 'all' ? undefined : selectedType,
-    limit: 50,
+    limit: memoryLimit,
     autoRefresh: true,
     refreshInterval: 60000, // Refresh every 1 minute (manual refresh button available)
   });
@@ -163,6 +166,34 @@ export function MemoryVisualization({ userId }: { userId: string }) {
               </button>
             )}
           </div>
+
+          {/* Memory Limit Selector */}
+          <select
+            value={memoryLimit}
+            onChange={(e) => setMemoryLimit(Number(e.target.value))}
+            className="px-4 py-2 text-sm bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            title="Number of memories to load"
+          >
+            <option value={50}>50 memories</option>
+            <option value={100}>100 memories</option>
+            <option value={200}>200 memories</option>
+            <option value={500}>500 memories</option>
+            <option value={10000}>All memories</option>
+          </select>
+
+          {/* Cleanup Button */}
+          <button
+            onClick={() => setShowCleanupPanel(!showCleanupPanel)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all flex items-center gap-2 ${
+              showCleanupPanel
+                ? 'bg-red-500/20 border-red-500/30 text-red-300'
+                : 'bg-slate-900/50 border-slate-700/50 text-slate-300 hover:text-white hover:border-purple-500/50'
+            }`}
+            title="Clean up problematic memories"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Cleanup</span>
+          </button>
         </div>
 
         {/* Stats Bar */}
@@ -184,6 +215,19 @@ export function MemoryVisualization({ userId }: { userId: string }) {
           )}
         </div>
       </div>
+
+      {/* Cleanup Panel */}
+      <AnimatePresence>
+        {showCleanupPanel && (
+          <CleanupPanel
+            userId={userId}
+            onCleanupComplete={() => {
+              refresh();
+              setShowCleanupPanel(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto">

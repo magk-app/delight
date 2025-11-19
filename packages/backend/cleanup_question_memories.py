@@ -16,7 +16,6 @@ from sqlalchemy import select, delete as sql_delete
 from app.db.session import AsyncSessionLocal
 from app.models.memory import Memory
 
-
 async def identify_question_memories(user_id: UUID = None):
     """Identify memories that are likely questions or vague statements."""
 
