@@ -52,10 +52,13 @@ export interface TokenUsage {
 export interface TokenUsageSummary {
   total_tokens: number;
   total_cost: number;
-  by_model: Record<string, {
-    tokens: number;
-    cost: number;
-  }>;
+  by_model: Record<
+    string,
+    {
+      tokens: number;
+      cost: number;
+    }
+  >;
 }
 
 export interface SystemConfig {
@@ -95,7 +98,7 @@ export interface GraphData {
 }
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp?: string;
   memories_used?: SearchResult[];
@@ -145,7 +148,7 @@ export interface ConversationMessage {
   id: string;
   conversation_id: string;
   user_id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   metadata?: {
     memories_retrieved?: SearchResult[];
@@ -164,9 +167,16 @@ class ExperimentalAPIClient {
   private ws: WebSocket | null = null;
   private wsCallbacks: Map<string, (data: any) => void> = new Map();
 
-  constructor(baseUrl = 'http://localhost:8001') {
-    this.baseUrl = baseUrl;
-    this.wsUrl = baseUrl.replace('http', 'ws');
+  constructor(baseUrl?: string) {
+    // Use environment variable if available, otherwise fallback to localhost
+    // NEXT_PUBLIC_ prefix makes it available in the browser
+    this.baseUrl =
+      baseUrl ||
+      (typeof window !== "undefined"
+        ? process.env.NEXT_PUBLIC_EXPERIMENTAL_API_URL ||
+          "http://localhost:8001"
+        : process.env.EXPERIMENTAL_API_URL || "http://localhost:8001");
+    this.wsUrl = this.baseUrl.replace("http", "ws");
   }
 
   // ============================================================================
@@ -182,7 +192,7 @@ class ExperimentalAPIClient {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
     });
@@ -196,18 +206,18 @@ class ExperimentalAPIClient {
   }
 
   private async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
   private async post<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   private async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 
   // ============================================================================
@@ -220,7 +230,7 @@ class ExperimentalAPIClient {
     storage: string;
     version: string;
   }> {
-    return this.get('/health');
+    return this.get("/health");
   }
 
   // ============================================================================
@@ -228,11 +238,13 @@ class ExperimentalAPIClient {
   // ============================================================================
 
   async getConfig(): Promise<SystemConfig> {
-    return this.get('/api/config');
+    return this.get("/api/config");
   }
 
-  async updateConfig(config: SystemConfig): Promise<{ status: string; message: string }> {
-    return this.post('/api/config', config);
+  async updateConfig(
+    config: SystemConfig
+  ): Promise<{ status: string; message: string }> {
+    return this.post("/api/config", config);
   }
 
   async getAvailableModels(): Promise<{
@@ -240,7 +252,7 @@ class ExperimentalAPIClient {
     reasoning: string[];
     embedding: string[];
   }> {
-    return this.get('/api/models/available');
+    return this.get("/api/models/available");
   }
 
   // ============================================================================
@@ -248,14 +260,17 @@ class ExperimentalAPIClient {
   // ============================================================================
 
   async getMemoryStats(userId?: string): Promise<MemoryStats> {
-    const params = userId ? `?user_id=${userId}` : '';
+    const params = userId ? `?user_id=${userId}` : "";
     return this.get(`/api/analytics/stats${params}`);
   }
 
-  async getTokenUsage(hours: number = 24, userId?: string): Promise<TokenUsageSummary> {
+  async getTokenUsage(
+    hours: number = 24,
+    userId?: string
+  ): Promise<TokenUsageSummary> {
     const params = new URLSearchParams();
-    params.append('hours', hours.toString());
-    if (userId) params.append('user_id', userId);
+    params.append("hours", hours.toString());
+    if (userId) params.append("user_id", userId);
     return this.get(`/api/analytics/token-usage?${params.toString()}`);
   }
 
@@ -264,7 +279,7 @@ class ExperimentalAPIClient {
   }
 
   async recordTokenUsage(usage: TokenUsage): Promise<{ status: string }> {
-    return this.post('/api/analytics/token-usage', usage);
+    return this.post("/api/analytics/token-usage", usage);
   }
 
   // ============================================================================
@@ -278,36 +293,43 @@ class ExperimentalAPIClient {
     limit?: number;
   }): Promise<Memory[]> {
     const params = new URLSearchParams();
-    if (filters?.user_id) params.append('user_id', filters.user_id);
-    if (filters?.memory_type) params.append('memory_type', filters.memory_type);
-    if (filters?.category) params.append('category', filters.category);
-    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.user_id) params.append("user_id", filters.user_id);
+    if (filters?.memory_type) params.append("memory_type", filters.memory_type);
+    if (filters?.category) params.append("category", filters.category);
+    if (filters?.limit) params.append("limit", filters.limit.toString());
 
     const queryString = params.toString();
-    return this.get(`/api/memories${queryString ? `?${queryString}` : ''}`);
+    return this.get(`/api/memories${queryString ? `?${queryString}` : ""}`);
   }
 
   async getMemory(memoryId: string): Promise<Memory> {
     return this.get(`/api/memories/${memoryId}`);
   }
 
-  async updateMemory(memoryId: string, updates: {
-    content?: string;
-    importance?: number;
-    metadata?: Record<string, any>;
-  }): Promise<Memory> {
+  async updateMemory(
+    memoryId: string,
+    updates: {
+      content?: string;
+      importance?: number;
+      metadata?: Record<string, any>;
+    }
+  ): Promise<Memory> {
     return this.request(`/api/memories/${memoryId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(updates),
     });
   }
 
-  async deleteMemory(memoryId: string): Promise<{ status: string; message: string }> {
+  async deleteMemory(
+    memoryId: string
+  ): Promise<{ status: string; message: string }> {
     return this.delete(`/api/memories/${memoryId}`);
   }
 
-  async getCategoryHierarchy(userId?: string): Promise<Record<string, Record<string, number>>> {
-    const params = userId ? `?user_id=${userId}` : '';
+  async getCategoryHierarchy(
+    userId?: string
+  ): Promise<Record<string, Record<string, number>>> {
+    const params = userId ? `?user_id=${userId}` : "";
     return this.get(`/api/memories/categories/hierarchy${params}`);
   }
 
@@ -315,10 +337,13 @@ class ExperimentalAPIClient {
   // Graph API
   // ============================================================================
 
-  async getMemoryGraph(userId?: string, limit: number = 100): Promise<GraphData> {
+  async getMemoryGraph(
+    userId?: string,
+    limit: number = 100
+  ): Promise<GraphData> {
     const params = new URLSearchParams();
-    if (userId) params.append('user_id', userId);
-    params.append('limit', limit.toString());
+    if (userId) params.append("user_id", userId);
+    params.append("limit", limit.toString());
 
     return this.get(`/api/graph/memories?${params.toString()}`);
   }
@@ -328,33 +353,45 @@ class ExperimentalAPIClient {
   // ============================================================================
 
   async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
-    return this.post('/api/chat/message', request);
+    return this.post("/api/chat/message", request);
   }
 
-  async checkChatHealth(): Promise<{ status: string; service: string; timestamp: string }> {
-    return this.get('/api/chat/health');
+  async checkChatHealth(): Promise<{
+    status: string;
+    service: string;
+    timestamp: string;
+  }> {
+    return this.get("/api/chat/health");
   }
 
   // ============================================================================
   // User API
   // ============================================================================
 
-  async ensureUser(userId: string): Promise<{ status: string; user_id: string; message: string }> {
-    return this.post('/api/users/ensure', { user_id: userId });
+  async ensureUser(
+    userId: string
+  ): Promise<{ status: string; user_id: string; message: string }> {
+    return this.post("/api/users/ensure", { user_id: userId });
   }
 
   // ============================================================================
   // Conversation API
   // ============================================================================
 
-  async createConversation(userId: string, title?: string): Promise<Conversation> {
-    return this.post('/api/conversations/', { user_id: userId, title });
+  async createConversation(
+    userId: string,
+    title?: string
+  ): Promise<Conversation> {
+    return this.post("/api/conversations/", { user_id: userId, title });
   }
 
-  async getConversations(userId: string, includeArchived = false): Promise<Conversation[]> {
+  async getConversations(
+    userId: string,
+    includeArchived = false
+  ): Promise<Conversation[]> {
     const params = new URLSearchParams();
-    params.append('user_id', userId);
-    if (includeArchived) params.append('include_archived', 'true');
+    params.append("user_id", userId);
+    if (includeArchived) params.append("include_archived", "true");
 
     return this.get(`/api/conversations/?${params.toString()}`);
   }
@@ -366,14 +403,14 @@ class ExperimentalAPIClient {
   async saveMessage(
     conversationId: string,
     userId: string,
-    role: 'user' | 'assistant' | 'system',
+    role: "user" | "assistant" | "system",
     content: string,
     metadata?: {
       memories_retrieved?: SearchResult[];
       memories_created?: Memory[];
     }
   ): Promise<ConversationMessage> {
-    return this.post('/api/conversations/messages', {
+    return this.post("/api/conversations/messages", {
       conversation_id: conversationId,
       user_id: userId,
       role,
@@ -382,11 +419,15 @@ class ExperimentalAPIClient {
     });
   }
 
-  async deleteConversation(conversationId: string): Promise<{ status: string; message: string }> {
+  async deleteConversation(
+    conversationId: string
+  ): Promise<{ status: string; message: string }> {
     return this.delete(`/api/conversations/${conversationId}`);
   }
 
-  async archiveConversation(conversationId: string): Promise<{ status: string; message: string }> {
+  async archiveConversation(
+    conversationId: string
+  ): Promise<{ status: string; message: string }> {
     return this.post(`/api/conversations/${conversationId}/archive`, {});
   }
 
@@ -402,7 +443,7 @@ class ExperimentalAPIClient {
     this.ws = new WebSocket(`${this.wsUrl}/ws/updates`);
 
     this.ws.onopen = () => {
-      console.log('✅ WebSocket connected');
+      console.log("✅ WebSocket connected");
     };
 
     this.ws.onmessage = (event) => {
@@ -415,16 +456,16 @@ class ExperimentalAPIClient {
           callback(data);
         });
       } catch (error) {
-        console.error('WebSocket message error:', error);
+        console.error("WebSocket message error:", error);
       }
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error("WebSocket error:", error);
     };
 
     this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log("WebSocket disconnected");
       // Auto-reconnect after 3 seconds
       setTimeout(() => {
         if (this.ws?.readyState === WebSocket.CLOSED) {
@@ -460,5 +501,26 @@ class ExperimentalAPIClient {
 // Export Singleton Instance
 // ============================================================================
 
-export const experimentalAPI = new ExperimentalAPIClient();
+// Create instance with environment variable support
+// In browser: uses NEXT_PUBLIC_EXPERIMENTAL_API_URL
+// On server: uses EXPERIMENTAL_API_URL
+const getExperimentalAPIUrl = (): string => {
+  if (typeof window !== "undefined") {
+    // Client-side: use NEXT_PUBLIC_ prefixed variable
+    return (
+      process.env.NEXT_PUBLIC_EXPERIMENTAL_API_URL || "http://localhost:8001"
+    );
+  } else {
+    // Server-side: use non-prefixed variable
+    return (
+      process.env.EXPERIMENTAL_API_URL ||
+      process.env.NEXT_PUBLIC_EXPERIMENTAL_API_URL ||
+      "http://localhost:8001"
+    );
+  }
+};
+
+export const experimentalAPI = new ExperimentalAPIClient(
+  getExperimentalAPIUrl()
+);
 export default experimentalAPI;
