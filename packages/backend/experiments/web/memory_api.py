@@ -365,3 +365,50 @@ async def get_memory_stats(user_id: Optional[str] = None):
         "by_type": by_type,
         "recent_count": len([m for m in all_memories[:10]]),
     }
+
+
+@router.get("/debug/{user_id}")
+async def debug_memories(user_id: str):
+    """Debug endpoint to check memory state and embeddings"""
+    if not memory_service:
+        raise HTTPException(status_code=503, detail="Memory service not available")
+
+    try:
+        user_uuid = UUID(user_id)
+        all_memories = await memory_service.get_memories(user_id=user_uuid, limit=100)
+
+        memories_with_embeddings = sum(1 for m in all_memories if m.embedding is not None)
+        memories_without_embeddings = len(all_memories) - memories_with_embeddings
+
+        # Get sample of memories
+        sample_memories = []
+        for m in all_memories[:10]:
+            sample_memories.append({
+                "id": str(m.id),
+                "content": m.content[:100],
+                "memory_type": m.memory_type.value if hasattr(m.memory_type, 'value') else str(m.memory_type),
+                "has_embedding": m.embedding is not None,
+                "embedding_dim": len(m.embedding) if m.embedding else 0,
+                "categories": m.extra_data.get("categories", []) if m.extra_data else [],
+                "created_at": m.created_at.isoformat() if m.created_at else None
+            })
+
+        return {
+            "user_id": user_id,
+            "total_memories": len(all_memories),
+            "with_embeddings": memories_with_embeddings,
+            "without_embeddings": memories_without_embeddings,
+            "embedding_coverage": f"{(memories_with_embeddings / len(all_memories) * 100) if all_memories else 0:.1f}%",
+            "sample_memories": sample_memories,
+            "recommendation": (
+                "✅ Good! Most memories have embeddings and can be searched semantically."
+                if memories_with_embeddings > len(all_memories) * 0.8
+                else "⚠️ Warning: Many memories are missing embeddings. Semantic search may not work well."
+            )
+        }
+
+    except Exception as e:
+        print(f"❌ Debug endpoint error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Debug failed: {str(e)}")

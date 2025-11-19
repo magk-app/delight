@@ -131,6 +131,9 @@ try:
                 await self._ensure_user_exists(user_id, db)
 
                 # Step 1: Retrieve relevant memories (FAST - only search)
+                print(f"\n🔍 Searching for memories related to: '{message}'")
+                print(f"   User ID: {user_id}")
+
                 relevant_memories = await self.memory_service.search_memories(
                     user_id=user_id,
                     query=message,
@@ -139,6 +142,16 @@ try:
                     limit=5,
                     memory_types=[MemoryType.PERSONAL, MemoryType.PROJECT]
                 )
+
+                print(f"   📊 Search returned {len(relevant_memories)} memories")
+                if relevant_memories:
+                    for i, mem in enumerate(relevant_memories[:3], 1):
+                        print(f"   {i}. [{mem.score:.3f}] {mem.content[:80]}...")
+                else:
+                    print(f"   ⚠️ No memories found! This might indicate:")
+                    print(f"      - No memories stored for this user")
+                    print(f"      - Memories don't have embeddings")
+                    print(f"      - Search threshold too high")
 
                 # Step 2: Build context and generate AI response (FAST - no memory creation)
                 memory_context = ""

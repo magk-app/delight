@@ -88,7 +88,7 @@ class SemanticSearch(BaseSearchStrategy):
         user_id: UUID,
         db: AsyncSession,
         limit: int = 10,
-        threshold: float = 0.7,
+        threshold: float = 0.3,  # LOWERED from 0.7 to 0.3 for better recall
         memory_types: Optional[List[str]] = None
     ) -> List[SearchResult]:
         """Search using vector similarity.
@@ -113,7 +113,9 @@ class SemanticSearch(BaseSearchStrategy):
             ... )
         """
         # Generate query embedding
+        print(f"      🔮 Generating embedding for query: '{query[:60]}...'")
         query_embedding = await self.embedding_service.embed_text(query)
+        print(f"      ✅ Generated embedding (dim: {len(query_embedding)})")
 
         # Build query with pgvector similarity
         # Note: <=> is cosine distance, so smaller is better (1 - <=>  = similarity)
@@ -134,16 +136,28 @@ class SemanticSearch(BaseSearchStrategy):
         stmt = stmt.order_by(text("similarity DESC")).limit(limit * 2)  # Get extra for filtering
 
         # Execute query
+        print(f"      🔍 Executing vector similarity search (threshold: {threshold})...")
         result = await db.execute(stmt)
         rows = result.all()
+        print(f"      📊 Database returned {len(rows)} memories with embeddings")
 
         # Convert to SearchResults and filter by threshold
         results = []
+        below_threshold = 0
         for memory, similarity in rows:
             if similarity >= threshold:
                 results.append(
                     self._memory_to_search_result(memory, similarity)
                 )
+                if len(results) <= 3:
+                    print(f"         ✅ [{similarity:.3f}] {memory.content[:80]}...")
+            else:
+                below_threshold += 1
+
+        if below_threshold > 0:
+            print(f"      ⚠️ Filtered out {below_threshold} memories below threshold {threshold}")
+
+        print(f"      ✅ Returning {len(results[:limit])} results")
 
         # Return top results
         return results[:limit]

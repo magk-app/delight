@@ -85,11 +85,12 @@ export function ConversationList({
       // Remove from list immediately for instant feedback (dynamic update, no reload)
       setConversations(prev => prev.filter(c => c.id !== conversationId));
 
-      // If deleted current conversation, clear localStorage and create new one
+      // If deleted current conversation, just clear localStorage
+      // DON'T auto-create a new one - let user do it manually
       if (isDeletingCurrent) {
-        console.log('📝 Deleted current conversation, clearing localStorage and creating new one');
+        console.log('📝 Deleted current conversation, clearing localStorage');
         localStorage.removeItem(`conversation_${userId}`); // Clear old conversation ID
-        await onNewConversation();
+        // Note: User will need to click "New Chat" button to start a new conversation
       }
     } catch (err: any) {
       console.error('❌ Failed to delete conversation:', err);
