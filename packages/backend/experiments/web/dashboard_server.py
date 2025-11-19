@@ -549,6 +549,19 @@ except Exception as e:
     traceback.print_exc()
 
 # ============================================================================
+# Include Conversation API Router
+# ============================================================================
+
+try:
+    from conversation_api import router as conversation_router
+    app.include_router(conversation_router)
+    print("✅ Conversation API enabled")
+except Exception as e:
+    print(f"⚠️  Conversation API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
+# ============================================================================
 # Startup
 # ============================================================================
 

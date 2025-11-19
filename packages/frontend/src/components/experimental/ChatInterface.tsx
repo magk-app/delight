@@ -22,6 +22,7 @@ import {
   Sparkles,
   Loader2,
   Database,
+  MessageSquarePlus,
 } from 'lucide-react';
 import { SearchResult, Memory } from '@/lib/api/experimental-client';
 
@@ -48,6 +49,8 @@ export function ChatInterface({ userId }: { userId: string }) {
   ]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,8 +68,75 @@ export function ChatInterface({ userId }: { userId: string }) {
     inputRef.current?.focus();
   }, []);
 
+  // Load or create conversation on mount
+  useEffect(() => {
+    const loadConversation = async () => {
+      try {
+        const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+
+        // Check if there's a conversation ID in localStorage for this user
+        const storageKey = `conversation_${userId}`;
+        const storedConversationId = localStorage.getItem(storageKey);
+
+        if (storedConversationId) {
+          // Try to load existing conversation
+          try {
+            const conversation = await experimentalAPI.getConversation(storedConversationId);
+
+            if (conversation.messages && conversation.messages.length > 0) {
+              // Load messages from database
+              const loadedMessages: Message[] = [
+                {
+                  id: '0',
+                  role: 'system',
+                  content: "Welcome back! Continuing your conversation...",
+                  timestamp: new Date(),
+                },
+                ...conversation.messages.map(msg => ({
+                  id: msg.id,
+                  role: msg.role,
+                  content: msg.content,
+                  timestamp: new Date(msg.created_at),
+                  memories_retrieved: msg.metadata?.memories_retrieved,
+                  memories_created: msg.metadata?.memories_created,
+                }))
+              ];
+
+              setMessages(loadedMessages);
+              setConversationId(conversation.id);
+              setIsLoadingConversation(false);
+              return;
+            } else {
+              // Conversation exists but has no messages, use it
+              setConversationId(conversation.id);
+              setIsLoadingConversation(false);
+              return;
+            }
+          } catch (error) {
+            console.warn('Failed to load conversation, creating new one:', error);
+            // Continue to create new conversation
+          }
+        }
+
+        // Create new conversation
+        const newConversation = await experimentalAPI.createConversation(
+          userId,
+          `Chat ${new Date().toLocaleDateString()}`
+        );
+        setConversationId(newConversation.id);
+        localStorage.setItem(storageKey, newConversation.id);
+        setIsLoadingConversation(false);
+      } catch (error) {
+        console.error('Failed to initialize conversation:', error);
+        setIsLoadingConversation(false);
+      }
+    };
+
+    loadConversation();
+  }, [userId]);
+
   const handleSendMessage = async () => {
-    if (!input.trim() || isProcessing) return;
+    if (!input.trim() || isProcessing || !conversationId) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -136,6 +206,32 @@ export function ChatInterface({ userId }: { userId: string }) {
       };
 
       setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(assistantMessage));
+
+      // Save both messages to database in the background
+      try {
+        // Save user message
+        await experimentalAPI.saveMessage(
+          conversationId,
+          userId,
+          'user',
+          userMessage.content
+        );
+
+        // Save assistant message with metadata
+        await experimentalAPI.saveMessage(
+          conversationId,
+          userId,
+          'assistant',
+          assistantMessage.content,
+          {
+            memories_retrieved: response.memories_retrieved,
+            memories_created: response.memories_created,
+          }
+        );
+      } catch (saveError) {
+        console.error('Failed to save messages to database:', saveError);
+        // Don't show error to user - messages are still in UI
+      }
     } catch (error) {
       console.error('Chat error:', error);
 
@@ -160,6 +256,51 @@ export function ChatInterface({ userId }: { userId: string }) {
     }
   };
 
+  const handleNewChat = async () => {
+    if (!confirm('Start a new conversation? Current conversation will be saved.')) return;
+
+    try {
+      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+
+      // Create new conversation
+      const newConversation = await experimentalAPI.createConversation(
+        userId,
+        `Chat ${new Date().toLocaleDateString()}`
+      );
+
+      // Update localStorage and state
+      const storageKey = `conversation_${userId}`;
+      localStorage.setItem(storageKey, newConversation.id);
+      setConversationId(newConversation.id);
+
+      // Reset messages
+      setMessages([
+        {
+          id: '0',
+          role: 'system',
+          content: "Welcome! I'm your AI companion with memory. Start chatting and I'll remember our conversations.",
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (error) {
+      console.error('Failed to create new conversation:', error);
+    }
+  };
+
+  // Show loading state while conversation is being initialized
+  if (isLoadingConversation) {
+    return (
+      <div className="flex flex-col h-full max-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+        <div className="flex items-center justify-center h-full">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+            <p className="text-slate-400">Loading conversation...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full max-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
       {/* Header with glassmorphism */}
@@ -176,8 +317,18 @@ export function ChatInterface({ userId }: { userId: string }) {
               </p>
             </div>
           </div>
-          <div className="text-xs text-slate-500 font-mono">
-            Session: {userId.slice(0, 8)}...
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleNewChat}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all text-sm"
+              title="Start new conversation"
+            >
+              <MessageSquarePlus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Chat</span>
+            </button>
+            <div className="text-xs text-slate-500 font-mono">
+              Session: {userId.slice(0, 8)}...
+            </div>
           </div>
         </div>
       </div>

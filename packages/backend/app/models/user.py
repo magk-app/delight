@@ -46,6 +46,11 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    conversations = relationship(
+        "Conversation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, clerk_user_id={self.clerk_user_id}, email={self.email})>"

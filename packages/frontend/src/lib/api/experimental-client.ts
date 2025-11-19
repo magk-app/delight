@@ -130,6 +130,30 @@ export interface ChatResponse {
   timestamp: string;
 }
 
+export interface Conversation {
+  id: string;
+  user_id: string;
+  title: string;
+  message_count: number;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  messages?: ConversationMessage[];
+}
+
+export interface ConversationMessage {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  metadata?: {
+    memories_retrieved?: SearchResult[];
+    memories_created?: Memory[];
+  };
+  created_at: string;
+}
+
 // ============================================================================
 // API Client
 // ============================================================================
@@ -295,6 +319,53 @@ class ExperimentalAPIClient {
 
   async checkChatHealth(): Promise<{ status: string; service: string; timestamp: string }> {
     return this.get('/api/chat/health');
+  }
+
+  // ============================================================================
+  // Conversation API
+  // ============================================================================
+
+  async createConversation(userId: string, title?: string): Promise<Conversation> {
+    return this.post('/api/conversations/', { user_id: userId, title });
+  }
+
+  async getConversations(userId: string, includeArchived = false): Promise<Conversation[]> {
+    const params = new URLSearchParams();
+    params.append('user_id', userId);
+    if (includeArchived) params.append('include_archived', 'true');
+
+    return this.get(`/api/conversations/?${params.toString()}`);
+  }
+
+  async getConversation(conversationId: string): Promise<Conversation> {
+    return this.get(`/api/conversations/${conversationId}`);
+  }
+
+  async saveMessage(
+    conversationId: string,
+    userId: string,
+    role: 'user' | 'assistant' | 'system',
+    content: string,
+    metadata?: {
+      memories_retrieved?: SearchResult[];
+      memories_created?: Memory[];
+    }
+  ): Promise<ConversationMessage> {
+    return this.post('/api/conversations/messages', {
+      conversation_id: conversationId,
+      user_id: userId,
+      role,
+      content,
+      metadata,
+    });
+  }
+
+  async deleteConversation(conversationId: string): Promise<{ status: string; message: string }> {
+    return this.delete(`/api/conversations/${conversationId}`);
+  }
+
+  async archiveConversation(conversationId: string): Promise<{ status: string; message: string }> {
+    return this.post(`/api/conversations/${conversationId}/archive`, {});
   }
 
   // ============================================================================
