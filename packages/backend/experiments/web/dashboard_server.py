@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from uuid import UUID
 import json
+import os
 import sys
 
 # Add parent directory to path to import from experiments
@@ -42,8 +43,9 @@ except ImportError:
 
 class WebConfig:
     """Configuration for web dashboard"""
-    web_host: str = "0.0.0.0"
-    web_port: int = 8001
+    # Railway provides PORT environment variable, fallback to 8001 for local dev
+    web_host: str = os.getenv("HOST", "0.0.0.0")
+    web_port: int = int(os.getenv("PORT", "8001"))
     templates_dir: Path = Path(__file__).parent / "templates"
     static_dir: Path = Path(__file__).parent / "static"
     data_dir: Path = Path(__file__).parent / "data"
@@ -189,9 +191,19 @@ app = FastAPI(
 
 from fastapi.middleware.cors import CORSMiddleware
 
+# CORS configuration - allow production domains from environment
+cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
+# Add Railway preview URLs if RAILWAY_PUBLIC_DOMAIN is set
+railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+if railway_domain:
+    cors_origins.append(f"https://{railway_domain}")
+    cors_origins.append(f"http://{railway_domain}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Next.js frontend
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

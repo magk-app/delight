@@ -1,0 +1,2 @@
+web: cd ../../.. && cd packages/backend && poetry run python -m experiments.web.dashboard_server
+
