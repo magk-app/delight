@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   MessageSquare,
   Brain,
@@ -11,20 +11,20 @@ import {
   Activity,
   AlertTriangle,
   Code,
-} from 'lucide-react';
-import { ChatInterface } from '@/components/experimental/ChatInterface';
-import { MemoryVisualization } from '@/components/experimental/MemoryVisualization';
-import { AnalyticsDashboard } from '@/components/experimental/AnalyticsDashboard';
-import { ConfigurationPanel } from '@/components/experimental/ConfigurationPanel';
-import { useHealthCheck } from '@/lib/hooks/useExperimentalAPI';
+} from "lucide-react";
+import { ChatInterface } from "@/components/experimental/ChatInterface";
+import { MemoryVisualization } from "@/components/experimental/MemoryVisualization";
+import { AnalyticsDashboard } from "@/components/experimental/AnalyticsDashboard";
+import { ConfigurationPanel } from "@/components/experimental/ConfigurationPanel";
+import { useHealthCheck } from "@/lib/hooks/useExperimentalAPI";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
 
-type TabType = 'chat' | 'memories' | 'analytics' | 'config';
+type TabType = "chat" | "memories" | "analytics" | "config";
 
 export default function ExperimentalPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('chat');
+  const [activeTab, setActiveTab] = useState<TabType>("chat");
   const { healthy, checking } = useHealthCheck();
 
   return (
@@ -50,24 +50,38 @@ export default function ExperimentalPage() {
 
             {/* Backend Status Indicator */}
             <div className="flex items-center gap-3">
-              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
-                checking
-                  ? 'bg-yellow-500/10 border border-yellow-500/30'
-                  : healthy
-                  ? 'bg-green-500/10 border border-green-500/30'
-                  : 'bg-red-500/10 border border-red-500/30'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
+              <div
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
                   checking
-                    ? 'bg-yellow-400 animate-pulse'
+                    ? "bg-yellow-500/10 border border-yellow-500/30"
                     : healthy
-                    ? 'bg-green-400 shadow-lg shadow-green-400/50'
-                    : 'bg-red-400 shadow-lg shadow-red-400/50'
-                }`} />
-                <span className={`text-sm font-medium ${
-                  checking ? 'text-yellow-300' : healthy ? 'text-green-300' : 'text-red-300'
-                }`}>
-                  {checking ? 'Checking...' : healthy ? 'Backend Online' : 'Backend Offline'}
+                    ? "bg-green-500/10 border border-green-500/30"
+                    : "bg-red-500/10 border border-red-500/30"
+                }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    checking
+                      ? "bg-yellow-400 animate-pulse"
+                      : healthy
+                      ? "bg-green-400 shadow-lg shadow-green-400/50"
+                      : "bg-red-400 shadow-lg shadow-red-400/50"
+                  }`}
+                />
+                <span
+                  className={`text-sm font-medium ${
+                    checking
+                      ? "text-yellow-300"
+                      : healthy
+                      ? "text-green-300"
+                      : "text-red-300"
+                  }`}
+                >
+                  {checking
+                    ? "Checking..."
+                    : healthy
+                    ? "Backend Online"
+                    : "Backend Offline"}
                 </span>
               </div>
             </div>
@@ -77,7 +91,7 @@ export default function ExperimentalPage() {
           {!checking && !healthy && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm"
             >
               <div className="flex items-start gap-3">
@@ -91,7 +105,8 @@ export default function ExperimentalPage() {
                   </p>
                   <code className="block mt-2 bg-slate-900/50 px-3 py-2 rounded-lg text-xs text-yellow-100 font-mono border border-yellow-500/20">
                     <Code className="w-3 h-3 inline mr-2" />
-                    cd packages/backend && poetry run python experiments/web/dashboard_server.py
+                    cd packages/backend && poetry run python
+                    experiments/web/dashboard_server.py
                   </code>
                 </div>
               </div>
@@ -105,26 +120,26 @@ export default function ExperimentalPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2">
             <TabButton
-              active={activeTab === 'chat'}
-              onClick={() => setActiveTab('chat')}
+              active={activeTab === "chat"}
+              onClick={() => setActiveTab("chat")}
               icon={<MessageSquare className="w-4 h-4" />}
               label="Chat"
             />
             <TabButton
-              active={activeTab === 'memories'}
-              onClick={() => setActiveTab('memories')}
+              active={activeTab === "memories"}
+              onClick={() => setActiveTab("memories")}
               icon={<Brain className="w-4 h-4" />}
               label="Memories"
             />
             <TabButton
-              active={activeTab === 'analytics'}
-              onClick={() => setActiveTab('analytics'}
+              active={activeTab === "analytics"}
+              onClick={() => setActiveTab("analytics")}
               icon={<BarChart3 className="w-4 h-4" />}
               label="Analytics"
             />
             <TabButton
-              active={activeTab === 'config'}
-              onClick={() => setActiveTab('config')}
+              active={activeTab === "config"}
+              onClick={() => setActiveTab("config")}
               icon={<Settings className="w-4 h-4" />}
               label="Config"
             />
@@ -142,10 +157,10 @@ export default function ExperimentalPage() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {activeTab === 'chat' && <ChatInterface />}
-            {activeTab === 'memories' && <MemoryVisualization />}
-            {activeTab === 'analytics' && <AnalyticsDashboard />}
-            {activeTab === 'config' && <ConfigurationPanel />}
+            {activeTab === "chat" && <ChatInterface />}
+            {activeTab === "memories" && <MemoryVisualization />}
+            {activeTab === "analytics" && <AnalyticsDashboard />}
+            {activeTab === "config" && <ConfigurationPanel />}
           </motion.div>
         </div>
       </main>
@@ -159,8 +174,14 @@ export default function ExperimentalPage() {
           </div>
           <div className="flex items-center gap-2">
             <span>Backend:</span>
-            <span className={healthy ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-              {healthy ? 'http://localhost:8001' : 'Not connected'}
+            <span
+              className={
+                healthy
+                  ? "text-green-400 font-medium"
+                  : "text-red-400 font-medium"
+              }
+            >
+              {healthy ? "http://localhost:8001" : "Not connected"}
             </span>
           </div>
         </div>
@@ -188,9 +209,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={`relative flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all ${
-        active
-          ? 'text-purple-300'
-          : 'text-slate-400 hover:text-slate-300'
+        active ? "text-purple-300" : "text-slate-400 hover:text-slate-300"
       }`}
     >
       {icon}
