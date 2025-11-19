@@ -149,7 +149,7 @@ try:
                             role=m.role,
                             content=m.content,
                             created_at=m.created_at.isoformat(),
-                            metadata=m.metadata
+                            metadata=m.message_metadata
                         )
                         for m in sorted(conversation.messages, key=lambda m: m.created_at)
                     ]
@@ -172,7 +172,7 @@ try:
                     user_id=user_id,
                     role=role,
                     content=content,
-                    metadata=metadata or {}
+                    message_metadata=metadata or {}
                 )
 
                 db.add(message)
@@ -194,7 +194,7 @@ try:
                     role=message.role,
                     content=message.content,
                     created_at=message.created_at.isoformat(),
-                    metadata=message.metadata
+                    metadata=message.message_metadata
                 )
 
         async def delete_conversation(self, conversation_id: UUID):
@@ -230,6 +230,11 @@ try:
 
 except ImportError as e:
     print(f"⚠️  ConversationService not available: {e}")
+    conversation_service = None
+except Exception as e:
+    print(f"⚠️  ConversationService initialization error: {e}")
+    import traceback
+    traceback.print_exc()
     conversation_service = None
 
 # ============================================================================
