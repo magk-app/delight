@@ -7,8 +7,8 @@ set -e
 echo "🚀 Starting Experimental Web Server for Railway..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Navigate to backend directory
-cd "$(dirname "$0")/../.." || exit 1
+# Navigate to backend directory (from experiments/web to packages/backend)
+cd "$(dirname "$0")/../../" || exit 1
 
 # Check if Poetry is available
 if ! command -v poetry &> /dev/null; then

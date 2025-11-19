@@ -3,12 +3,11 @@ nixPkgs = ["python311", "poetry"]
 
 [phases.install]
 cmds = [
-  "cd ../../..",
-  "cd packages/backend",
+  "cd ../../",
   "poetry config virtualenvs.create false",
   "poetry install --no-dev --no-interaction"
 ]
 
 [start]
-cmd = "cd ../../.. && cd packages/backend && poetry run python -m experiments.web.dashboard_server"
+cmd = "cd ../../ && poetry run python -m experiments.web.dashboard_server"
 
