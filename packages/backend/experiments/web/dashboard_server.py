@@ -639,6 +639,19 @@ except Exception as e:
     traceback.print_exc()
 
 # ============================================================================
+# Include Cleanup API Router
+# ============================================================================
+
+try:
+    from cleanup_api import router as cleanup_router
+    app.include_router(cleanup_router)
+    print("✅ Cleanup API enabled")
+except Exception as e:
+    print(f"⚠️  Cleanup API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
+# ============================================================================
 # User Auto-Creation Endpoint
 # ============================================================================
 
