@@ -78,28 +78,67 @@ export function ChatInterface() {
       },
     ]);
 
-    // TODO: Call actual chat API when backend is ready
-    // For now, simulate a response
-    setTimeout(() => {
+    try {
+      // Import the API client
+      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+
+      // Prepare conversation history
+      const conversationHistory = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp.toISOString(),
+        }));
+
+      // Call the chat API
+      const response = await experimentalAPI.sendChatMessage({
+        message: userMessage.content,
+        conversation_history: conversationHistory,
+      });
+
+      // Create assistant message from response
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: `This is a placeholder response. Once the backend server is running, I'll be able to:
-
-• Search through my memories to find relevant context
-• Use OpenAI GPT-4o-mini to generate personalized responses
-• Extract facts from your message and store them
-• Show you which memories I used and created
-
-Try starting the backend server on port 8001 to see the full chat experience!`,
-        timestamp: new Date(),
-        memories_retrieved: [],
-        memories_created: [],
+        content: response.response,
+        timestamp: new Date(response.timestamp),
+        memories_retrieved: response.memories_retrieved.map(m => ({
+          id: m.id,
+          content: m.content,
+          memory_type: m.memory_type,
+          score: m.score || 0,
+          metadata: { categories: m.categories || [] },
+        })),
+        memories_created: response.memories_created.map(m => ({
+          id: m.id,
+          content: m.content,
+          memory_type: m.memory_type,
+          user_id: 'current-user',
+          metadata: { categories: m.categories || [] },
+          created_at: new Date().toISOString(),
+        })),
       };
 
       setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(assistantMessage));
+    } catch (error) {
+      console.error('Chat error:', error);
+
+      // Show error message
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        role: 'system',
+        content: `⚠️ Error: ${error instanceof Error ? error.message : 'Failed to connect to backend'}
+
+Make sure the experimental backend server is running on port 8001:
+cd packages/backend && poetry run python experiments/web/dashboard_server.py`,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(errorMessage));
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

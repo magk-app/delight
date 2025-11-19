@@ -102,6 +102,34 @@ export interface ChatMessage {
   memories_created?: Memory[];
 }
 
+export interface ChatRequest {
+  message: string;
+  user_id?: string;
+  conversation_history?: Array<{
+    role: string;
+    content: string;
+    timestamp?: string;
+  }>;
+}
+
+export interface ChatResponse {
+  response: string;
+  memories_retrieved: Array<{
+    id: string;
+    content: string;
+    memory_type: string;
+    score?: number;
+    categories?: string[];
+  }>;
+  memories_created: Array<{
+    id: string;
+    content: string;
+    memory_type: string;
+    categories?: string[];
+  }>;
+  timestamp: string;
+}
+
 // ============================================================================
 // API Client
 // ============================================================================
@@ -255,6 +283,18 @@ class ExperimentalAPIClient {
     params.append('limit', limit.toString());
 
     return this.get(`/api/graph/memories?${params.toString()}`);
+  }
+
+  // ============================================================================
+  // Chat API
+  // ============================================================================
+
+  async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
+    return this.post('/api/chat/message', request);
+  }
+
+  async checkChatHealth(): Promise<{ status: string; service: string; timestamp: string }> {
+    return this.get('/api/chat/health');
   }
 
   // ============================================================================

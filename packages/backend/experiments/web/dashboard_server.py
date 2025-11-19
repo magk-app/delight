@@ -183,6 +183,20 @@ app = FastAPI(
     version="0.1.0"
 )
 
+# ============================================================================
+# CORS Configuration
+# ============================================================================
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Next.js frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(config.static_dir)), name="static")
 
@@ -520,6 +534,17 @@ async def health_check():
         "version": "0.1.0"
     }
 
+
+# ============================================================================
+# Include Chat API Router
+# ============================================================================
+
+try:
+    from .chat_api import router as chat_router
+    app.include_router(chat_router)
+    print("✅ Chat API enabled")
+except ImportError as e:
+    print(f"⚠️  Chat API not available: {e}")
 
 # ============================================================================
 # Startup
