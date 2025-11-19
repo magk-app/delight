@@ -11,9 +11,11 @@ import {
   Activity,
   AlertTriangle,
   Code,
+  Network,
 } from "lucide-react";
 import { ChatInterfaceWithSidebar } from "@/components/experimental/ChatInterfaceWithSidebar";
 import { MemoryVisualization } from "@/components/experimental/MemoryVisualization";
+import { MemoryGraph } from "@/components/experimental/MemoryGraph";
 import { AnalyticsDashboard } from "@/components/experimental/AnalyticsDashboard";
 import { ConfigurationPanel } from "@/components/experimental/ConfigurationPanel";
 import { UserSwitcher } from "@/components/experimental/UserSwitcher";
@@ -23,7 +25,7 @@ import { usePersistentUser } from "@/lib/hooks/usePersistentUser";
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
 
-type TabType = "chat" | "memories" | "analytics" | "config";
+type TabType = "chat" | "memories" | "graph" | "analytics" | "config";
 
 export default function ExperimentalPage() {
   const [activeTab, setActiveTab] = useState<TabType>("chat");
@@ -149,6 +151,12 @@ export default function ExperimentalPage() {
               label="Memories"
             />
             <TabButton
+              active={activeTab === "graph"}
+              onClick={() => setActiveTab("graph")}
+              icon={<Network className="w-4 h-4" />}
+              label="Graph"
+            />
+            <TabButton
               active={activeTab === "analytics"}
               onClick={() => setActiveTab("analytics")}
               icon={<BarChart3 className="w-4 h-4" />}
@@ -185,6 +193,11 @@ export default function ExperimentalPage() {
             >
               {activeTab === "chat" && <ChatInterfaceWithSidebar userId={userId} />}
               {activeTab === "memories" && <MemoryVisualization userId={userId} />}
+              {activeTab === "graph" && (
+                <div className="h-[calc(100vh-20rem)]">
+                  <MemoryGraph userId={userId} />
+                </div>
+              )}
               {activeTab === "analytics" && <AnalyticsDashboard userId={userId} />}
               {activeTab === "config" && <ConfigurationPanel />}
             </motion.div>
@@ -197,7 +210,7 @@ export default function ExperimentalPage() {
         <div className="mx-auto max-w-7xl flex items-center justify-between text-slate-400">
           <div className="flex items-center gap-2">
             <Beaker className="w-3.5 h-3.5" />
-            <span>Experimental Features • PostgreSQL + OpenAI GPT-4o-mini</span>
+            <span>Phase 3 • Hierarchical Memory + Graph + Visualization</span>
           </div>
           <div className="flex items-center gap-2">
             <span>Backend:</span>

@@ -334,9 +334,12 @@ class ExperimentalAPIClient {
   }
 
   // ============================================================================
-  // Graph API
+  // Graph API (Phase 3)
   // ============================================================================
 
+  /**
+   * Get basic memory graph (legacy format)
+   */
   async getMemoryGraph(
     userId?: string,
     limit: number = 100
@@ -346,6 +349,175 @@ class ExperimentalAPIClient {
     params.append("limit", limit.toString());
 
     return this.get(`/api/graph/memories?${params.toString()}`);
+  }
+
+  /**
+   * Get graph visualization data (React Flow format)
+   */
+  async getGraphVisualization(
+    userId: string,
+    entityType?: string,
+    limit: number = 50
+  ): Promise<{
+    nodes: Array<{
+      id: string;
+      label: string;
+      type: string;
+      content: string;
+      attributes: Record<string, any>;
+      created_at: string | null;
+    }>;
+    edges: Array<{
+      id: string;
+      source: string;
+      target: string;
+      label: string;
+      strength: number;
+      metadata: Record<string, any>;
+    }>;
+  }> {
+    const params = new URLSearchParams();
+    if (entityType) params.append("entity_type", entityType);
+    params.append("limit", limit.toString());
+
+    return this.get(`/api/graph/visualize/${userId}?${params.toString()}`);
+  }
+
+  /**
+   * Create a typed relationship between two memories
+   */
+  async createRelationship(request: {
+    from_memory_id: string;
+    to_memory_id: string;
+    relationship_type: string;
+    strength?: number;
+    metadata?: Record<string, any>;
+    bidirectional?: boolean;
+  }): Promise<{
+    status: string;
+    relationship: {
+      id: string;
+      from_memory_id: string;
+      to_memory_id: string;
+      relationship_type: string;
+      strength: number;
+      metadata: Record<string, any>;
+      created_at: string;
+    };
+  }> {
+    return this.post("/api/graph/relationship", request);
+  }
+
+  /**
+   * Get all relationships for a specific memory
+   */
+  async getRelationships(
+    memoryId: string,
+    relationshipType?: string
+  ): Promise<{
+    memory_id: string;
+    relationships: Array<{
+      id: string;
+      from_memory_id: string;
+      to_memory_id: string;
+      relationship_type: string;
+      strength: number;
+      metadata: Record<string, any>;
+      related_memory: {
+        id: string;
+        content: string;
+        entity_id: string | null;
+        entity_type: string | null;
+      };
+      direction: "outgoing" | "incoming";
+    }>;
+  }> {
+    const params = relationshipType
+      ? `?relationship_type=${relationshipType}`
+      : "";
+    return this.get(`/api/graph/relationships/${memoryId}${params}`);
+  }
+
+  /**
+   * Traverse the graph from a starting memory
+   */
+  async traverseGraph(
+    startMemoryId: string,
+    maxDepth: number = 3,
+    minStrength: number = 0.5,
+    relationshipType?: string
+  ): Promise<{
+    start_memory_id: string;
+    paths: Array<{
+      nodes: Array<{
+        memory_id: string;
+        entity_id: string | null;
+        entity_type: string | null;
+        content: string;
+        depth: number;
+      }>;
+      edges: Array<{
+        from_id: string;
+        to_id: string;
+        relationship_type: string;
+        strength: number;
+      }>;
+      total_strength: number;
+    }>;
+  }> {
+    const params = new URLSearchParams();
+    params.append("max_depth", maxDepth.toString());
+    params.append("min_strength", minStrength.toString());
+    if (relationshipType) params.append("relationship_type", relationshipType);
+
+    return this.get(`/api/graph/traverse/${startMemoryId}?${params.toString()}`);
+  }
+
+  /**
+   * Find the shortest path between two memories
+   */
+  async findShortestPath(
+    fromMemoryId: string,
+    toMemoryId: string,
+    maxDepth: number = 5
+  ): Promise<{
+    from_memory_id: string;
+    to_memory_id: string;
+    path: Array<{
+      memory_id: string;
+      entity_id: string | null;
+      content: string;
+      relationship_to_next: string | null;
+    }> | null;
+    path_length: number;
+  }> {
+    const params = new URLSearchParams();
+    params.append("max_depth", maxDepth.toString());
+
+    return this.get(
+      `/api/graph/shortest-path/${fromMemoryId}/${toMemoryId}?${params.toString()}`
+    );
+  }
+
+  /**
+   * Get the complete entity graph for a user
+   */
+  async getEntityGraph(
+    userId: string,
+    entityType?: string
+  ): Promise<{
+    user_id: string;
+    entity_graph: Record<
+      string,
+      Array<{
+        to_entity_id: string;
+        relationship_type: string;
+        strength: number;
+      }>
+    >;
+  }> {
+    const params = entityType ? `?entity_type=${entityType}` : "";
+    return this.get(`/api/graph/entity-graph/${userId}${params}`);
   }
 
   // ============================================================================
