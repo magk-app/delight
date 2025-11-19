@@ -191,7 +191,7 @@ try:
                 try:
                     print(f"\n🗑️  Deleting memory {memory_id}")
 
-                    # Fetch the memory first
+                    # Check if memory exists first
                     query = select(Memory).where(Memory.id == memory_id)
                     result = await db.execute(query)
                     memory = result.scalar_one_or_none()
@@ -200,8 +200,9 @@ try:
                         print(f"   ❌ Memory {memory_id} not found")
                         raise HTTPException(status_code=404, detail="Memory not found")
 
-                    # Delete the memory
-                    await db.delete(memory)
+                    # Delete using proper async SQLAlchemy 2.0 pattern
+                    delete_stmt = sql_delete(Memory).where(Memory.id == memory_id)
+                    await db.execute(delete_stmt)
                     await db.commit()
 
                     print(f"   ✅ Successfully deleted memory {memory_id}")
