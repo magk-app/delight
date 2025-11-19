@@ -165,8 +165,8 @@ export default function ExperimentalPage() {
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="h-[calc(100vh-16rem)]">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 min-h-[calc(100vh-16rem)] pb-16">
+        <div className="min-h-[calc(100vh-16rem)]">
           {userLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-slate-400">Loading user session...</div>
