@@ -28,8 +28,8 @@ import {
 import { useMemoryStats, useTokenUsage } from '@/lib/hooks/useExperimentalAPI';
 
 export function AnalyticsDashboard({ userId }: { userId: string }) {
-  const { stats, loading: statsLoading, error: statsError } = useMemoryStats(userId, true, 3000);
-  const { usage, loading: usageLoading, error: usageError } = useTokenUsage(24, true, 3000);
+  const { stats, loading: statsLoading, error: statsError } = useMemoryStats(userId, true, 10000);
+  const { usage, loading: usageLoading, error: usageError } = useTokenUsage(24, true, 10000);
 
   const loading = statsLoading || usageLoading;
   const error = statsError || usageError;
