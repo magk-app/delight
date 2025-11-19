@@ -174,7 +174,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
           content: "Conversation loaded.",
           timestamp: new Date(),
         },
-        ...conversation.messages.map(msg => ({
+        ...(conversation.messages || []).map(msg => ({
           id: msg.id,
           role: msg.role,
           content: msg.content,
@@ -355,8 +355,21 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
             role: 'assistant',
             content: response.response,
             timestamp: new Date(response.timestamp),
-            memories_retrieved: response.memories_retrieved,
-            memories_created: response.memories_created,
+            memories_retrieved: response.memories_retrieved.map(m => ({
+              id: m.id,
+              content: m.content,
+              memory_type: m.memory_type,
+              score: m.score || 0,
+              metadata: { categories: m.categories || [] },
+            })),
+            memories_created: response.memories_created.map(m => ({
+              id: m.id,
+              content: m.content,
+              memory_type: m.memory_type,
+              user_id: 'current-user',
+              metadata: { categories: m.categories || [] },
+              created_at: new Date().toISOString(),
+            })),
           },
         ])
       );
@@ -373,7 +386,15 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
               // Avoid duplicates
               if (prev.find(m => m.id === mem.id)) return prev;
               console.log(`✨ Adding memory ${index + 1}/${response.memories_created.length}: ${mem.content.substring(0, 50)}...`);
-              return [mem, ...prev]; // Add to beginning for newest-first display
+              const fullMemory = {
+                id: mem.id,
+                content: mem.content,
+                memory_type: mem.memory_type,
+                user_id: 'current-user',
+                metadata: { categories: mem.categories || [] },
+                created_at: new Date().toISOString(),
+              };
+              return [fullMemory, ...prev]; // Add to beginning for newest-first display
             });
           }, index * 500); // 500ms delay between each memory
         });
@@ -405,8 +426,21 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
           'assistant',
           response.response,
           {
-            memories_retrieved: response.memories_retrieved,
-            memories_created: response.memories_created,
+            memories_retrieved: response.memories_retrieved.map(m => ({
+              id: m.id,
+              content: m.content,
+              memory_type: m.memory_type,
+              score: m.score || 0,
+              metadata: { categories: m.categories || [] },
+            })),
+            memories_created: response.memories_created.map(m => ({
+              id: m.id,
+              content: m.content,
+              memory_type: m.memory_type,
+              user_id: 'current-user',
+              metadata: { categories: m.categories || [] },
+              created_at: new Date().toISOString(),
+            })),
           }
         );
       } catch (saveError) {

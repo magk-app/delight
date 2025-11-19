@@ -224,8 +224,8 @@ export function ChatInterface({ userId }: { userId: string }) {
           'assistant',
           assistantMessage.content,
           {
-            memories_retrieved: response.memories_retrieved,
-            memories_created: response.memories_created,
+            memories_retrieved: assistantMessage.memories_retrieved || [],
+            memories_created: assistantMessage.memories_created || [],
           }
         );
       } catch (saveError) {
@@ -431,7 +431,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                             </p>
                             {memory.metadata?.categories && memory.metadata.categories.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mt-2">
-                                {memory.metadata.categories.slice(0, 3).map((cat, i) => (
+                                {memory.metadata.categories.slice(0, 3).map((cat: string, i: number) => (
                                   <span
                                     key={i}
                                     className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md"
@@ -478,7 +478,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                         </div>
                         {memory.metadata?.categories && memory.metadata.categories.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2 ml-6">
-                            {memory.metadata.categories.slice(0, 3).map((cat, i) => (
+                            {memory.metadata.categories.slice(0, 3).map((cat: string, i: number) => (
                               <span
                                 key={i}
                                 className="text-xs px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-md"
