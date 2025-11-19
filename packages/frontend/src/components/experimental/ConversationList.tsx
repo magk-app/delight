@@ -142,63 +142,67 @@ export function ConversationList({
             <p className="text-slate-500 text-xs mt-1">Start chatting to create your first conversation</p>
           </div>
         ) : (
-          <div className="space-y-1">
-            {conversations.map(conversation => (
-              <motion.div
-                key={conversation.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="group relative"
-              >
-                <button
-                  onClick={() => onConversationSelect(conversation.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-all ${
-                    conversation.id === currentConversationId
-                      ? 'bg-purple-500/20 border border-purple-500/30'
-                      : 'hover:bg-slate-800/50 border border-transparent'
-                  }`}
+          <AnimatePresence mode="popLayout">
+            <div className="space-y-1">
+              {conversations.map(conversation => (
+                <motion.div
+                  key={conversation.id}
+                  initial={{ opacity: 0, x: -10, height: 0 }}
+                  animate={{ opacity: 1, x: 0, height: 'auto' }}
+                  exit={{ opacity: 0, x: -20, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="group relative overflow-hidden"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`text-sm font-medium truncate ${
-                        conversation.id === currentConversationId
-                          ? 'text-purple-300'
-                          : 'text-slate-300 group-hover:text-white'
-                      }`}>
-                        {conversation.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-500">
-                          {conversation.message_count} messages
-                        </span>
-                        <span className="text-xs text-slate-600">•</span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatDate(conversation.updated_at)}
-                        </span>
+                  <button
+                    onClick={() => onConversationSelect(conversation.id)}
+                    className={`w-full text-left p-3 rounded-lg transition-all ${
+                      conversation.id === currentConversationId
+                        ? 'bg-purple-500/20 border border-purple-500/30'
+                        : 'hover:bg-slate-800/50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`text-sm font-medium truncate ${
+                          conversation.id === currentConversationId
+                            ? 'text-purple-300'
+                            : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          {conversation.title}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-slate-500">
+                            {conversation.message_count} messages
+                          </span>
+                          <span className="text-xs text-slate-600">•</span>
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDate(conversation.updated_at)}
+                          </span>
+                        </div>
                       </div>
+
+                      {conversation.id === currentConversationId && (
+                        <ChevronRight className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                      )}
                     </div>
+                  </button>
 
-                    {conversation.id === currentConversationId && (
-                      <ChevronRight className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                    )}
-                  </div>
-                </button>
-
-                {/* Delete button on hover */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteConversation(conversation.id);
-                  }}
-                  className="absolute top-3 right-3 p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-md opacity-0 group-hover:opacity-100 transition-all"
-                  title="Delete conversation"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
+                  {/* Delete button on hover */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteConversation(conversation.id);
+                    }}
+                    className="absolute top-3 right-3 p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-md opacity-0 group-hover:opacity-100 transition-all z-10"
+                    title="Delete conversation"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </AnimatePresence>
         )}
       </div>
     </div>

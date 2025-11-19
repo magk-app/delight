@@ -206,13 +206,13 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
 
       // Send message to backend
-      const response = await experimentalAPI.sendMessage(
-        userMessage.content,
-        userId,
-        messages
+      const response = await experimentalAPI.sendChatMessage({
+        message: userMessage.content,
+        user_id: userId,
+        conversation_history: messages
           .filter(m => m.role !== 'system' && !m.loading)
           .map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp.toISOString() }))
-      );
+      });
 
       // Update messages with response
       setMessages(prev =>
