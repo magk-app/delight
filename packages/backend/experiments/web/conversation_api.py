@@ -241,6 +241,11 @@ except Exception as e:
 # API Endpoints
 # ============================================================================
 
+@router.get("/test")
+async def test_conversation_api():
+    """Test endpoint to verify router is loaded"""
+    return {"status": "ok", "message": "Conversation API router is working", "service_loaded": conversation_service is not None}
+
 @router.post("/", response_model=ConversationResponse)
 async def create_conversation(request: ConversationCreateRequest):
     """Create a new conversation"""
