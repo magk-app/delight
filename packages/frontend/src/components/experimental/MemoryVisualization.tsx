@@ -45,7 +45,7 @@ export function MemoryVisualization({ userId }: { userId: string }) {
     memory_type: selectedType === 'all' ? undefined : selectedType,
     limit: 50,
     autoRefresh: true,
-    refreshInterval: 5000, // Refresh every 5 seconds
+    refreshInterval: 60000, // Refresh every 1 minute (manual refresh button available)
   });
 
   const filteredMemories = memories.filter((memory) =>

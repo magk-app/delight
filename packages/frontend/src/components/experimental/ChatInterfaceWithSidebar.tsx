@@ -75,7 +75,10 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   }, [userId]);
 
   const loadOrCreateConversation = async () => {
+    if (isCreatingConversation) return; // Prevent duplicate creation
+
     try {
+      setIsCreatingConversation(true);
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
 
       // Check if there's a conversation ID in localStorage for this user
@@ -122,8 +125,11 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       );
       setConversationId(newConversation.id);
       localStorage.setItem(storageKey, newConversation.id);
+      setRefreshKey(prev => prev + 1); // Trigger conversation list refresh
     } catch (error) {
       console.error('Failed to initialize conversation:', error);
+    } finally {
+      setIsCreatingConversation(false);
     }
   };
 
