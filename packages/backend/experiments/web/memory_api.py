@@ -2,6 +2,7 @@
 Memory API for experimental frontend
 
 Provides endpoints for managing memories stored in PostgreSQL database.
+Now integrated with sophisticated search strategies!
 """
 
 from fastapi import APIRouter, HTTPException
@@ -34,13 +35,98 @@ class MemoryUpdateRequest(BaseModel):
     importance: Optional[float] = None
     metadata: Optional[dict] = None
 
-# Try to import real memory service
+class MemorySearchRequest(BaseModel):
+    query: str
+    user_id: str
+    limit: int = 10
+    auto_route: bool = True
+
+# Try to import real memory service and search strategies
 try:
     from app.db.session import AsyncSessionLocal
     from app.models.memory import Memory, MemoryType
-    from sqlalchemy import select, desc
+    from sqlalchemy import select, desc, delete as sql_delete
+    from experiments.memory.search_router import SearchRouter
+    from experiments.memory.search_strategies import SemanticSearch
 
     class MemoryService:
+        def __init__(self):
+            """Initialize memory service with search capabilities"""
+            self.search_router = SearchRouter()
+            self.semantic_search = SemanticSearch()
+
+        async def search_memories(
+            self,
+            query: str,
+            user_id: UUID,
+            limit: int = 10,
+            auto_route: bool = True
+        ) -> List:
+            """Search memories using intelligent routing with fallback"""
+            async with AsyncSessionLocal() as db:
+                try:
+                    print(f"\n🔍 Searching memories for user {user_id}")
+                    print(f"   Query: '{query}'")
+                    print(f"   Auto-route: {auto_route}")
+
+                    results = await self.search_router.search(
+                        query=query,
+                        user_id=user_id,
+                        db=db,
+                        auto_route=auto_route,
+                        limit=limit
+                    )
+
+                    # If no results, try with lower threshold semantic search
+                    if len(results) == 0:
+                        print(f"   ⚠️ No results with primary strategy, trying fallback...")
+                        try:
+                            # Try semantic search with lower threshold
+                            fallback_results = await self.semantic_search.search(
+                                query=query,
+                                user_id=user_id,
+                                db=db,
+                                limit=limit,
+                                threshold=0.5  # Lower threshold
+                            )
+
+                            if len(fallback_results) > 0:
+                                print(f"   ✅ Fallback found {len(fallback_results)} results")
+                                return fallback_results
+
+                        except Exception as fallback_error:
+                            print(f"   ❌ Fallback search error: {fallback_error}")
+
+                        # If still no results, return most recent memories
+                        print(f"   📅 No semantic results, returning most recent memories")
+                        recent_memories = await self.get_memories(
+                            user_id=user_id,
+                            limit=limit
+                        )
+
+                        # Convert Memory objects to SearchResult-like format
+                        from experiments.memory.types import SearchResult
+                        results = [
+                            SearchResult(
+                                memory_id=m.id,
+                                content=m.content,
+                                score=0.5,  # Default score
+                                memory_type=m.memory_type.value if hasattr(m.memory_type, 'value') else str(m.memory_type),
+                                categories=m.extra_data.get("categories", []) if m.extra_data else [],
+                                created_at=m.created_at,
+                                metadata=m.extra_data or {}
+                            )
+                            for m in recent_memories
+                        ]
+
+                    print(f"   ✅ Returning {len(results)} total results")
+                    return results
+                except Exception as e:
+                    print(f"   ❌ Search error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return []
+
         @staticmethod
         async def get_memories(
             user_id: Optional[UUID] = None,
@@ -48,25 +134,31 @@ try:
             category: Optional[str] = None,
             limit: int = 50
         ) -> List[Memory]:
-            """Get memories from database with filters"""
+            """Get memories from database with filters (chronological order)"""
             async with AsyncSessionLocal() as db:
-                query = select(Memory).order_by(desc(Memory.created_at))
+                try:
+                    query = select(Memory).order_by(desc(Memory.created_at))
 
-                if user_id:
-                    query = query.where(Memory.user_id == user_id)
-                if memory_type:
-                    query = query.where(Memory.memory_type == MemoryType(memory_type))
+                    if user_id:
+                        query = query.where(Memory.user_id == user_id)
+                    if memory_type:
+                        query = query.where(Memory.memory_type == MemoryType(memory_type))
 
-                query = query.limit(limit)
+                    query = query.limit(limit)
 
-                result = await db.execute(query)
-                memories = result.scalars().all()
+                    result = await db.execute(query)
+                    memories = result.scalars().all()
 
-                # Filter by category if specified
-                if category:
-                    memories = [m for m in memories if category in m.metadata.get("categories", [])]
+                    # Filter by category if specified
+                    if category:
+                        memories = [m for m in memories if category in m.extra_data.get("categories", []) if m.extra_data]
 
-                return memories
+                    return memories
+                except Exception as e:
+                    print(f"❌ Error fetching memories: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    raise
 
         @staticmethod
         async def update_memory(memory_id: UUID, updates: dict) -> Memory:
@@ -94,17 +186,34 @@ try:
 
         @staticmethod
         async def delete_memory(memory_id: UUID):
-            """Delete a memory"""
+            """Delete a memory with proper error handling"""
             async with AsyncSessionLocal() as db:
-                query = select(Memory).where(Memory.id == memory_id)
-                result = await db.execute(query)
-                memory = result.scalar_one_or_none()
+                try:
+                    print(f"\n🗑️  Deleting memory {memory_id}")
 
-                if not memory:
-                    raise HTTPException(status_code=404, detail="Memory not found")
+                    # Fetch the memory first
+                    query = select(Memory).where(Memory.id == memory_id)
+                    result = await db.execute(query)
+                    memory = result.scalar_one_or_none()
 
-                await db.delete(memory)
-                await db.commit()
+                    if not memory:
+                        print(f"   ❌ Memory {memory_id} not found")
+                        raise HTTPException(status_code=404, detail="Memory not found")
+
+                    # Delete the memory
+                    await db.delete(memory)
+                    await db.commit()
+
+                    print(f"   ✅ Successfully deleted memory {memory_id}")
+
+                except HTTPException:
+                    raise
+                except Exception as e:
+                    print(f"   ❌ Error deleting memory: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    await db.rollback()
+                    raise HTTPException(status_code=500, detail=f"Failed to delete memory: {str(e)}")
 
     memory_service = MemoryService()
     print("✅ Real MemoryService loaded for API")
@@ -186,9 +295,54 @@ async def delete_memory(memory_id: str):
     if not memory_service:
         raise HTTPException(status_code=503, detail="Memory service not available")
 
-    await memory_service.delete_memory(UUID(memory_id))
+    try:
+        await memory_service.delete_memory(UUID(memory_id))
+        return {"status": "deleted", "memory_id": memory_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete memory: {str(e)}")
 
-    return {"status": "deleted", "memory_id": memory_id}
+
+@router.post("/search", response_model=List[MemoryResponse])
+async def search_memories(request: MemorySearchRequest):
+    """Search memories using intelligent routing and semantic search"""
+    if not memory_service:
+        raise HTTPException(status_code=503, detail="Memory service not available")
+
+    try:
+        user_uuid = UUID(request.user_id)
+
+        # Use the search router with semantic search
+        results = await memory_service.search_memories(
+            query=request.query,
+            user_id=user_uuid,
+            limit=request.limit,
+            auto_route=request.auto_route
+        )
+
+        # Convert SearchResult objects to MemoryResponse format
+        responses = []
+        for result in results:
+            responses.append(MemoryResponse(
+                id=str(result.memory_id),
+                user_id=str(user_uuid),
+                content=result.content,
+                memory_type=result.memory_type,
+                importance=result.score,  # Use search score as importance
+                metadata=result.metadata or {},
+                embedding=None,  # Don't send embeddings to frontend
+                created_at=result.created_at.isoformat() if result.created_at else datetime.now().isoformat(),
+                updated_at=result.created_at.isoformat() if result.created_at else datetime.now().isoformat()
+            ))
+
+        return responses
+
+    except Exception as e:
+        print(f"❌ Search endpoint error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 
 @router.get("/stats")

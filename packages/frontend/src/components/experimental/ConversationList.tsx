@@ -76,18 +76,23 @@ export function ConversationList({
     const isDeletingCurrent = conversationId === currentConversationId;
 
     try {
+      console.log(`🗑️ Deleting conversation ${conversationId}...`);
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
       await experimentalAPI.deleteConversation(conversationId);
+
+      console.log(`✅ Successfully deleted conversation ${conversationId}`);
 
       // Remove from list immediately for instant feedback (dynamic update, no reload)
       setConversations(prev => prev.filter(c => c.id !== conversationId));
 
-      // If deleted current conversation, trigger new conversation creation
+      // If deleted current conversation, clear localStorage and create new one
       if (isDeletingCurrent) {
+        console.log('📝 Deleted current conversation, clearing localStorage and creating new one');
+        localStorage.removeItem(`conversation_${userId}`); // Clear old conversation ID
         await onNewConversation();
       }
     } catch (err: any) {
-      console.error('Failed to delete conversation:', err);
+      console.error('❌ Failed to delete conversation:', err);
       alert(`Failed to delete conversation: ${err.message || 'Unknown error'}`);
       // Only reload on error to resync
       await loadConversations();

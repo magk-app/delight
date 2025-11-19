@@ -195,16 +195,18 @@ If no memories are provided, respond naturally without making assumptions.
                     # Don't fail the request if token tracking fails
 
                 # Return response immediately (don't wait for memory creation)
+                print(f"📤 Returning {len(relevant_memories)} retrieved memories")
+
                 return (
                     ChatResponse(
                         response=assistant_message,
                         memories_retrieved=[
                             MemoryInfo(
-                                id=str(m.id) if hasattr(m, 'id') else str(uuid4()),
+                                id=str(m.memory_id) if hasattr(m, 'memory_id') else str(uuid4()),
                                 content=m.content,
                                 memory_type=m.memory_type if hasattr(m, 'memory_type') else "unknown",
                                 score=m.score if hasattr(m, 'score') else None,
-                                categories=m.metadata.get("categories", []) if hasattr(m, 'metadata') else []
+                                categories=m.metadata.get("categories", []) if (hasattr(m, 'metadata') and m.metadata) else []
                             )
                             for m in relevant_memories
                         ],

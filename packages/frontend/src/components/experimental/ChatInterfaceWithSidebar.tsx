@@ -54,6 +54,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasInitialized = useRef(false); // Prevent duplicate initialization
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -69,13 +70,28 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
     inputRef.current?.focus();
   }, []);
 
-  // Load or create conversation on mount
+  // Load or create conversation on mount (with duplicate prevention)
   useEffect(() => {
-    loadOrCreateConversation();
+    // Only initialize once per userId
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      loadOrCreateConversation();
+    }
+
+    // Cleanup on unmount or userId change
+    return () => {
+      if (hasInitialized.current) {
+        hasInitialized.current = false;
+      }
+    };
   }, [userId]);
 
   const loadOrCreateConversation = async () => {
-    if (isCreatingConversation) return; // Prevent duplicate creation
+    // Guard against concurrent calls
+    if (isCreatingConversation) {
+      console.log('⏳ Already creating/loading conversation, skipping...');
+      return;
+    }
 
     try {
       setIsCreatingConversation(true);
@@ -85,10 +101,14 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       const storageKey = `conversation_${userId}`;
       const storedConversationId = localStorage.getItem(storageKey);
 
+      console.log(`🔍 Checking for existing conversation: ${storedConversationId}`);
+
       if (storedConversationId) {
         // Try to load existing conversation
         try {
           const conversation = await experimentalAPI.getConversation(storedConversationId);
+
+          console.log(`✅ Loaded conversation ${conversation.id} with ${conversation.message_count} messages`);
 
           if (conversation.messages && conversation.messages.length > 0) {
             // Load messages from database
@@ -113,12 +133,20 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
             setConversationId(conversation.id);
             return;
           }
+
+          // Conversation exists but has no messages - use it
+          setConversationId(conversation.id);
+          console.log(`✅ Using existing empty conversation ${conversation.id}`);
+          return;
         } catch (error) {
-          console.warn('Failed to load conversation, creating new one:', error);
+          console.warn('⚠️ Failed to load stored conversation, will create new one:', error);
+          // Clear invalid conversation ID from storage
+          localStorage.removeItem(storageKey);
         }
       }
 
-      // Create new conversation
+      // Create new conversation only if we don't have one
+      console.log('➕ Creating new conversation...');
       const newConversation = await experimentalAPI.createConversation(
         userId,
         `Chat ${new Date().toLocaleDateString()}`
@@ -126,8 +154,9 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       setConversationId(newConversation.id);
       localStorage.setItem(storageKey, newConversation.id);
       setRefreshKey(prev => prev + 1); // Trigger conversation list refresh
+      console.log(`✅ Created new conversation ${newConversation.id}`);
     } catch (error) {
-      console.error('Failed to initialize conversation:', error);
+      console.error('❌ Failed to initialize conversation:', error);
     } finally {
       setIsCreatingConversation(false);
     }
@@ -216,15 +245,23 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   };
 
   const handleNewConversation = async () => {
-    if (isCreatingConversation) return; // Prevent duplicate creation
+    // Guard against concurrent creation
+    if (isCreatingConversation) {
+      console.log('⏳ Already creating conversation, skipping...');
+      return;
+    }
 
     try {
       setIsCreatingConversation(true);
+      console.log('➕ Creating new conversation (manual)...');
+
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
       const newConversation = await experimentalAPI.createConversation(
         userId,
         `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
       );
+
+      console.log(`✅ Created new conversation ${newConversation.id}`);
 
       setConversationId(newConversation.id);
       localStorage.setItem(`conversation_${userId}`, newConversation.id);
@@ -238,7 +275,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       ]);
       setRefreshKey(prev => prev + 1); // Trigger conversation list refresh
     } catch (error) {
-      console.error('Failed to create conversation:', error);
+      console.error('❌ Failed to create conversation:', error);
+      alert('Failed to create new conversation. Please try again.');
     } finally {
       setIsCreatingConversation(false);
     }
