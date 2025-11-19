@@ -73,23 +73,27 @@ export function ConversationList({
   const deleteConversation = async (conversationId: string) => {
     if (!confirm('Delete this conversation? This cannot be undone.')) return;
 
+    const isDeletingCurrent = conversationId === currentConversationId;
+
     try {
       const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
       await experimentalAPI.deleteConversation(conversationId);
 
-      // Remove from list
+      // Remove from list immediately for instant feedback
       setConversations(prev => prev.filter(c => c.id !== conversationId));
 
-      // If deleted current conversation, create new one
-      if (conversationId === currentConversationId) {
-        onNewConversation();
-      } else {
-        // Reload conversations to ensure sync
-        await loadConversations();
+      // If deleted current conversation, trigger new conversation creation first
+      if (isDeletingCurrent) {
+        await onNewConversation();
       }
+
+      // Always reload conversations list after deletion to ensure sync
+      await loadConversations();
     } catch (err: any) {
       console.error('Failed to delete conversation:', err);
       alert(`Failed to delete conversation: ${err.message || 'Unknown error'}`);
+      // Reload on error to resync
+      await loadConversations();
     }
   };
 

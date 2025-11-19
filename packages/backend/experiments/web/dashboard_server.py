@@ -454,52 +454,13 @@ async def record_token_usage_api(usage: TokenUsage):
 
 
 # ============================================================================
-# API Routes - Memories
+# API Routes - Memories (REMOVED - using memory_api.py router instead)
 # ============================================================================
+# OLD MOCK ENDPOINTS REMOVED - These were using MockStorage instead of real DB
+# Real memory endpoints are now provided by memory_api.py router
+# which is included below and uses PostgreSQL
 
-@app.get("/api/memories")
-async def get_memories(
-    user_id: Optional[str] = None,
-    memory_type: Optional[str] = None,
-    category: Optional[str] = None,
-    limit: int = 50
-):
-    """Get memories with optional filters"""
-    memories = await storage.get_all_memories()
-
-    if user_id:
-        memories = [m for m in memories if str(m.user_id) == user_id]
-    if memory_type:
-        memories = [m for m in memories if m.memory_type == memory_type]
-    if category:
-        memories = [m for m in memories if category in m.metadata.get("categories", [])]
-
-    memories = memories[:limit]
-    return [m.to_dict() for m in memories]
-
-
-@app.get("/api/memories/{memory_id}")
-async def get_memory(memory_id: str):
-    """Get single memory by ID"""
-    try:
-        memory = await storage.get_memory(UUID(memory_id))
-        if not memory:
-            raise HTTPException(status_code=404, detail="Memory not found")
-        return memory.to_dict()
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid memory ID")
-
-
-@app.delete("/api/memories/{memory_id}")
-async def delete_memory(memory_id: str):
-    """Delete a memory"""
-    try:
-        await storage.delete_memory(UUID(memory_id))
-        return {"status": "success", "message": "Memory deleted"}
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid memory ID")
-
-
+# Legacy category endpoint (TODO: move to memory_api.py)
 @app.get("/api/memories/categories/hierarchy")
 async def get_category_hierarchy(user_id: Optional[str] = None):
     """Get hierarchical category structure"""
