@@ -65,10 +65,12 @@ export default function ExperimentalPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               {/* User Switcher */}
               {userId && !userLoading && (
-                <UserSwitcher
-                  currentUserId={userId}
-                  onUserChange={handleUserChange}
-                />
+                <div className="hidden sm:block">
+                  <UserSwitcher
+                    currentUserId={userId}
+                    onUserChange={handleUserChange}
+                  />
+                </div>
               )}
 
               {/* Backend Status Indicator */}
@@ -99,19 +101,16 @@ export default function ExperimentalPage() {
                       : "text-red-300"
                   }`}
                 >
-                  {checking ? (
-                    "Checking..."
-                  ) : healthy ? (
-                    <span className="hidden sm:inline">Backend Online</span>
-                  ) : (
-                    <span className="hidden sm:inline">Backend Offline</span>
-                  )}
-                  {!checking && healthy && (
-                    <span className="sm:hidden">Online</span>
-                  )}
-                  {!checking && !healthy && (
-                    <span className="sm:hidden">Offline</span>
-                  )}
+                  <span className="hidden sm:inline">
+                    {checking
+                      ? "Checking..."
+                      : healthy
+                      ? "Backend Online"
+                      : "Backend Offline"}
+                  </span>
+                  <span className="sm:hidden">
+                    {checking ? "..." : healthy ? "Online" : "Offline"}
+                  </span>
                 </span>
               </div>
             </div>
@@ -122,15 +121,15 @@ export default function ExperimentalPage() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm"
+              className="mt-3 sm:mt-4 p-3 sm:p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg sm:rounded-xl backdrop-blur-sm"
             >
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-yellow-300">
-                    Experimental Backend Not Running
+                  <p className="text-xs sm:text-sm font-semibold text-yellow-300">
+                    Backend Not Running
                   </p>
-                  <p className="text-xs text-yellow-200/80 mt-2">
+                  <p className="text-xs text-yellow-200/80 mt-1 sm:mt-2 hidden sm:block">
                     Start the backend to enable full chat functionality:
                   </p>
                   <code className="block mt-2 bg-slate-900/50 px-2 sm:px-3 py-2 rounded-lg text-[10px] sm:text-xs text-yellow-100 font-mono border border-yellow-500/20 overflow-x-auto">
@@ -151,37 +150,37 @@ export default function ExperimentalPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50 overflow-x-auto">
+      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50 overflow-x-auto scrollbar-hide">
         <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
           <div className="flex gap-1 sm:gap-2 min-w-max">
             <TabButton
               active={activeTab === "chat"}
               onClick={() => setActiveTab("chat")}
-              icon={<MessageSquare className="w-4 h-4" />}
+              icon={<MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Chat"
             />
             <TabButton
               active={activeTab === "memories"}
               onClick={() => setActiveTab("memories")}
-              icon={<Brain className="w-4 h-4" />}
+              icon={<Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Memories"
             />
             <TabButton
               active={activeTab === "graph"}
               onClick={() => setActiveTab("graph")}
-              icon={<Network className="w-4 h-4" />}
+              icon={<Network className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Graph"
             />
             <TabButton
               active={activeTab === "analytics"}
               onClick={() => setActiveTab("analytics")}
-              icon={<BarChart3 className="w-4 h-4" />}
+              icon={<BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Analytics"
             />
             <TabButton
               active={activeTab === "config"}
               onClick={() => setActiveTab("config")}
-              icon={<Settings className="w-4 h-4" />}
+              icon={<Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Config"
             />
           </div>
