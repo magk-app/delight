@@ -15,6 +15,11 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5, // Allow zoom for accessibility, but inputs are 16px+ to prevent auto-zoom
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +30,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className="font-sans" suppressHydrationWarning>
+        <body className="font-sans bg-slate-950" suppressHydrationWarning>
           <MainNav />
           <div className="pt-16">{children}</div>
         </body>

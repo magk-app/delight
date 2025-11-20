@@ -61,18 +61,31 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false); // Prevent duplicate initialization
 
-  // Auto-scroll to bottom
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Auto-scroll to bottom - use instant scroll on mobile for better UX
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      // Use instant scroll on mobile, smooth on desktop
+      const isMobile = window.innerWidth < 640;
+      messagesEndRef.current.scrollIntoView({
+        behavior: isMobile ? "auto" : "smooth",
+        block: "nearest",
+      });
+    }
+  }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Use requestAnimationFrame to ensure DOM is updated before scrolling
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+  }, [messages, scrollToBottom]);
 
-  // Focus input on mount
+  // Focus input on mount (but not on mobile to avoid keyboard issues)
   useEffect(() => {
-    inputRef.current?.focus();
+    // Only auto-focus on desktop to avoid mobile keyboard issues
+    if (window.innerWidth >= 640) {
+      inputRef.current?.focus();
+    }
   }, []);
 
   const loadOrCreateConversation = useCallback(async () => {
@@ -377,9 +390,19 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       loading: true,
     };
 
+    // Optimistically add messages immediately
     setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    const currentInput = input;
     setInput("");
     setIsProcessing(true);
+
+    // Scroll to bottom immediately after state update
+    // Use double RAF to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    });
 
     try {
       const { default: experimentalAPI } = await import(
@@ -388,10 +411,12 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
 
       // Send message to backend
       const response = await experimentalAPI.sendChatMessage({
-        message: userMessage.content,
+        message: currentInput, // Use the captured input value
         user_id: userId,
         conversation_history: messages
-          .filter((m) => m.role !== "system" && !m.loading)
+          .filter(
+            (m) => m.role !== "system" && !m.loading && m.id !== userMessage.id
+          )
           .map((m) => ({
             role: m.role,
             content: m.content,
@@ -427,6 +452,13 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
             },
           ])
       );
+
+      // Scroll to bottom after response is added
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      });
 
       // Show memory processing notification
       if (response.memories_created && response.memories_created.length > 0) {
@@ -627,8 +659,14 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent p-4 space-y-4">
-          <AnimatePresence>
+        <div
+          className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent p-4 space-y-4"
+          style={{
+            WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
+            overscrollBehavior: "contain", // Prevent pull-to-refresh interference
+          }}
+        >
+          <AnimatePresence mode="popLayout">
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
@@ -637,7 +675,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
         </div>
 
         {/* Input Area */}
-        <div className="p-2 sm:p-4 border-t border-slate-700/50 bg-slate-900/50">
+        <div className="p-2 sm:p-4 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-xl">
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -647,7 +685,9 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               disabled={isProcessing}
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              // Prevent iOS zoom by ensuring font-size is at least 16px on mobile
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-base bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ fontSize: "16px" }} // Force 16px to prevent iOS zoom
             />
             <button
               onClick={handleSendMessage}
@@ -716,6 +756,7 @@ function ChatMessage({ message }: { message: Message }) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }} // Faster animation
         className="flex justify-center"
       >
         <div className="px-4 py-2 bg-slate-800/30 border border-slate-700/30 rounded-lg text-slate-400 text-sm">
@@ -729,6 +770,7 @@ function ChatMessage({ message }: { message: Message }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }} // Faster animation on mobile
       className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
     >
       {/* Avatar */}
