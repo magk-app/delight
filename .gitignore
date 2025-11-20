@@ -3,6 +3,7 @@ node_modules/
 .pnp/
 .pnp.js
 .yarn/
+package-lock.json
 
 # Python
 __pycache__/
