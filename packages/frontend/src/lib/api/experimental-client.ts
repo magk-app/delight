@@ -189,20 +189,50 @@ class ExperimentalAPIClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API Error (${response.status}): ${error}`);
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`API Error (${response.status}): ${error}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      // Provide helpful error message for network issues
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        const currentHost =
+          typeof window !== "undefined" ? window.location.host : "unknown";
+        const isLocalhost =
+          this.baseUrl.includes("localhost") ||
+          this.baseUrl.includes("127.0.0.1");
+        const isNetworkAccess =
+          currentHost !== "localhost" &&
+          currentHost !== "127.0.0.1" &&
+          !currentHost.includes("localhost");
+
+        if (isLocalhost && isNetworkAccess) {
+          throw new Error(
+            `Cannot connect to backend at ${this.baseUrl}. ` +
+              `When accessing the frontend via network (${currentHost}), ` +
+              `you must set NEXT_PUBLIC_EXPERIMENTAL_API_URL to a network-accessible backend URL. ` +
+              `If using ngrok, expose the backend and set: ` +
+              `NEXT_PUBLIC_EXPERIMENTAL_API_URL=https://your-backend-ngrok-url.ngrok.io`
+          );
+        }
+        throw new Error(
+          `Failed to fetch from ${url}. ` +
+            `Make sure the experimental backend is running and accessible at ${this.baseUrl}`
+        );
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   private async get<T>(endpoint: string): Promise<T> {
@@ -470,7 +500,9 @@ class ExperimentalAPIClient {
     params.append("min_strength", minStrength.toString());
     if (relationshipType) params.append("relationship_type", relationshipType);
 
-    return this.get(`/api/graph/traverse/${startMemoryId}?${params.toString()}`);
+    return this.get(
+      `/api/graph/traverse/${startMemoryId}?${params.toString()}`
+    );
   }
 
   /**

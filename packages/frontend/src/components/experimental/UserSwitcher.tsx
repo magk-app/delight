@@ -8,25 +8,22 @@
  * - Clear current user button
  */
 
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  User,
-  ChevronDown,
-  Plus,
-  Trash2,
-  Check,
-  Copy,
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, ChevronDown, Plus, Trash2, Check, Copy } from "lucide-react";
+import { generateUUID } from "@/lib/utils/uuid";
 
 interface UserSwitcherProps {
   currentUserId: string;
   onUserChange: () => void;
 }
 
-export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps) {
+export function UserSwitcher({
+  currentUserId,
+  onUserChange,
+}: UserSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [recentUsers, setRecentUsers] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
@@ -34,14 +31,14 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
 
   // Load recent users from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const recent = JSON.parse(localStorage.getItem('recent_users') || '[]');
+    if (typeof window !== "undefined") {
+      const recent = JSON.parse(localStorage.getItem("recent_users") || "[]");
       setRecentUsers(recent);
 
       // Add current user to recent if not already there
       if (!recent.includes(currentUserId)) {
         const updated = [currentUserId, ...recent].slice(0, 5);
-        localStorage.setItem('recent_users', JSON.stringify(updated));
+        localStorage.setItem("recent_users", JSON.stringify(updated));
         setRecentUsers(updated);
       }
     }
@@ -50,32 +47,41 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isOpen]);
 
   const switchToUser = async (userId: string) => {
     // Ensure user exists in database
     try {
-      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+      const { default: experimentalAPI } = await import(
+        "@/lib/api/experimental-client"
+      );
       await experimentalAPI.ensureUser(userId);
     } catch (error) {
-      console.error('Failed to ensure user exists:', error);
+      console.error("Failed to ensure user exists:", error);
       // Continue anyway - might be in mock mode
     }
 
-    localStorage.setItem('experimental_user_id', userId);
+    localStorage.setItem("experimental_user_id", userId);
 
     // Update recent users
-    const updated = [userId, ...recentUsers.filter(id => id !== userId)].slice(0, 5);
-    localStorage.setItem('recent_users', JSON.stringify(updated));
+    const updated = [
+      userId,
+      ...recentUsers.filter((id) => id !== userId),
+    ].slice(0, 5);
+    localStorage.setItem("recent_users", JSON.stringify(updated));
     setRecentUsers(updated);
 
     setIsOpen(false);
@@ -83,7 +89,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
   };
 
   const createNewUser = async () => {
-    const newId = crypto.randomUUID();
+    const newId = generateUUID();
     await switchToUser(newId);
   };
 
@@ -94,7 +100,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
   };
 
   const clearCurrentUser = () => {
-    if (confirm('Clear current user and create a new one?')) {
+    if (confirm("Clear current user and create a new one?")) {
       createNewUser();
     }
   };
@@ -106,8 +112,14 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
         className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 hover:text-white hover:border-purple-500/50 transition-all relative z-[9999]"
       >
         <User className="w-4 h-4" />
-        <span className="text-xs font-mono">{currentUserId.slice(0, 8)}...</span>
-        <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="text-xs font-mono">
+          {currentUserId.slice(0, 8)}...
+        </span>
+        <ChevronDown
+          className={`w-3 h-3 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       <AnimatePresence>
@@ -159,8 +171,8 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
                 </div>
                 <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                   {recentUsers
-                    .filter(userId => userId !== currentUserId)
-                    .map(userId => (
+                    .filter((userId) => userId !== currentUserId)
+                    .map((userId) => (
                       <button
                         key={userId}
                         onClick={() => switchToUser(userId)}
@@ -196,7 +208,8 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
             {/* Info */}
             <div className="px-4 pb-3">
               <p className="text-xs text-slate-500">
-                Switching users will reload the page with a different user ID. Memories are tied to each user.
+                Switching users will reload the page with a different user ID.
+                Memories are tied to each user.
               </p>
             </div>
           </motion.div>

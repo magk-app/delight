@@ -1,7 +1,7 @@
 {
   "models": {
     "chat_model": "gpt-4o-mini",
-    "reasoning_model": "o1-mini",
+    "reasoning_model": "gpt-4o",
     "expensive_model": "gpt-4o",
     "embedding_model": "text-embedding-3-small"
   },

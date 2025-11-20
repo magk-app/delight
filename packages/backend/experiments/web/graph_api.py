@@ -233,69 +233,88 @@ async def visualize_graph(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID")
 
-    async with AsyncSessionLocal() as db:
-        graph = MemoryGraph()
+    try:
+        async with AsyncSessionLocal() as db:
+            graph = MemoryGraph()
 
-        try:
-            # Get all hierarchical memories for user
-            stmt = select(Memory).where(
-                Memory.user_id == user_uuid,
-                Memory.extra_data["storage_type"].astext == "hierarchical_eav"
-            )
+            try:
+                # Get all hierarchical memories for user
+                stmt = select(Memory).where(
+                    Memory.user_id == user_uuid,
+                    Memory.extra_data["storage_type"].astext == "hierarchical_eav"
+                )
 
-            if entity_type:
-                stmt = stmt.where(Memory.extra_data["entity_type"].astext == entity_type)
+                if entity_type:
+                    stmt = stmt.where(Memory.extra_data["entity_type"].astext == entity_type)
 
-            stmt = stmt.limit(limit)
+                stmt = stmt.limit(limit)
 
-            result = await db.execute(stmt)
-            memories = result.scalars().all()
+                result = await db.execute(stmt)
+                memories = result.scalars().all()
 
-            # Build nodes and edges
-            nodes = []
-            edges = []
-            edge_id = 0
+                # Build nodes and edges
+                nodes = []
+                edges = []
+                edge_id = 0
 
-            for memory in memories:
-                if not memory.extra_data or "entity_id" not in memory.extra_data:
-                    continue
+                for memory in memories:
+                    if not memory.extra_data or "entity_id" not in memory.extra_data:
+                        continue
 
-                entity_id = memory.extra_data["entity_id"]
-                entity_type = memory.extra_data.get("entity_type", "unknown")
+                    entity_id = memory.extra_data["entity_id"]
+                    entity_type_val = memory.extra_data.get("entity_type", "unknown")
 
-                # Create node
-                node = {
-                    "id": str(memory.id),
-                    "label": entity_id,
-                    "type": entity_type,
-                    "content": memory.content[:100],
-                    "attributes": memory.extra_data.get("attributes", {}),
-                    "created_at": memory.created_at.isoformat() if memory.created_at else None
-                }
-                nodes.append(node)
+                    # Create node
+                    node = {
+                        "id": str(memory.id),
+                        "label": entity_id,
+                        "type": entity_type_val,
+                        "content": memory.content[:100],
+                        "attributes": memory.extra_data.get("attributes", {}),
+                        "created_at": memory.created_at.isoformat() if memory.created_at else None
+                    }
+                    nodes.append(node)
 
-                # Create edges from relationships
-                relationships_data = memory.extra_data.get("relationships", {})
-                for rel_type, rels in relationships_data.items():
-                    for rel in rels:
-                        edge_id += 1
-                        edge = {
-                            "id": f"edge-{edge_id}",
-                            "source": str(memory.id),
-                            "target": rel["to_memory_id"],
-                            "label": rel_type,
-                            "strength": rel.get("strength", 1.0),
-                            "metadata": rel.get("metadata", {})
-                        }
-                        edges.append(edge)
+                    # Create edges from relationships
+                    relationships_data = memory.extra_data.get("relationships", {})
+                    for rel_type, rels in relationships_data.items():
+                        for rel in rels:
+                            edge_id += 1
+                            edge = {
+                                "id": f"edge-{edge_id}",
+                                "source": str(memory.id),
+                                "target": rel["to_memory_id"],
+                                "label": rel_type,
+                                "strength": rel.get("strength", 1.0),
+                                "metadata": rel.get("metadata", {})
+                            }
+                            edges.append(edge)
 
-            return GraphVisualizationResponse(
-                nodes=nodes,
-                edges=edges
-            )
+                return GraphVisualizationResponse(
+                    nodes=nodes,
+                    edges=edges
+                )
 
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to visualize graph: {str(e)}")
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"❌ Error in visualize_graph (query): {e}")
+                print(error_details)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to query graph data: {str(e)}"
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error in visualize_graph (database): {e}")
+        print(error_details)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to visualize graph: {str(e)}"
+        )
 
 
 @router.get("/shortest-path/{from_memory_id}/{to_memory_id}")

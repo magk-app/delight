@@ -201,13 +201,45 @@ if railway_domain:
     cors_origins.append(f"https://{railway_domain}")
     cors_origins.append(f"http://{railway_domain}")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# For development: Allow all ngrok origins automatically
+# This makes it easier to test with ngrok without configuring CORS_ORIGINS
+# In production, set ALLOW_NGROK_ORIGINS=false and use explicit CORS_ORIGINS
+allow_ngrok = os.getenv("ALLOW_NGROK_ORIGINS", "true").lower() == "true"
+is_development = os.getenv("ENVIRONMENT", "development").lower() == "development"
+
+# Configure CORS middleware
+# In development, allow all origins for easier ngrok testing
+# In production, use explicit origins only
+if allow_ngrok and is_development:
+    # Development mode: Allow all origins (including ngrok)
+    # Note: Cannot use allow_origins=["*"] with allow_credentials=True
+    # So we use a regex that matches everything
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r".*",  # Match all origins in development
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # Production mode: Only allow explicit origins
+    cors_kwargs = {
+        "allow_origins": cors_origins,
+        "allow_credentials": True,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+    }
+    
+    # Add ngrok regex pattern if enabled
+    if allow_ngrok:
+        # Regex pattern matches:
+        # - https://abc123.ngrok.io
+        # - https://abc123.ngrok-free.app
+        # - https://abc123.ngrok.app
+        # - http:// versions too
+        cors_kwargs["allow_origin_regex"] = r"https?://.*\.ngrok(?:-free)?\.(?:io|app)"
+    
+    app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(config.static_dir)), name="static")
@@ -673,48 +705,65 @@ try:
     from app.models.user import User
     from sqlalchemy import select
 
+    class EnsureUserRequest(BaseModel):
+        user_id: str
+
     @app.post("/api/users/ensure")
-    async def ensure_user(request: dict):
+    async def ensure_user(request: EnsureUserRequest):
         """
         Ensure user exists in database, create if not.
         For experimental frontend that generates test user IDs.
         """
-        user_id_str = request.get("user_id")
+        user_id_str = request.user_id
         if not user_id_str:
             raise HTTPException(status_code=400, detail="user_id is required")
 
-        user_id = UUID(user_id_str)
+        try:
+            user_id = UUID(user_id_str)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid user_id format: {user_id_str}")
 
-        async with AsyncSessionLocal() as db:
-            # Check if user exists
-            query = select(User).where(User.id == user_id)
-            result = await db.execute(query)
-            existing_user = result.scalar_one_or_none()
+        try:
+            async with AsyncSessionLocal() as db:
+                # Check if user exists
+                query = select(User).where(User.id == user_id)
+                result = await db.execute(query)
+                existing_user = result.scalar_one_or_none()
 
-            if existing_user:
+                if existing_user:
+                    return {
+                        "status": "exists",
+                        "user_id": str(existing_user.id),
+                        "message": "User already exists"
+                    }
+
+                # Create new user
+                clerk_user_id = f"experimental_{user_id}"
+                new_user = User(
+                    id=user_id,
+                    clerk_user_id=clerk_user_id,  # Mock clerk ID for experimental users
+                    email=None,  # Email is nullable
+                    display_name=f"Test User {user_id_str[:8]}"
+                )
+
+                db.add(new_user)
+                await db.commit()
+                await db.refresh(new_user)
+
                 return {
-                    "status": "exists",
-                    "user_id": str(existing_user.id),
-                    "message": "User already exists"
+                    "status": "created",
+                    "user_id": str(new_user.id),
+                    "message": "User created successfully"
                 }
-
-            # Create new user
-            new_user = User(
-                id=user_id,
-                clerk_user_id=f"experimental_{user_id}",  # Mock clerk ID for experimental users
-                email=None,
-                display_name=f"Test User {user_id_str[:8]}"
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"❌ Error in ensure_user: {e}")
+            print(error_details)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to ensure user: {str(e)}"
             )
-
-            db.add(new_user)
-            await db.commit()
-            await db.refresh(new_user)
-
-            return {
-                "status": "created",
-                "user_id": str(new_user.id),
-                "message": "User created successfully"
-            }
 
     print("✅ User auto-creation API enabled")
 

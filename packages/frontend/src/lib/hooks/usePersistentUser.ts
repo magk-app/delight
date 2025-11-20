@@ -7,11 +7,12 @@
  * Future: Can be replaced with Clerk user ID when auth is implemented
  */
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { generateUUID } from "@/lib/utils/uuid";
 
-const USER_ID_KEY = 'experimental_user_id';
+const USER_ID_KEY = "experimental_user_id";
 
 export function usePersistentUser() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -19,7 +20,7 @@ export function usePersistentUser() {
 
   useEffect(() => {
     // Only run on client side
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       setIsLoading(false);
       return;
     }
@@ -30,16 +31,18 @@ export function usePersistentUser() {
 
       if (!stored) {
         // Generate new UUID
-        stored = crypto.randomUUID();
+        stored = generateUUID();
         localStorage.setItem(USER_ID_KEY, stored);
       }
 
       // Ensure user exists in database
       try {
-        const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+        const { default: experimentalAPI } = await import(
+          "@/lib/api/experimental-client"
+        );
         await experimentalAPI.ensureUser(stored);
       } catch (error) {
-        console.error('Failed to ensure user exists:', error);
+        console.error("Failed to ensure user exists:", error);
         // Continue anyway - user might be using mock mode
       }
 
@@ -51,17 +54,19 @@ export function usePersistentUser() {
   }, []);
 
   const clearUser = async () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.removeItem(USER_ID_KEY);
-      const newId = crypto.randomUUID();
+      const newId = generateUUID();
       localStorage.setItem(USER_ID_KEY, newId);
 
       // Ensure new user exists in database
       try {
-        const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+        const { default: experimentalAPI } = await import(
+          "@/lib/api/experimental-client"
+        );
         await experimentalAPI.ensureUser(newId);
       } catch (error) {
-        console.error('Failed to ensure new user exists:', error);
+        console.error("Failed to ensure new user exists:", error);
       }
 
       setUserId(newId);

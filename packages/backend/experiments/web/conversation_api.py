@@ -253,8 +253,22 @@ async def create_conversation(request: ConversationCreateRequest):
     if not conversation_service:
         raise HTTPException(status_code=503, detail="Conversation service not available")
 
-    user_id = UUID(request.user_id)
-    return await conversation_service.create_conversation(user_id, request.title)
+    try:
+        user_id = UUID(request.user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid user_id format: {request.user_id}")
+
+    try:
+        return await conversation_service.create_conversation(user_id, request.title)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error in create_conversation: {e}")
+        print(error_details)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create conversation: {str(e)}"
+        )
 
 
 @router.get("/", response_model=List[ConversationResponse])
@@ -268,8 +282,22 @@ async def get_conversations(
     if not conversation_service:
         raise HTTPException(status_code=503, detail="Conversation service not available")
 
-    user_uuid = UUID(user_id)
-    return await conversation_service.get_conversations(user_uuid, include_archived, limit)
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid user_id format: {user_id}")
+
+    try:
+        return await conversation_service.get_conversations(user_uuid, include_archived, limit)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error in get_conversations: {e}")
+        print(error_details)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get conversations: {str(e)}"
+        )
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)

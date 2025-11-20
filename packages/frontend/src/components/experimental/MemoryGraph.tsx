@@ -8,9 +8,9 @@
  * - Node details on click
  */
 
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -22,9 +22,9 @@ import ReactFlow, {
   Connection,
   Panel,
   MiniMap,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import { motion, AnimatePresence } from 'framer-motion';
+} from "reactflow";
+import "reactflow/dist/style.css";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Network,
   Loader2,
@@ -33,8 +33,8 @@ import {
   Info,
   Maximize2,
   Filter,
-} from 'lucide-react';
-import experimentalAPI from '@/lib/api/experimental-client';
+} from "lucide-react";
+import experimentalAPI from "@/lib/api/experimental-client";
 
 interface MemoryGraphProps {
   userId: string;
@@ -66,13 +66,13 @@ interface GraphData {
 
 // Node color mapping by entity type
 const NODE_COLORS: Record<string, string> = {
-  person: '#10b981', // green
-  place: '#3b82f6', // blue
-  project: '#8b5cf6', // purple
-  organization: '#f59e0b', // amber
-  object: '#ec4899', // pink
-  event: '#06b6d4', // cyan
-  unknown: '#6b7280', // gray
+  person: "#10b981", // green
+  place: "#3b82f6", // blue
+  project: "#8b5cf6", // purple
+  organization: "#f59e0b", // amber
+  object: "#ec4899", // pink
+  event: "#06b6d4", // cyan
+  unknown: "#6b7280", // gray
 };
 
 export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
@@ -89,20 +89,20 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
     setError(null);
 
     try {
-      const response = await fetch(
-        `http://localhost:8001/api/graph/visualize/${userId}${entityType ? `?entity_type=${entityType}` : ''}`
+      // Use the experimental API client instead of hardcoded localhost
+      const { default: experimentalAPI } = await import(
+        "@/lib/api/experimental-client"
       );
-
-      if (!response.ok) {
-        throw new Error(`Failed to load graph: ${response.statusText}`);
-      }
-
-      const data: GraphData = await response.json();
+      const data = await experimentalAPI.getGraphVisualization(
+        userId,
+        entityType || undefined,
+        50
+      );
 
       // Convert to React Flow format
       const flowNodes: Node[] = data.nodes.map((node, index) => ({
         id: node.id,
-        type: 'default',
+        type: "default",
         position: {
           // Simple circular layout
           x: 400 + 300 * Math.cos((index / data.nodes.length) * 2 * Math.PI),
@@ -119,15 +119,15 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
         },
         style: {
           background: NODE_COLORS[node.type] || NODE_COLORS.unknown,
-          color: 'white',
-          border: '2px solid rgba(255,255,255,0.3)',
-          borderRadius: '8px',
-          padding: '10px',
-          minWidth: '120px',
+          color: "white",
+          border: "2px solid rgba(255,255,255,0.3)",
+          borderRadius: "8px",
+          padding: "10px",
+          minWidth: "120px",
         },
       }));
 
-      const flowEdges: Edge[] = data.edges.map(edge => ({
+      const flowEdges: Edge[] = data.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
@@ -138,7 +138,7 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
           strokeWidth: 1 + edge.strength,
         },
         labelStyle: {
-          fill: '#94a3b8',
+          fill: "#94a3b8",
           fontSize: 10,
         },
       }));
@@ -146,8 +146,8 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
       setNodes(flowNodes);
       setEdges(flowEdges);
     } catch (err: any) {
-      console.error('Failed to load graph:', err);
-      setError(err.message || 'Failed to load graph');
+      console.error("Failed to load graph:", err);
+      setError(err.message || "Failed to load graph");
     } finally {
       setLoading(false);
     }
@@ -188,8 +188,8 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
               onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-lg border transition-all ${
                 showFilters
-                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-300'
-                  : 'bg-slate-900/50 border-slate-700/50 text-slate-300 hover:text-white'
+                  ? "bg-purple-500/20 border-purple-500/30 text-purple-300"
+                  : "bg-slate-900/50 border-slate-700/50 text-slate-300 hover:text-white"
               }`}
             >
               <Filter className="w-4 h-4" />
@@ -222,7 +222,9 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
           <div className="flex items-center justify-center h-full p-12">
             <div className="text-center max-w-md">
               <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-red-400 mb-2">Error loading graph</p>
+              <p className="text-lg font-medium text-red-400 mb-2">
+                Error loading graph
+              </p>
               <p className="text-sm text-slate-400">{error}</p>
             </div>
           </div>
@@ -230,9 +232,12 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
           <div className="flex items-center justify-center h-full p-12">
             <div className="text-center max-w-md">
               <Network className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-lg font-medium text-slate-400 mb-2">No graph data</p>
+              <p className="text-lg font-medium text-slate-400 mb-2">
+                No graph data
+              </p>
               <p className="text-sm text-slate-500">
-                Start chatting to create hierarchical memories and build your knowledge graph!
+                Start chatting to create hierarchical memories and build your
+                knowledge graph!
               </p>
             </div>
           </div>
@@ -253,11 +258,17 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
               className="bg-slate-800/90 border border-slate-700"
               nodeColor={(node) => {
                 const nodeData = node.data?.node as GraphNode | undefined;
-                return NODE_COLORS[nodeData?.type || 'unknown'] || NODE_COLORS.unknown;
+                return (
+                  NODE_COLORS[nodeData?.type || "unknown"] ||
+                  NODE_COLORS.unknown
+                );
               }}
             />
 
-            <Panel position="bottom-left" className="bg-slate-800/90 border border-slate-700 rounded-lg p-4">
+            <Panel
+              position="bottom-left"
+              className="bg-slate-800/90 border border-slate-700 rounded-lg p-4"
+            >
               <div className="text-xs text-slate-300 space-y-1">
                 <div className="font-semibold mb-2">Legend</div>
                 {Object.entries(NODE_COLORS).map(([type, color]) => (
@@ -289,11 +300,16 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
                 <div>
                   <div
                     className="inline-block px-2 py-1 rounded text-xs font-medium text-white mb-2"
-                    style={{ backgroundColor: NODE_COLORS[selectedNode.type] || NODE_COLORS.unknown }}
+                    style={{
+                      backgroundColor:
+                        NODE_COLORS[selectedNode.type] || NODE_COLORS.unknown,
+                    }}
                   >
                     {selectedNode.type}
                   </div>
-                  <h3 className="text-xl font-semibold text-white">{selectedNode.label}</h3>
+                  <h3 className="text-xl font-semibold text-white">
+                    {selectedNode.label}
+                  </h3>
                 </div>
                 <button
                   onClick={() => setSelectedNode(null)}
@@ -305,33 +321,46 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-2">Content</h4>
+                  <h4 className="text-sm font-medium text-slate-400 mb-2">
+                    Content
+                  </h4>
                   <p className="text-sm text-slate-200 leading-relaxed">
                     {selectedNode.content}
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-2">Attributes</h4>
+                  <h4 className="text-sm font-medium text-slate-400 mb-2">
+                    Attributes
+                  </h4>
                   <div className="space-y-2">
-                    {Object.entries(selectedNode.attributes).map(([key, value]) => (
-                      <div key={key} className="bg-slate-700/50 rounded-lg p-3">
-                        <div className="text-xs font-medium text-slate-400 mb-1">{key}</div>
-                        <div className="text-sm text-slate-200">
-                          {Array.isArray(value)
-                            ? value.join(', ')
-                            : typeof value === 'object'
-                            ? JSON.stringify(value, null, 2)
-                            : String(value)}
+                    {Object.entries(selectedNode.attributes).map(
+                      ([key, value]) => (
+                        <div
+                          key={key}
+                          className="bg-slate-700/50 rounded-lg p-3"
+                        >
+                          <div className="text-xs font-medium text-slate-400 mb-1">
+                            {key}
+                          </div>
+                          <div className="text-sm text-slate-200">
+                            {Array.isArray(value)
+                              ? value.join(", ")
+                              : typeof value === "object"
+                              ? JSON.stringify(value, null, 2)
+                              : String(value)}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </div>
 
                 {selectedNode.created_at && (
                   <div>
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Created</h4>
+                    <h4 className="text-sm font-medium text-slate-400 mb-2">
+                      Created
+                    </h4>
                     <p className="text-sm text-slate-200">
                       {new Date(selectedNode.created_at).toLocaleString()}
                     </p>
