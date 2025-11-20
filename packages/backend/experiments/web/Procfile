@@ -1,0 +1,2 @@
+web: cd ../../ && poetry run python -m experiments.web.dashboard_server
+

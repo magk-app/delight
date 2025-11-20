@@ -1,0 +1,20 @@
+{
+  "models": {
+    "chat_model": "gpt-4o-mini",
+    "reasoning_model": "gpt-4o",
+    "expensive_model": "gpt-4o",
+    "embedding_model": "text-embedding-3-small"
+  },
+  "search": {
+    "similarity_threshold": 0.7,
+    "default_search_limit": 10,
+    "hybrid_search_weight_vector": 0.7,
+    "graph_traversal_max_depth": 3
+  },
+  "fact_extraction": {
+    "max_facts_per_message": 20,
+    "auto_categorize": true,
+    "max_categories_per_fact": 3,
+    "min_fact_length": 10
+  }
+}

@@ -28,6 +28,7 @@
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
+  "packageManager": "pnpm@10.21.0",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=8.0.0"

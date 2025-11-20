@@ -25,18 +25,18 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             # Connection test - if this succeeds, database is accessible
             pass
-        print("✅ Database connection established")
+        print("[OK] Database connection established")
     except Exception as e:
-        print(f"⚠️  Database connection failed (app will continue): {e}")
+        print(f"[WARNING] Database connection failed (app will continue): {e}")
 
     yield
 
     # Shutdown: Clean up database connections
     try:
         await engine.dispose()
-        print("✅ Database connections closed")
+        print("[OK] Database connections closed")
     except Exception as e:
-        print(f"⚠️  Error closing database connections: {e}")
+        print(f"[WARNING] Error closing database connections: {e}")
 
 
 app = FastAPI(

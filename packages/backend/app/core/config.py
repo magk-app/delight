@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Database Configuration
-    DATABASE_URL: str
+    DATABASE_URL: str = ""  # Allow empty for better error messages
 
     # Authentication Configuration (Clerk)
     CLERK_SECRET_KEY: str  # Required: Session token verification
@@ -40,12 +40,31 @@ class Settings(BaseSettings):
         """
         Convert DATABASE_URL to use asyncpg driver for async operations.
         Replaces postgresql:// with postgresql+asyncpg://
+        Adds statement_cache_size=0 for pgbouncer Transaction Mode.
         """
-        if self.DATABASE_URL.startswith("postgresql://"):
-            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-        elif self.DATABASE_URL.startswith("postgres://"):
-            return self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-        return self.DATABASE_URL
+        if not self.DATABASE_URL:
+            raise ValueError(
+                "DATABASE_URL is not set. Please set it in your .env file.\n"
+                "Example: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/delight"
+            )
+        
+        # Convert to asyncpg driver
+        url = self.DATABASE_URL
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        
+        # Note: statement_cache_size must be set in connect_args, not URL
+        # See app/db/session.py for the actual configuration
+        
+        return url
+    
+    @property
+    def requires_ssl(self) -> bool:
+        """Check if database connection requires SSL (Supabase/cloud databases)"""
+        url = self.DATABASE_URL.lower()
+        return "pooler.supabase.com" in url or "supabase.co" in url or "railway.app" in url
 
 
 # Singleton settings instance

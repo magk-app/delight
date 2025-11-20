@@ -1,0 +1,11 @@
+{
+  "build": {
+    "commands": [
+      "cd packages/backend && poetry config virtualenvs.create false",
+      "cd packages/backend && poetry install --no-dev --no-interaction"
+    ]
+  },
+  "start": {
+    "command": "cd packages/backend && poetry run python -m experiments.web.dashboard_server"
+  }
+}
