@@ -166,6 +166,9 @@ class ExperimentalAPIClient {
   private wsUrl: string;
   private ws: WebSocket | null = null;
   private wsCallbacks: Map<string, (data: any) => void> = new Map();
+  private requestCache: Map<string, { data: any; timestamp: number }> =
+    new Map();
+  private readonly CACHE_TTL = 2000; // 2 seconds cache for GET requests
 
   constructor(baseUrl?: string) {
     // Use environment variable if available, otherwise fallback to localhost
@@ -235,8 +238,23 @@ class ExperimentalAPIClient {
     }
   }
 
-  private async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: "GET" });
+  private async get<T>(endpoint: string, useCache: boolean = true): Promise<T> {
+    // Check cache for recent requests to prevent duplicate calls
+    if (useCache) {
+      const cached = this.requestCache.get(endpoint);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.data as T;
+      }
+    }
+
+    const data = await this.request<T>(endpoint, { method: "GET" });
+
+    // Cache the result
+    if (useCache) {
+      this.requestCache.set(endpoint, { data, timestamp: Date.now() });
+    }
+
+    return data;
   }
 
   private async post<T>(endpoint: string, data?: any): Promise<T> {
@@ -591,17 +609,30 @@ class ExperimentalAPIClient {
 
   async getConversations(
     userId: string,
-    includeArchived = false
+    includeArchived = false,
+    useCache: boolean = true
   ): Promise<Conversation[]> {
     const params = new URLSearchParams();
     params.append("user_id", userId);
     if (includeArchived) params.append("include_archived", "true");
 
-    return this.get(`/api/conversations/?${params.toString()}`);
+    return this.get(`/api/conversations/?${params.toString()}`, useCache);
   }
 
-  async getConversation(conversationId: string): Promise<Conversation> {
-    return this.get(`/api/conversations/${conversationId}`);
+  // Clear cache (useful after mutations)
+  clearCache(endpoint?: string): void {
+    if (endpoint) {
+      this.requestCache.delete(endpoint);
+    } else {
+      this.requestCache.clear();
+    }
+  }
+
+  async getConversation(
+    conversationId: string,
+    useCache: boolean = true
+  ): Promise<Conversation> {
+    return this.get(`/api/conversations/${conversationId}`, useCache);
   }
 
   async saveMessage(

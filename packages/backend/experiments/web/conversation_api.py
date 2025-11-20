@@ -126,34 +126,42 @@ try:
             """Get a conversation with all its messages"""
 
             async with AsyncSessionLocal() as db:
-                query = select(Conversation).where(Conversation.id == conversation_id).options(
-                    selectinload(Conversation.messages)
-                )
+                try:
+                    query = select(Conversation).where(Conversation.id == conversation_id).options(
+                        selectinload(Conversation.messages)
+                    )
 
-                result = await db.execute(query)
-                conversation = result.scalar_one_or_none()
+                    result = await db.execute(query)
+                    conversation = result.scalar_one_or_none()
 
-                if not conversation:
-                    raise HTTPException(status_code=404, detail="Conversation not found")
+                    if not conversation:
+                        raise HTTPException(status_code=404, detail="Conversation not found")
 
-                return ConversationResponse(
-                    id=str(conversation.id),
-                    title=conversation.title,
-                    message_count=conversation.message_count,
-                    is_archived=conversation.is_archived,
-                    created_at=conversation.created_at.isoformat(),
-                    updated_at=conversation.updated_at.isoformat(),
-                    messages=[
-                        MessageResponse(
-                            id=str(m.id),
-                            role=m.role,
-                            content=m.content,
-                            created_at=m.created_at.isoformat(),
-                            metadata=m.message_metadata
-                        )
-                        for m in sorted(conversation.messages, key=lambda m: m.created_at)
-                    ]
-                )
+                    return ConversationResponse(
+                        id=str(conversation.id),
+                        title=conversation.title,
+                        message_count=conversation.message_count,
+                        is_archived=conversation.is_archived,
+                        created_at=conversation.created_at.isoformat(),
+                        updated_at=conversation.updated_at.isoformat(),
+                        messages=[
+                            MessageResponse(
+                                id=str(m.id),
+                                role=m.role,
+                                content=m.content,
+                                created_at=m.created_at.isoformat(),
+                                metadata=m.message_metadata
+                            )
+                            for m in sorted(conversation.messages, key=lambda m: m.created_at)
+                        ]
+                    )
+                except HTTPException:
+                    # Re-raise HTTP exceptions
+                    raise
+                except Exception as e:
+                    # Log and re-raise other exceptions
+                    print(f"❌ Database error in get_conversation_with_messages: {e}")
+                    raise
 
         async def create_message(
             self,
@@ -307,8 +315,25 @@ async def get_conversation(conversation_id: str):
     if not conversation_service:
         raise HTTPException(status_code=503, detail="Conversation service not available")
 
-    conv_uuid = UUID(conversation_id)
-    return await conversation_service.get_conversation_with_messages(conv_uuid)
+    try:
+        conv_uuid = UUID(conversation_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid conversation_id format: {conversation_id}")
+
+    try:
+        return await conversation_service.get_conversation_with_messages(conv_uuid)
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error in get_conversation: {e}")
+        print(error_details)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get conversation: {str(e)}"
+        )
 
 
 @router.post("/messages", response_model=MessageResponse)

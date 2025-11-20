@@ -88,12 +88,26 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
     }
   }, []);
 
+  /**
+   * FIXED: Dependency Loop Issue
+   * =============================
+   * Previously, loadOrCreateConversation depended on isCreatingConversation state,
+   * which caused the callback to be recreated every time the state changed,
+   * triggering the useEffect again → infinite loop of API calls.
+   * 
+   * Solution: Use ref (hasInitialized) instead of state for guard, and remove
+   * isCreatingConversation from useCallback dependencies. This prevents the
+   * callback from being recreated unnecessarily.
+   */
   const loadOrCreateConversation = useCallback(async () => {
-    // Guard against concurrent calls
-    if (isCreatingConversation) {
+    // Guard against concurrent calls using ref instead of state
+    if (hasInitialized.current === false) {
       console.log("⏳ Already creating/loading conversation, skipping...");
       return;
     }
+
+    // Mark as in progress
+    hasInitialized.current = false;
 
     try {
       setIsCreatingConversation(true);
@@ -141,6 +155,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
 
             setMessages(loadedMessages);
             setConversationId(conversation.id);
+            hasInitialized.current = true; // Mark as complete
             return;
           }
 
@@ -149,6 +164,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
           console.log(
             `✅ Using existing empty conversation ${conversation.id}`
           );
+          hasInitialized.current = true; // Mark as complete
           return;
         } catch (error) {
           console.warn(
@@ -168,30 +184,32 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       );
       setConversationId(newConversation.id);
       localStorage.setItem(storageKey, newConversation.id);
+      // Clear cache and refresh conversation list
+      experimentalAPI.clearCache();
       setRefreshKey((prev) => prev + 1); // Trigger conversation list refresh
       console.log(`✅ Created new conversation ${newConversation.id}`);
+      hasInitialized.current = true; // Mark as complete
     } catch (error) {
       console.error("❌ Failed to initialize conversation:", error);
+      hasInitialized.current = true; // Reset on error so it can retry
     } finally {
       setIsCreatingConversation(false);
     }
-  }, [userId, isCreatingConversation]);
+  }, [userId]); // Remove isCreatingConversation from dependencies
 
   // Load or create conversation on mount (with duplicate prevention)
   useEffect(() => {
     // Only initialize once per userId
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
+    if (hasInitialized.current) {
       loadOrCreateConversation();
     }
 
     // Cleanup on unmount or userId change
     return () => {
-      if (hasInitialized.current) {
-        hasInitialized.current = false;
-      }
+      hasInitialized.current = false;
     };
-  }, [userId, loadOrCreateConversation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // Only depend on userId, not loadOrCreateConversation to avoid loops
 
   const handleConversationSelect = async (newConversationId: string) => {
     try {
@@ -355,6 +373,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
 
       setConversationId(newConversation.id);
       localStorage.setItem(`conversation_${userId}`, newConversation.id);
+      // Clear cache and refresh conversation list
+      experimentalAPI.clearCache();
       setMessages([
         {
           id: "0",
@@ -545,6 +565,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
             })),
           }
         );
+        // Clear cache for this conversation to ensure fresh data
+        experimentalAPI.clearCache(`/api/conversations/${conversationId}`);
       } catch (saveError) {
         console.error("Failed to save messages:", saveError);
       }

@@ -8,10 +8,10 @@
  * - Create new conversation
  */
 
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare,
   Plus,
@@ -19,7 +19,7 @@ import {
   Clock,
   ChevronRight,
   Archive,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Conversation {
   id: string;
@@ -48,53 +48,69 @@ export function ConversationList({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isLoadingRef = useRef(false); // Prevent concurrent loads
 
-  useEffect(() => {
-    loadConversations();
-  }, [userId, refreshTrigger]); // Also refresh when refreshTrigger changes
+  const loadConversations = useCallback(async () => {
+    // Prevent concurrent requests
+    if (isLoadingRef.current) {
+      console.log("⏳ Conversation list already loading, skipping...");
+      return;
+    }
 
-  const loadConversations = async () => {
     try {
+      isLoadingRef.current = true;
       setLoading(true);
       setError(null);
 
-      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+      const { default: experimentalAPI } = await import(
+        "@/lib/api/experimental-client"
+      );
       const data = await experimentalAPI.getConversations(userId, false);
 
       setConversations(data);
     } catch (err: any) {
-      console.error('Failed to load conversations:', err);
-      setError(err.message || 'Failed to load conversations');
+      console.error("Failed to load conversations:", err);
+      setError(err.message || "Failed to load conversations");
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [userId, refreshTrigger, loadConversations]); // Include loadConversations in deps
 
   const deleteConversation = async (conversationId: string) => {
-    if (!confirm('Delete this conversation? This cannot be undone.')) return;
+    if (!confirm("Delete this conversation? This cannot be undone.")) return;
 
     const isDeletingCurrent = conversationId === currentConversationId;
 
     try {
       console.log(`🗑️ Deleting conversation ${conversationId}...`);
-      const { default: experimentalAPI } = await import('@/lib/api/experimental-client');
+      const { default: experimentalAPI } = await import(
+        "@/lib/api/experimental-client"
+      );
       await experimentalAPI.deleteConversation(conversationId);
+
+      // Clear cache to ensure fresh data
+      experimentalAPI.clearCache();
 
       console.log(`✅ Successfully deleted conversation ${conversationId}`);
 
       // Remove from list immediately for instant feedback (dynamic update, no reload)
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
 
       // If deleted current conversation, just clear localStorage
       // DON'T auto-create a new one - let user do it manually
       if (isDeletingCurrent) {
-        console.log('📝 Deleted current conversation, clearing localStorage');
+        console.log("📝 Deleted current conversation, clearing localStorage");
         localStorage.removeItem(`conversation_${userId}`); // Clear old conversation ID
         // Note: User will need to click "New Chat" button to start a new conversation
       }
     } catch (err: any) {
-      console.error('❌ Failed to delete conversation:', err);
-      alert(`Failed to delete conversation: ${err.message || 'Unknown error'}`);
+      console.error("❌ Failed to delete conversation:", err);
+      alert(`Failed to delete conversation: ${err.message || "Unknown error"}`);
       // Only reload on error to resync
       await loadConversations();
     }
@@ -108,12 +124,12 @@ export function ConversationList({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   return (
@@ -151,16 +167,18 @@ export function ConversationList({
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
             <MessageSquare className="w-12 h-12 text-slate-600 mb-3" />
             <p className="text-slate-400 text-sm">No conversations yet</p>
-            <p className="text-slate-500 text-xs mt-1">Start chatting to create your first conversation</p>
+            <p className="text-slate-500 text-xs mt-1">
+              Start chatting to create your first conversation
+            </p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
             <div className="space-y-1">
-              {conversations.map(conversation => (
+              {conversations.map((conversation) => (
                 <motion.div
                   key={conversation.id}
                   initial={{ opacity: 0, x: -10, height: 0 }}
-                  animate={{ opacity: 1, x: 0, height: 'auto' }}
+                  animate={{ opacity: 1, x: 0, height: "auto" }}
                   exit={{ opacity: 0, x: -20, height: 0 }}
                   transition={{ duration: 0.2 }}
                   className="group relative overflow-hidden"
@@ -169,17 +187,19 @@ export function ConversationList({
                     onClick={() => onConversationSelect(conversation.id)}
                     className={`w-full text-left p-3 rounded-lg transition-all ${
                       conversation.id === currentConversationId
-                        ? 'bg-purple-500/20 border border-purple-500/30'
-                        : 'hover:bg-slate-800/50 border border-transparent'
+                        ? "bg-purple-500/20 border border-purple-500/30"
+                        : "hover:bg-slate-800/50 border border-transparent"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className={`text-sm font-medium truncate ${
-                          conversation.id === currentConversationId
-                            ? 'text-purple-300'
-                            : 'text-slate-300 group-hover:text-white'
-                        }`}>
+                        <h3
+                          className={`text-sm font-medium truncate ${
+                            conversation.id === currentConversationId
+                              ? "text-purple-300"
+                              : "text-slate-300 group-hover:text-white"
+                          }`}
+                        >
                           {conversation.title}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
