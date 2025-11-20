@@ -1,211 +1,274 @@
-import Link from "next/link";
+'use client';
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { ArrowRight, Sparkles, Shield, Zap, Heart } from 'lucide-react';
 
 export default function WhyPage() {
   return (
-    <div className="flex flex-col">
-      {/* Hero */}
-      <section className="py-20 lg:py-32 bg-gradient-to-b from-secondary/10 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Why we're building Delight
+    <div className="min-h-screen bg-black text-zinc-200">
+      {/* Hero Section */}
+      <section className="relative pt-48 pb-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-black to-black" />
+        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto px-6 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="space-y-12 text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-purple-400">
+              <Sparkles size={12} />
+              The Manifesto
+            </div>
+
+            <h1 className="text-6xl md:text-8xl font-display font-bold text-white leading-[0.9] tracking-tighter">
+              Why Delight <br />
+              <span className="text-zinc-600">Exists.</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              A manifesto for ambitious people who know what to do but can't seem to start
+
+            <p className="text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+              A declaration for ambitious people who know what to do <br className="hidden md:block" />
+              but can't seem to start.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Thesis Statements */}
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="space-y-32">
+            {/* Statement 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -left-8 top-0 text-8xl font-display text-zinc-900 font-bold">01</div>
+              <div className="relative space-y-6">
+                <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-tight">
+                  Ambition is not the problem. <br />
+                  <span className="text-amber-500">Emotional friction is.</span>
+                </h2>
+                <div className="space-y-6 text-lg text-zinc-400 leading-relaxed border-l border-white/10 pl-8">
+                  <p>
+                    You're ambitious. You set audacious goals. You know exactly what needs to be done.
+                    But after lunch, or after a break, <span className="text-white">starting feels impossible</span>. Five minutes into focused work,
+                    you're checking another tab.
+                  </p>
+                  <p>
+                    This isn't laziness. It's not a character flaw. It's <span className="text-white font-medium">emotional friction</span>—the cognitive and
+                    affective resistance that emerges when stress, overwhelm, and context switching collide with
+                    complex goals.
+                  </p>
+                  <blockquote className="text-xl italic text-zinc-300 border-l-4 border-amber-500 pl-6 py-2">
+                    "Your brain can't tell the difference between a difficult presentation and a physical danger."
+                  </blockquote>
+                  <p>
+                    Traditional productivity tools don't address this. They focus on structure—lists, timers,
+                    Kanban boards—but ignore the emotional state that determines whether you can even engage
+                    with that structure.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Statement 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -left-8 top-0 text-8xl font-display text-zinc-900 font-bold">02</div>
+              <div className="relative space-y-6">
+                <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-tight">
+                  Tools that ignore your state <br />
+                  <span className="text-blue-500">keep failing you.</span>
+                </h2>
+                <div className="space-y-6 text-lg text-zinc-400 leading-relaxed border-l border-white/10 pl-8">
+                  <p>
+                    DIY productivity systems demand constant maintenance exactly when you have the least bandwidth.
+                    They're built for the version of you who has energy to spare. <span className="text-white">When life gets chaotic, they collapse</span>.
+                  </p>
+                  <p>
+                    Generic AI assistants provide surface-level advice without understanding your unique context.
+                    They reset every conversation, forcing you to re-explain your situation repeatedly.
+                  </p>
+                  <p>
+                    Professional coaching is effective but expensive—and <span className="text-white font-medium">unavailable during the exact moments of
+                    hesitation</span> when you need support most. That 3pm slump where you're staring at your screen?
+                    Your coach isn't there.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Statement 3 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -left-8 top-0 text-8xl font-display text-zinc-900 font-bold">03</div>
+              <div className="relative space-y-6">
+                <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-tight">
+                  A companion that <br />
+                  <span className="text-cyan-500">remembers.</span>
+                </h2>
+                <div className="space-y-6 text-lg text-zinc-400 leading-relaxed border-l border-white/10 pl-8">
+                  <p>
+                    Delight is designed to be what those other tools aren't: a companion that remembers. Not just
+                    your tasks, but <span className="text-white font-medium">your journey. Your values. Your fears. Your patterns</span>.
+                  </p>
+                  <p>
+                    When you open Delight after a difficult week, it doesn't greet you with a generic "What can I do for you today?"
+                    It says: <span className="text-cyan-400 italic">"You've been quiet. Last time we talked, you were stressed about the presentation.
+                    How did it go?"</span>
+                  </p>
+
+                  <div className="grid md:grid-cols-3 gap-4 my-8">
+                    <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-xl">
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Personal</div>
+                      <div className="text-sm text-white">Long-term context</div>
+                    </div>
+                    <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-xl">
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Project</div>
+                      <div className="text-sm text-white">Goal evolution</div>
+                    </div>
+                    <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-xl">
+                      <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Task</div>
+                      <div className="text-sm text-white">Mission details</div>
+                    </div>
+                  </div>
+
+                  <blockquote className="text-xl italic text-zinc-300 border-l-4 border-cyan-500 pl-6 py-2">
+                    "Trust isn't built in a single conversation. It's built when someone remembers what you told them last time."
+                  </blockquote>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Statement 4 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -left-8 top-0 text-8xl font-display text-zinc-900 font-bold">04</div>
+              <div className="relative space-y-6">
+                <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-tight">
+                  A world, not <br />
+                  <span className="text-purple-500">another list.</span>
+                </h2>
+                <div className="space-y-6 text-lg text-zinc-400 leading-relaxed border-l border-white/10 pl-8">
+                  <p>
+                    Productivity shouldn't feel like paperwork. For many ambitious people—especially those with ADHD tendencies or creative
+                    mindsets—<span className="text-white">lists feel lifeless</span>. They don't inspire. They don't create meaning.
+                  </p>
+                  <p>
+                    This is why Delight includes a narrative layer. Your work unfolds in a living world that
+                    responds to your real-world progress. <span className="text-white font-medium">Complete missions, build relationships, unlock new zones</span>.
+                  </p>
+                  <p>
+                    This isn't superficial gamification. When your actual work drives a story that surprises you,
+                    when characters you've grown to care about acknowledge your effort—<span className="text-white">that creates genuine motivation</span>.
+                    It turns "I should work on this" into "I want to see what happens next."
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Statement 5 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -left-8 top-0 text-8xl font-display text-zinc-900 font-bold">05</div>
+              <div className="relative space-y-6">
+                <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-tight">
+                  Privacy, cost, <br />
+                  <span className="text-emerald-500">and trust.</span>
+                </h2>
+                <div className="space-y-6 text-lg text-zinc-400 leading-relaxed border-l border-white/10 pl-8">
+                  <p>
+                    When you share your emotional state, your goals, and your struggles with a tool, you're
+                    extending <span className="text-white font-medium">enormous trust</span>. We don't take that lightly.
+                  </p>
+
+                  <div className="grid md:grid-cols-3 gap-4 my-8">
+                    <div className="p-6 bg-zinc-900/50 border border-emerald-500/20 rounded-xl">
+                      <Shield size={24} className="text-emerald-500 mb-3" />
+                      <div className="text-sm font-medium text-white mb-2">Privacy First</div>
+                      <div className="text-xs text-zinc-500">Opt-in tracking. Export anytime. You own your data.</div>
+                    </div>
+                    <div className="p-6 bg-zinc-900/50 border border-blue-500/20 rounded-xl">
+                      <Zap size={24} className="text-blue-500 mb-3" />
+                      <div className="text-sm font-medium text-white mb-2">Cost Efficient</div>
+                      <div className="text-xs text-zinc-500">&lt;$0.10/user/day target. Accessible pricing.</div>
+                    </div>
+                    <div className="p-6 bg-zinc-900/50 border border-purple-500/20 rounded-xl">
+                      <Heart size={24} className="text-purple-500 mb-3" />
+                      <div className="text-sm font-medium text-white mb-2">Trust-Centered</div>
+                      <div className="text-xs text-zinc-500">Your autonomy stays front and center. Always.</div>
+                    </div>
+                  </div>
+
+                  <p>
+                    Trust is the only defensible moat for a companion. If we betray that trust—through dark patterns,
+                    surveillance, or exploitative pricing—we lose everything that makes Delight valuable.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Content */}
-      <article className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mx-auto space-y-16">
-            {/* Section 1 */}
-            <section className="space-y-6">
-              <h2 className="text-3xl font-bold text-foreground">
-                Ambition is not the problem. Emotional friction is.
-              </h2>
-              <div className="prose prose-lg prose-slate max-w-none">
-                <p className="text-foreground/90 leading-relaxed">
-                  You're ambitious. You set audacious goals. You know exactly what needs to be done.
-                  But after lunch, or after a break, starting feels impossible. Five minutes into focused work,
-                  you're checking another tab. Your to-do list sprawls across three tools, and the thought of
-                  prioritizing feels paralyzing.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  This isn't laziness. It's not a character flaw. It's emotional friction—the cognitive and
-                  affective resistance that emerges when stress, overwhelm, and context switching collide with
-                  complex goals. Your brain is protecting you from perceived threats. The problem is, your
-                  brain can't tell the difference between a difficult presentation and a physical danger.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Traditional productivity tools don't address this. They focus on structure—lists, timers,
-                  Kanban boards—but ignore the emotional state that determines whether you can even engage
-                  with that structure. When you're overwhelmed, another task list isn't the answer.
-                  Understanding and acknowledgment is.
-                </p>
-              </div>
-            </section>
+      {/* Closing CTA */}
+      <section className="py-32 border-t border-white/5 bg-gradient-to-b from-black to-zinc-900">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-6"
+          >
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-white">
+              If this resonates, <br />
+              <span className="text-blue-500">you're who we're building for.</span>
+            </h2>
+            <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+              We're in early development. The core loop is taking shape. The memory system works.
+              But we need people willing to trust us with their goals and give honest feedback.
+            </p>
+          </motion.div>
 
-            {/* Pull Quote */}
-            <blockquote className="border-l-4 border-primary pl-6 py-2 italic text-xl text-foreground/80">
-              "The gap between knowing what to do and actually doing it is where most ambitious projects die."
-            </blockquote>
-
-            {/* Section 2 */}
-            <section className="space-y-6">
-              <h2 className="text-3xl font-bold text-foreground">
-                Why tools that ignore your state keep failing you
-              </h2>
-              <div className="prose prose-lg prose-slate max-w-none">
-                <p className="text-foreground/90 leading-relaxed">
-                  DIY productivity systems—Notion templates, habit trackers, elaborate frameworks—demand constant
-                  maintenance exactly when you have the least bandwidth. They're built for the version of you
-                  who has energy to spare. When life gets chaotic, they collapse. You return three weeks later
-                  to a graveyard of abandoned boards and outdated goals.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Generic AI assistants provide surface-level advice without understanding your unique context.
-                  They reset every conversation, forcing you to re-explain your situation repeatedly. They can't
-                  remember that three weeks ago you mentioned your fear of public speaking, or that last month
-                  you tried a similar approach and it didn't work.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Professional coaching is effective but expensive—and unavailable during the exact moments of
-                  hesitation when you need support most. That 3pm slump where you're staring at your screen,
-                  knowing you should start the report but opening Twitter instead? Your coach isn't there.
-                  Your accountability buddy is in their own meeting. You're alone with your avoidance.
-                </p>
-              </div>
-            </section>
-
-            {/* Section 3 */}
-            <section className="space-y-6">
-              <h2 className="text-3xl font-bold text-foreground">
-                What it means to be a companion with memory
-              </h2>
-              <div className="prose prose-lg prose-slate max-w-none">
-                <p className="text-foreground/90 leading-relaxed">
-                  Delight is designed to be what those other tools aren't: a companion that remembers. Not just
-                  your tasks, but your journey. Your values. Your fears. Your patterns. When you open Delight
-                  after a difficult week, it doesn't greet you with a generic "What can I do for you today?"
-                  It says: "You've been quiet. Last time we talked, you were stressed about the presentation.
-                  How did it go?"
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  This memory system operates on three tiers. Personal memories capture long-term context:
-                  your career aspirations, your tendency to procrastinate on creative work, your preference for
-                  morning focus sessions. Project memories track each major goal's evolution: what you've tried,
-                  what worked, what obstacles emerged. Task memories ensure the AI understands specific mission
-                  details: that "finish design mockups" actually means three screens with interactive prototypes,
-                  not just static images.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Over time, this creates a relationship that compounds in value. The companion doesn't just
-                  respond—it anticipates. It notices when you're slipping into old patterns. It remembers what
-                  helped you push through similar challenges before. It becomes more useful precisely when you
-                  need it most: when you're too overwhelmed to articulate what you need.
-                </p>
-              </div>
-            </section>
-
-            {/* Pull Quote */}
-            <blockquote className="border-l-4 border-secondary pl-6 py-2 italic text-xl text-foreground/80">
-              "Trust isn't built in a single conversation. It's built when someone remembers—and acts on—what you told them last time."
-            </blockquote>
-
-            {/* Section 4 */}
-            <section className="space-y-6">
-              <h2 className="text-3xl font-bold text-foreground">
-                Why we built a world instead of another list
-              </h2>
-              <div className="prose prose-lg prose-slate max-w-none">
-                <p className="text-foreground/90 leading-relaxed">
-                  Productivity shouldn't feel like paperwork. For some people, tracking progress in a spreadsheet
-                  is satisfying. But for many ambitious people—especially those with ADHD tendencies or creative
-                  mindsets—lists feel lifeless. They don't inspire. They don't create meaning.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  This is why Delight includes a narrative layer. Your work unfolds in a living world that
-                  responds to your real-world progress. Complete missions to earn Essence (in-game currency),
-                  build relationships with AI characters, unlock new zones, and progress through story chapters.
-                  The narrative serves your real goals—"prepare for job interview" becomes "prove yourself to
-                  the Guild Council," making preparation feel like meaningful progression in a larger story.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  This isn't superficial gamification. Points and badges alone don't work—they feel hollow.
-                  But when your actual work drives a story that surprises you, when characters you've grown to
-                  care about acknowledge your effort, when the world visibly changes based on your consistency—
-                  that creates genuine motivation. It turns "I should work on this" into "I want to see what
-                  happens next."
-                </p>
-              </div>
-            </section>
-
-            {/* Section 5 */}
-            <section className="space-y-6">
-              <h2 className="text-3xl font-bold text-foreground">
-                How we think about privacy, cost, and trust
-              </h2>
-              <div className="prose prose-lg prose-slate max-w-none">
-                <p className="text-foreground/90 leading-relaxed">
-                  When you share your emotional state, your goals, and your struggles with a tool, you're
-                  extending enormous trust. We don't take that lightly.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Privacy in Delight means transparency and control. Any context signals—like tab focus or
-                  activity patterns—are explicitly opt-in. You always know what we're tracking. You can review
-                  everything stored about you, revoke permissions anytime, and export your complete data on demand.
-                  Your emotional check-ins, goals, and progress belong to you. We're caretakers, not owners.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Cost efficiency matters because it determines accessibility. We're targeting operational costs
-                  under $0.10 per user per day—using smart architecture choices like PostgreSQL with pgvector
-                  for unified storage, GPT-4o-mini for most interactions, and careful prompt engineering to
-                  minimize API calls. This isn't about maximizing profit margins. It's about building something
-                  that students, freelancers, and early-stage founders can actually afford.
-                </p>
-                <p className="text-foreground/90 leading-relaxed">
-                  Trust is the only defensible moat for a companion. If we betray that trust—through dark patterns,
-                  surveillance, or exploitative pricing—we lose everything that makes Delight valuable. Your
-                  autonomy stays front and center. Always.
-                </p>
-              </div>
-            </section>
-
-            {/* Closing */}
-            <section className="border-t border-border pt-12 space-y-8">
-              <div className="space-y-4">
-                <p className="text-xl text-foreground/90 leading-relaxed">
-                  If this resonates—if you've felt the gap between ambition and execution, if you've wished for
-                  a tool that understands the emotional dimension of getting things done—you're exactly who we're
-                  building for.
-                </p>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  We're in early development. The core loop is taking shape. The memory system works. The narrative
-                  engine is generating personalized stories. But we need people willing to trust us with their goals
-                  and give honest feedback when something doesn't work.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/waitlist"
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
-                >
-                  Join the Waitlist
-                </Link>
-                <Link
-                  href="/"
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-foreground border-2 border-border rounded-xl hover:border-primary/50 hover:bg-accent transition-all"
-                >
-                  ← Back to Product
-                </Link>
-              </div>
-            </section>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+            <Link
+              href="/waitlist"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-full font-medium hover:bg-zinc-200 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Join the Waitlist <ArrowRight size={16} />
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-full font-medium hover:bg-white/10 transition-all"
+            >
+              ← Explore the System
+            </Link>
           </div>
         </div>
-      </article>
+      </section>
     </div>
   );
 }
