@@ -1,15 +1,13 @@
 {
   "$schema": "https://schema.railpack.com",
   "language": "python",
-  "build": {
-    "commands": [
-      "python -V",
-      "pip install --upgrade pip",
-      "pip install poetry",
-      "poetry export -f requirements.txt --output requirements.txt --without-hashes --without dev"
-    ]
+  "install": {
+    "command": "poetry install --no-interaction --no-ansi --only main --no-root"
   },
-  "deploy": {
-    "startCommand": "pip install --no-cache-dir -r requirements.txt && python -m alembic upgrade head || true && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+  "build": {
+    "command": "python -m alembic upgrade head || true"
+  },
+  "start": {
+    "command": "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
   }
 }
