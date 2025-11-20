@@ -269,8 +269,22 @@ class ExperimentalAPIClient {
       }
     }
 
-    // Create new request and track it
-    const requestPromise = this.request<T>(endpoint, { method: "GET" })
+    // FIX: Create placeholder promise IMMEDIATELY to prevent race condition
+    // Multiple synchronous calls will now see the pending request
+    let resolvePromise: (value: T) => void;
+    let rejectPromise: (error: any) => void;
+    const placeholderPromise = new Promise<T>((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
+    // Add to pending BEFORE making the actual request (prevents race condition)
+    if (useCache) {
+      this.pendingRequests.set(endpoint, placeholderPromise);
+    }
+
+    // Now make the actual request
+    this.request<T>(endpoint, { method: "GET" })
       .then((data) => {
         // Cache the result
         if (useCache) {
@@ -278,19 +292,19 @@ class ExperimentalAPIClient {
         }
         // Remove from pending requests
         this.pendingRequests.delete(endpoint);
+        // Resolve the placeholder promise
+        resolvePromise!(data);
         return data;
       })
       .catch((error) => {
         // Remove from pending requests on error
         this.pendingRequests.delete(endpoint);
+        // Reject the placeholder promise
+        rejectPromise!(error);
         throw error;
       });
 
-    if (useCache) {
-      this.pendingRequests.set(endpoint, requestPromise);
-    }
-
-    return requestPromise;
+    return placeholderPromise;
   }
 
   private async post<T>(endpoint: string, data?: any): Promise<T> {
