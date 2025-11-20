@@ -29,8 +29,38 @@ else:
         pool_size=10,
         max_overflow=20,
     )
+    
+    # Add SSL configuration for Supabase/cloud databases
+    # asyncpg requires SSL to be configured via connect_args
+    connect_args = {}
+    
+    if settings.requires_ssl:
+        # For Supabase pooler, use SSL with relaxed verification
+        # The pooler handles SSL termination
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ssl_context
+        connect_args["server_settings"] = {
+            "application_name": "delight-backend"
+        }
+    
+    # Note: SQLAlchemy's asyncpg dialect always uses prepared statements.
+    # Transaction Mode pooler (port 6543) does NOT support prepared statements.
+    # You MUST use Session Mode pooler (port 5432) for SQLAlchemy to work correctly.
+    if ":6543" in settings.async_database_url:
+        import warnings
+        warnings.warn(
+            "⚠️  WARNING: Transaction Mode pooler (port 6543) does NOT support prepared statements, "
+            "but SQLAlchemy's asyncpg dialect requires them. This will cause errors.\n"
+            "Please switch to Session Mode pooler (port 5432) in your DATABASE_URL.",
+            UserWarning
+        )
+    
+    if connect_args:
+        engine_kwargs["connect_args"] = connect_args
 
-# Create async engine with environment-aware pooling
 engine = create_async_engine(
     settings.async_database_url,  # Use async driver (postgresql+asyncpg://)
     **engine_kwargs,
