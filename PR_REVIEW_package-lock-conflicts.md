@@ -8,6 +8,8 @@
 
 **Root Cause**: The project uses **pnpm** as its package manager, but `package-lock.json` (npm's lockfile) exists in the repository, causing conflicts when branches diverge.
 
+**Important**: We are removing `package-lock.json` (npm's lockfile), NOT `package.json` (the project configuration file). `package.json` is essential and must be kept.
+
 ---
 
 ## Root Cause Analysis
@@ -160,9 +162,14 @@ After resolving conflicts:
 
 **Project Package Manager**: pnpm (NOT npm)
 
-**Correct Lockfile**: `pnpm-lock.yaml` ✅
+**Files to KEEP**:
 
-**Incorrect Lockfile**: `package-lock.json` ❌ (should be deleted and ignored)
+- `package.json` ✅ (Essential - project configuration)
+- `pnpm-lock.yaml` ✅ (pnpm's lockfile)
+
+**Files to REMOVE**:
+
+- `package-lock.json` ❌ (npm's lockfile - conflicts with pnpm)
 
 **Install Command**: `pnpm install` (NOT `npm install`)
 
