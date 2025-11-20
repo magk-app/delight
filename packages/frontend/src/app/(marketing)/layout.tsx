@@ -11,20 +11,6 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="min-h-screen bg-black text-zinc-200 selection:bg-blue-500/30 font-sans relative overflow-x-hidden">
-      {/* Fixed Navigation (Swiss Style) */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 flex justify-between items-center mix-blend-difference pointer-events-none">
-        <Link href="/" className="flex items-center gap-2 pointer-events-auto group">
-             <div className="w-4 h-4 bg-white rounded-sm group-hover:scale-110 transition-transform" />
-             <div className="text-lg font-display font-bold tracking-tight text-white">Delight.</div>
-        </Link>
-        <Link
-          href="/waitlist"
-          className="pointer-events-auto text-xs bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.2)] transform hover:scale-105 duration-300"
-        >
-          Enter Simulation <MoveUpRight size={12} />
-        </Link>
-      </nav>
-
       {/* Main Content */}
       <main className="flex-1">{children}</main>
 

@@ -24,7 +24,7 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <body className="font-sans" suppressHydrationWarning>
           <MainNav />
-          <div className="pt-16">{children}</div>
+          {children}
         </body>
       </html>
     </ClerkProvider>
