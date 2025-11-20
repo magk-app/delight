@@ -1,6 +1,4 @@
-/* Marketing Page Custom Font Imports - Must come first */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap');
+/* Fonts are now loaded via Next.js optimized font loading (see layout.tsx) */
 
 @tailwind base;
 @tailwind components;
@@ -80,21 +78,37 @@
   * {
     @apply border-border;
   }
+
+  html {
+    background-color: #000000;
+  }
+
   body {
     @apply bg-background text-foreground;
+    /* Use system fonts for instant rendering - no download needed! */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #000000;
   }
 }
 
 /* Marketing Page Custom Styles */
 
-/* Custom font utilities */
+/* Pure system fonts - instant rendering, zero network requests */
 .font-display {
-  font-family: 'Space Grotesk', sans-serif;
+  /* San Francisco on macOS/iOS, Segoe UI on Windows, Roboto on Android */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700; /* Bold for headings */
+  letter-spacing: -0.02em; /* Tighter tracking for modern look */
 }
 
 .font-signature {
-  font-family: 'Dancing Script', cursive;
+  /* System cursive fonts - instant rendering */
+  font-family: "Apple Chancery", "Brush Script MT", cursive, system-ui;
+}
+
+.font-sans {
+  /* System fonts - instant rendering! */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Glass panel effect */

@@ -14,7 +14,7 @@ import { Psychology } from "@/components/marketing/Psychology";
 import { FeatureDeepDive } from "@/components/marketing/FeatureDeepDive";
 import { WhyDelight } from "@/components/marketing/WhyDelight";
 import { CollaborativeStory } from "@/components/marketing/CollaborativeStory";
-import { MoveUpRight, Play } from "lucide-react";
+import { Play } from "lucide-react";
 
 export default function MarketingHome() {
   return (

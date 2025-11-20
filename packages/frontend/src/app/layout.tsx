@@ -3,6 +3,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { MainNav } from "@/components/navigation/main-nav";
 import "./globals.css";
 
+// NO custom fonts - using pure system fonts for instant rendering
+// System fonts are already beautiful and load instantly!
+
 export const metadata: Metadata = {
   title: "Delight - AI-Powered Self-Improvement Companion",
   description:
@@ -22,7 +25,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className="font-sans" suppressHydrationWarning>
+        <body suppressHydrationWarning>
           <MainNav />
           {children}
         </body>
