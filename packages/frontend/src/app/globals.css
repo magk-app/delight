@@ -93,19 +93,21 @@
 
 /* Marketing Page Custom Styles */
 
-/* Custom font utilities */
+/* Pure system fonts - instant rendering, zero network requests */
 .font-display {
-  /* Space Grotesk for headings only - fallback to system fonts */
-  font-family: var(--font-display), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* San Francisco on macOS/iOS, Segoe UI on Windows, Roboto on Android */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700; /* Bold for headings */
+  letter-spacing: -0.02em; /* Tighter tracking for modern look */
 }
 
 .font-signature {
-  /* Fallback to system cursive fonts */
-  font-family: "Brush Script MT", cursive, system-ui;
+  /* System cursive fonts - instant rendering */
+  font-family: "Apple Chancery", "Brush Script MT", cursive, system-ui;
 }
 
 .font-sans {
-  /* System fonts for body text - instant rendering! */
+  /* System fonts - instant rendering! */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 

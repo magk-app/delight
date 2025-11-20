@@ -1,69 +1,20 @@
 "use client";
 
 import React from "react";
-import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { SectionFrame } from "@/components/marketing/ui/SectionFrame";
 import { ScrollProgress } from "@/components/marketing/ui/ScrollProgress";
 import { NarrativeDemo } from "@/components/marketing/NarrativeDemo";
+import { MissionControl } from "@/components/marketing/MissionControl";
+import { Companions } from "@/components/marketing/Companions";
+import { Constellation } from "@/components/marketing/Constellation";
+import { DailyLoop } from "@/components/marketing/DailyLoop";
+import { WorldMap } from "@/components/marketing/WorldMap";
+import { Psychology } from "@/components/marketing/Psychology";
+import { FeatureDeepDive } from "@/components/marketing/FeatureDeepDive";
+import { WhyDelight } from "@/components/marketing/WhyDelight";
+import { CollaborativeStory } from "@/components/marketing/CollaborativeStory";
 import { Play } from "lucide-react";
-
-// Loading component - prevents white flash during lazy load
-const LoadingSection = () => (
-  <div className="w-full min-h-[400px] bg-black flex items-center justify-center">
-    <div className="flex flex-col items-center gap-4">
-      <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-      <div className="text-xs text-zinc-600 uppercase tracking-widest">Loading</div>
-    </div>
-  </div>
-);
-
-// Lazy load below-the-fold components for better mobile performance
-// ssr: false prevents hydration issues and ensures client-only rendering
-const MissionControl = dynamic(() => import("@/components/marketing/MissionControl").then(mod => ({ default: mod.MissionControl })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const Companions = dynamic(() => import("@/components/marketing/Companions").then(mod => ({ default: mod.Companions })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const Constellation = dynamic(() => import("@/components/marketing/Constellation").then(mod => ({ default: mod.Constellation })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const DailyLoop = dynamic(() => import("@/components/marketing/DailyLoop").then(mod => ({ default: mod.DailyLoop })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const WorldMap = dynamic(() => import("@/components/marketing/WorldMap").then(mod => ({ default: mod.WorldMap })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const Psychology = dynamic(() => import("@/components/marketing/Psychology").then(mod => ({ default: mod.Psychology })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const FeatureDeepDive = dynamic(() => import("@/components/marketing/FeatureDeepDive").then(mod => ({ default: mod.FeatureDeepDive })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const WhyDelight = dynamic(() => import("@/components/marketing/WhyDelight").then(mod => ({ default: mod.WhyDelight })), {
-  loading: LoadingSection,
-  ssr: false
-});
-
-const CollaborativeStory = dynamic(() => import("@/components/marketing/CollaborativeStory").then(mod => ({ default: mod.CollaborativeStory })), {
-  loading: LoadingSection,
-  ssr: false
-});
 
 export default function MarketingHome() {
   return (

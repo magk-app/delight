@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MainNav } from "@/components/navigation/main-nav";
-import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-// Only load Space Grotesk for headings - MUCH faster!
-// Body text uses system fonts (no download needed)
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "700"], // Only 2 weights instead of 11!
-  variable: "--font-display",
-  display: "optional", // Don't block render waiting for fonts
-  preload: true,
-  fallback: ["system-ui", "sans-serif"],
-});
+// NO custom fonts - using pure system fonts for instant rendering
+// System fonts are already beautiful and load instantly!
 
 export const metadata: Metadata = {
   title: "Delight - AI-Powered Self-Improvement Companion",
@@ -34,7 +25,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${spaceGrotesk.variable}`} suppressHydrationWarning>
+        <body suppressHydrationWarning>
           <MainNav />
           {children}
         </body>

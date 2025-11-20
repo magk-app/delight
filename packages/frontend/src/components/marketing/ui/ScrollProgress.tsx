@@ -15,8 +15,12 @@ const SECTIONS = [
 
 export const ScrollProgress: React.FC = () => {
   const [activeSection, setActiveSection] = useState('hero');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Prevent hydration mismatch - only run on client
+    setMounted(true);
+
     const handleScroll = () => {
       const sections = SECTIONS.map(s => document.getElementById(s.id));
       const scrollPosition = window.scrollY + window.innerHeight / 3;
@@ -31,6 +35,9 @@ export const ScrollProgress: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Don't render on server - prevents hydration mismatch
+  if (!mounted) return null;
 
   return (
     <div className="hidden lg:flex fixed left-8 top-1/2 -translate-y-1/2 z-50 flex-col gap-6 mix-blend-difference">
