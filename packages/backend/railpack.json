@@ -11,6 +11,6 @@
     ]
   },
   "start": {
-    "command": "poetry run python -m experiments.web.dashboard_server"
+    "command": "poetry run uvicorn experiments.web.dashboard_server:app --host 0.0.0.0 --port ${PORT:-8001}"
   }
 }
