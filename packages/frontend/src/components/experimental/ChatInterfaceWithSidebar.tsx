@@ -486,23 +486,23 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-slate-900/50 backdrop-blur-xl rounded-xl border border-slate-700/50 overflow-hidden">
+      <div className="flex-1 flex flex-col bg-card backdrop-blur-xl rounded-xl border border-border overflow-hidden">
         {/* Chat Header */}
-        <div className="p-4 border-b border-slate-700/50 bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
+        <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-secondary/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-lg">
-                <Brain className="w-5 h-5 text-purple-400" />
+              <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg">
+                <Brain className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white">AI Second Brain</h3>
-                <p className="text-xs text-slate-400">Memory-augmented chat</p>
+                <p className="text-xs text-muted-foreground">Memory-augmented chat</p>
               </div>
             </div>
 
             <button
               onClick={handleNewConversation}
-              className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-lg text-purple-300 hover:text-purple-200 transition-all text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-lg text-primary/90 hover:text-primary/80 transition-all text-sm"
             >
               <MessageSquarePlus className="w-4 h-4" />
               <span>New Chat</span>
@@ -511,7 +511,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-4 space-y-4">
           <AnimatePresence>
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
@@ -521,7 +521,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-slate-700/50 bg-slate-900/50">
+        <div className="p-4 border-t border-border bg-card">
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -531,12 +531,12 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               disabled={isProcessing}
-              className="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 bg-card/50 border border-border rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleSendMessage}
               disabled={!input.trim() || isProcessing}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-700 disabled:to-slate-700 text-white rounded-lg font-medium transition-all disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 disabled:shadow-none flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 disabled:from-border disabled:to-border text-white rounded-lg font-medium transition-all disabled:cursor-not-allowed shadow-lg shadow-primary/20 disabled:shadow-none flex items-center gap-2"
             >
               {isProcessing ? (
                 <>
@@ -584,7 +584,7 @@ function ChatMessage({ message }: { message: Message }) {
         animate={{ opacity: 1, y: 0 }}
         className="flex justify-center"
       >
-        <div className="px-4 py-2 bg-slate-800/30 border border-slate-700/30 rounded-lg text-slate-400 text-sm">
+        <div className="px-4 py-2 bg-card/30 border border-border/30 rounded-lg text-muted-foreground text-sm">
           {message.content}
         </div>
       </motion.div>
@@ -600,8 +600,8 @@ function ChatMessage({ message }: { message: Message }) {
       {/* Avatar */}
       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
         isUser
-          ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
-          : 'bg-gradient-to-br from-slate-700 to-slate-600'
+          ? 'bg-gradient-to-br from-primary to-secondary'
+          : 'bg-gradient-to-br from-border to-border/80'
       }`}>
         {isUser ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
       </div>
@@ -609,15 +609,15 @@ function ChatMessage({ message }: { message: Message }) {
       {/* Message Content */}
       <div className={`flex-1 max-w-[70%] ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
         {message.loading ? (
-          <div className="px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg">
-            <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+          <div className="px-4 py-3 bg-card/50 border border-border rounded-lg">
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
           </div>
         ) : (
           <>
             <div className={`px-4 py-3 rounded-lg ${
               isUser
-                ? 'bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30'
-                : 'bg-slate-800/50 border border-slate-700/50'
+                ? 'bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30'
+                : 'bg-card/50 border border-border'
             }`}>
               <p className="text-sm text-white leading-relaxed">{message.content}</p>
             </div>
@@ -626,13 +626,13 @@ function ChatMessage({ message }: { message: Message }) {
             {!isUser && (message.memories_retrieved || message.memories_created) && (
               <div className="flex items-center gap-2 px-2">
                 {message.memories_retrieved && message.memories_retrieved.length > 0 && (
-                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Brain className="w-3 h-3" />
                     <span>{message.memories_retrieved.length} recalled</span>
                   </div>
                 )}
                 {message.memories_created && message.memories_created.length > 0 && (
-                  <div className="flex items-center gap-1 text-xs text-green-500">
+                  <div className="flex items-center gap-1 text-xs text-success">
                     <Sparkles className="w-3 h-3" />
                     <span>{message.memories_created.length} saved</span>
                   </div>
@@ -642,7 +642,7 @@ function ChatMessage({ message }: { message: Message }) {
           </>
         )}
 
-        <span className="text-xs text-slate-600 px-2">
+        <span className="text-xs text-muted-foreground/60 px-2">
           {message.timestamp.toLocaleTimeString()}
         </span>
       </div>

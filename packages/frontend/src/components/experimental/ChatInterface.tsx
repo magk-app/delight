@@ -313,11 +313,11 @@ export function ChatInterface({ userId }: { userId: string }) {
   // Show loading state while conversation is being initialized
   if (isLoadingConversation) {
     return (
-      <div className="flex flex-col h-full max-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+      <div className="flex flex-col h-full max-h-full bg-card rounded-2xl shadow-2xl overflow-hidden border border-border">
         <div className="flex items-center justify-center h-full">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-            <p className="text-slate-400">Loading conversation...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading conversation...</p>
           </div>
         </div>
       </div>
@@ -325,17 +325,17 @@ export function ChatInterface({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="flex flex-col h-full max-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+    <div className="flex flex-col h-full max-h-full bg-card rounded-2xl shadow-2xl overflow-hidden border border-border">
       {/* Header with glassmorphism */}
-      <div className="flex-shrink-0 bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
+      <div className="flex-shrink-0 bg-muted/30 backdrop-blur-xl border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
-              <Brain className="w-5 h-5 text-white" />
+            <div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-lg">
+              <Brain className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">AI Companion</h2>
-              <p className="text-sm text-slate-400">
+              <h2 className="text-lg font-semibold text-foreground">AI Companion</h2>
+              <p className="text-sm text-muted-foreground">
                 Powered by memory-augmented intelligence
               </p>
             </div>
@@ -343,13 +343,13 @@ export function ChatInterface({ userId }: { userId: string }) {
           <div className="flex items-center gap-3">
             <button
               onClick={handleNewChat}
-              className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all text-sm"
               title="Start new conversation"
             >
               <MessageSquarePlus className="w-4 h-4" />
               <span className="hidden sm:inline">New Chat</span>
             </button>
-            <div className="text-xs text-slate-500 font-mono">
+            <div className="text-xs text-muted-foreground font-mono">
               Session: {userId.slice(0, 8)}...
             </div>
           </div>
@@ -376,10 +376,10 @@ export function ChatInterface({ userId }: { userId: string }) {
                 <div
                   className={`max-w-[85%] rounded-2xl px-5 py-3 ${
                     message.role === "user"
-                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20"
+                      ? "bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg"
                       : message.role === "system"
-                      ? "bg-slate-800/50 backdrop-blur-sm text-slate-300 border border-slate-700/50"
-                      : "bg-slate-800/80 backdrop-blur-sm text-slate-100 border border-slate-700/50 shadow-lg"
+                      ? "bg-muted/50 backdrop-blur-sm text-muted-foreground border border-border"
+                      : "bg-card backdrop-blur-sm text-card-foreground border border-border shadow-lg"
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -387,8 +387,8 @@ export function ChatInterface({ userId }: { userId: string }) {
                     <div
                       className={`mt-0.5 ${
                         message.role === "user"
-                          ? "text-white"
-                          : "text-slate-400"
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {message.role === "user" ? (
@@ -403,8 +403,8 @@ export function ChatInterface({ userId }: { userId: string }) {
                     <div className="flex-1 min-w-0">
                       {message.loading ? (
                         <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                          <span className="text-sm text-slate-400">
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
                             Thinking...
                           </span>
                         </div>
@@ -427,7 +427,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                     transition={{ delay: 0.2 }}
                     className="ml-14 mt-3 space-y-2"
                   >
-                    <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       <Brain className="w-3.5 h-3.5" />
                       <span>
                         Context Retrieved ({message.memories_retrieved.length})
@@ -440,15 +440,15 @@ export function ChatInterface({ userId }: { userId: string }) {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 * idx }}
-                          className="group relative bg-slate-800/60 backdrop-blur-sm border border-purple-500/20 rounded-lg px-4 py-3 hover:border-purple-500/40 transition-all"
+                          className="group relative bg-card/60 backdrop-blur-sm border border-primary/20 rounded-lg px-4 py-3 hover:border-primary/40 transition-all"
                         >
                           <div className="flex items-start gap-3">
                             {/* Relevance Score with Progress Bar */}
                             <div className="flex flex-col items-center gap-1 min-w-[48px]">
-                              <span className="text-xs font-mono font-semibold text-purple-400">
+                              <span className="text-xs font-mono font-semibold text-primary">
                                 {(memory.score * 100).toFixed(0)}%
                               </span>
-                              <div className="w-full h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                 <motion.div
                                   initial={{ width: 0 }}
                                   animate={{ width: `${memory.score * 100}%` }}
@@ -456,14 +456,14 @@ export function ChatInterface({ userId }: { userId: string }) {
                                     duration: 0.6,
                                     delay: 0.2 * idx,
                                   }}
-                                  className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                                  className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
                                 />
                               </div>
                             </div>
 
                             {/* Memory Content */}
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-slate-300 leading-relaxed">
+                              <p className="text-sm text-foreground leading-relaxed">
                                 {memory.content}
                               </p>
                               {memory.metadata?.categories &&
@@ -474,7 +474,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                                       .map((cat: string, i: number) => (
                                         <span
                                           key={i}
-                                          className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md"
+                                          className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-md"
                                         >
                                           {cat}
                                         </span>
@@ -498,7 +498,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                     transition={{ delay: 0.4 }}
                     className="ml-14 mt-3 space-y-2"
                   >
-                    <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>
                         Knowledge Added ({message.memories_created.length})
@@ -511,11 +511,11 @@ export function ChatInterface({ userId }: { userId: string }) {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 * idx }}
-                          className="bg-slate-800/60 backdrop-blur-sm border border-cyan-500/20 rounded-lg px-4 py-3 hover:border-cyan-500/40 transition-all"
+                          className="bg-card/60 backdrop-blur-sm border border-success/20 rounded-lg px-4 py-3 hover:border-success/40 transition-all"
                         >
                           <div className="flex items-start gap-2">
-                            <Database className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-slate-300 leading-relaxed">
+                            <Database className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-foreground leading-relaxed">
                               {memory.content}
                             </p>
                           </div>
@@ -527,7 +527,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                                   .map((cat: string, i: number) => (
                                     <span
                                       key={i}
-                                      className="text-xs px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-md"
+                                      className="text-xs px-2 py-0.5 bg-success/20 text-success rounded-md"
                                     >
                                       {cat}
                                     </span>
@@ -547,7 +547,7 @@ export function ChatInterface({ userId }: { userId: string }) {
                   animate={{ opacity: 1, y: 0 }}
                   className="ml-14 mt-3"
                 >
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     <span>Processing memories in background...</span>
                   </div>
@@ -560,7 +560,7 @@ export function ChatInterface({ userId }: { userId: string }) {
       </div>
 
       {/* Input Area */}
-      <div className="flex-shrink-0 bg-slate-800/50 backdrop-blur-xl border-t border-slate-700/50 px-6 py-4">
+      <div className="flex-shrink-0 bg-muted/30 backdrop-blur-xl border-t border-border px-6 py-4">
         <div className="flex gap-3">
           <input
             ref={inputRef}
@@ -570,21 +570,21 @@ export function ChatInterface({ userId }: { userId: string }) {
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             disabled={isProcessing}
-            className="flex-1 px-5 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl
-                     text-slate-100 placeholder-slate-500
-                     focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent
+            className="flex-1 px-5 py-3 bg-background border border-border rounded-xl
+                     text-foreground placeholder-muted-foreground
+                     focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-all"
           />
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() || isProcessing}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium rounded-xl
-                     hover:from-purple-500 hover:to-indigo-500
-                     focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-slate-900
+            className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-medium rounded-xl
+                     hover:opacity-90
+                     focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-all duration-200
-                     shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30
+                     shadow-lg
                      flex items-center gap-2"
           >
             {isProcessing ? (
@@ -600,7 +600,7 @@ export function ChatInterface({ userId }: { userId: string }) {
             )}
           </button>
         </div>
-        <p className="text-xs text-slate-500 mt-3 flex items-center gap-2">
+        <p className="text-xs text-muted-foreground mt-3 flex items-center gap-2">
           <AlertCircle className="w-3.5 h-3.5" />
           <span>
             I&apos;ll remember facts from our conversation and use them in

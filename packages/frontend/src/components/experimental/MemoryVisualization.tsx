@@ -83,24 +83,24 @@ export function MemoryVisualization({ userId }: { userId: string }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+    <div className="flex flex-col h-full bg-gradient-to-br from-background via-card to-background rounded-xl shadow-2xl overflow-hidden border border-border">
       {/* Header */}
-      <div className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
+      <div className="bg-card/50 backdrop-blur-xl border-b border-border px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+            <div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-lg">
               <Brain className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Memory Browser</h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 View and manage your AI&apos;s knowledge base
               </p>
             </div>
           </div>
           <button
             onClick={refresh}
-            className="p-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-300 hover:text-white hover:border-purple-500/50 transition-all"
+            className="p-2 bg-card/50 border border-border rounded-lg text-foreground/80 hover:text-foreground hover:border-primary/50 transition-all"
             title="Refresh memories"
           >
             <RefreshCw className="w-4 h-4" />
@@ -109,13 +109,13 @@ export function MemoryVisualization({ userId }: { userId: string }) {
 
         {/* View Mode Toggle */}
         <div className="flex items-center gap-4 mb-4">
-          <div className="flex rounded-lg border border-slate-700/50 overflow-hidden bg-slate-900/50">
+          <div className="flex rounded-lg border border-border overflow-hidden bg-card/50">
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-all ${
                 viewMode === 'list'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
               }`}
             >
               <List className="w-4 h-4" />
@@ -123,10 +123,10 @@ export function MemoryVisualization({ userId }: { userId: string }) {
             </button>
             <button
               onClick={() => setViewMode('graph')}
-              className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-l border-slate-700/50 transition-all ${
+              className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-l border-border transition-all ${
                 viewMode === 'graph'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
               }`}
             >
               <Network className="w-4 h-4" />
@@ -138,7 +138,7 @@ export function MemoryVisualization({ userId }: { userId: string }) {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-2 text-sm bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="px-4 py-2 text-sm bg-card/50 border border-border rounded-lg text-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             <option value="all">All Types</option>
             <option value="personal">Personal</option>
@@ -149,18 +149,18 @@ export function MemoryVisualization({ userId }: { userId: string }) {
 
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search memories..."
-              className="w-full pl-10 pr-4 py-2 text-sm bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-300 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-card/50 border border-border rounded-lg text-foreground/80 placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-white"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -171,7 +171,7 @@ export function MemoryVisualization({ userId }: { userId: string }) {
           <select
             value={memoryLimit}
             onChange={(e) => setMemoryLimit(Number(e.target.value))}
-            className="px-4 py-2 text-sm bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="px-4 py-2 text-sm bg-card/50 border border-border rounded-lg text-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/50"
             title="Number of memories to load"
           >
             <option value={50}>50 memories</option>
@@ -186,8 +186,8 @@ export function MemoryVisualization({ userId }: { userId: string }) {
             onClick={() => setShowCleanupPanel(!showCleanupPanel)}
             className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all flex items-center gap-2 ${
               showCleanupPanel
-                ? 'bg-red-500/20 border-red-500/30 text-red-300'
-                : 'bg-slate-900/50 border-slate-700/50 text-slate-300 hover:text-white hover:border-purple-500/50'
+                ? 'bg-destructive/20 border-destructive/30 text-destructive/90'
+                : 'bg-card/50 border-border text-foreground/80 hover:text-foreground hover:border-primary/50'
             }`}
             title="Clean up problematic memories"
           >
@@ -198,19 +198,19 @@ export function MemoryVisualization({ userId }: { userId: string }) {
 
         {/* Stats Bar */}
         <div className="flex items-center gap-4 text-sm">
-          <span className="text-slate-400">
+          <span className="text-muted-foreground">
             Total: <strong className="text-white">{filteredMemories.length}</strong>
           </span>
           {selectedType !== 'all' && (
-            <span className="flex items-center gap-1.5 text-slate-400">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
               <Filter className="w-3.5 h-3.5" />
-              Filtered by: <strong className="text-purple-400">{selectedType}</strong>
+              Filtered by: <strong className="text-primary">{selectedType}</strong>
             </span>
           )}
           {searchQuery && (
-            <span className="flex items-center gap-1.5 text-slate-400">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
               <Search className="w-3.5 h-3.5" />
-              Search: <strong className="text-purple-400">&quot;{searchQuery}&quot;</strong>
+              Search: <strong className="text-primary">&quot;{searchQuery}&quot;</strong>
             </span>
           )}
         </div>
@@ -234,17 +234,17 @@ export function MemoryVisualization({ userId }: { userId: string }) {
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-              <span className="text-sm text-slate-400">Loading memories...</span>
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Loading memories...</span>
             </div>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full p-12">
             <div className="text-center max-w-md">
-              <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-red-400 mb-2">Error loading memories</p>
-              <p className="text-sm text-slate-400 mb-4">{error.message}</p>
-              <p className="text-xs text-slate-500">
+              <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
+              <p className="text-lg font-medium text-destructive mb-2">Error loading memories</p>
+              <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
+              <p className="text-xs text-muted-foreground/60">
                 Make sure the experimental backend server is running on port 8001
               </p>
             </div>
@@ -252,9 +252,9 @@ export function MemoryVisualization({ userId }: { userId: string }) {
         ) : filteredMemories.length === 0 ? (
           <div className="flex items-center justify-center h-full p-12">
             <div className="text-center max-w-md">
-              <Brain className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-lg font-medium text-slate-400 mb-2">No memories found</p>
-              <p className="text-sm text-slate-500">
+              <Brain className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">No memories found</p>
+              <p className="text-sm text-muted-foreground/80">
                 {searchQuery || selectedType !== 'all'
                   ? 'Try adjusting your filters'
                   : 'Start chatting to create some memories!'}
@@ -301,23 +301,23 @@ function ListView({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.05, duration: 0.3 }}
-          className="group bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-5 hover:border-purple-500/30 hover:shadow-lg transition-all"
+          className="group bg-card/60 backdrop-blur-sm border border-border rounded-xl p-5 hover:border-primary/30 hover:shadow-lg transition-all"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {/* Type Badge */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/20 text-primary/90 border border-primary/30">
                   {memory.memory_type}
                 </span>
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{new Date(memory.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
 
               {/* Content */}
-              <p className="text-slate-200 text-sm leading-relaxed mb-3">
+              <p className="text-foreground text-sm leading-relaxed mb-3">
                 {memory.content}
               </p>
 
@@ -327,7 +327,7 @@ function ListView({
                   {memory.metadata.categories.map((category: string, idx: number) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-success/10 text-success/90 border border-success/20"
                     >
                       <Tag className="w-3 h-3" />
                       {category}
@@ -341,14 +341,14 @@ function ListView({
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => onEdit(memory)}
-                className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all"
+                className="p-2 bg-border/50 hover:bg-border rounded-lg text-foreground/80 hover:text-foreground transition-all"
                 title="Edit memory"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(memory.id)}
-                className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-all border border-red-500/20"
+                className="p-2 bg-destructive/10 hover:bg-destructive/20 rounded-lg text-destructive hover:text-destructive/90 transition-all border border-destructive/20"
                 title="Delete memory"
               >
                 <Trash2 className="w-4 h-4" />
@@ -369,12 +369,12 @@ function GraphViewPlaceholder() {
   return (
     <div className="flex items-center justify-center h-full p-12">
       <div className="text-center max-w-md">
-        <Network className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-        <p className="text-lg font-medium text-slate-300 mb-2">Graph View Coming Soon</p>
-        <p className="text-sm text-slate-400 mb-4">
+        <Network className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+        <p className="text-lg font-medium text-foreground/80 mb-2">Graph View Coming Soon</p>
+        <p className="text-sm text-muted-foreground mb-4">
           This will display an interactive knowledge graph of your memories using D3.js or React Flow
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted-foreground/60">
           For now, use the List View to browse your memories
         </p>
       </div>

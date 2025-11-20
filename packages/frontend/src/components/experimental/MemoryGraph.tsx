@@ -167,17 +167,17 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
   );
 
   return (
-    <div className="relative h-full w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50">
+    <div className="relative h-full w-full bg-gradient-to-br from-background via-card to-background rounded-xl shadow-2xl overflow-hidden border border-border">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4 z-10">
+      <div className="absolute top-0 left-0 right-0 bg-card/50 backdrop-blur-xl border-b border-border px-6 py-4 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+            <div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-lg">
               <Network className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Memory Graph</h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 {nodes.length} entities, {edges.length} relationships
               </p>
             </div>
@@ -188,8 +188,8 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
               onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-lg border transition-all ${
                 showFilters
-                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-300'
-                  : 'bg-slate-900/50 border-slate-700/50 text-slate-300 hover:text-white'
+                  ? 'bg-primary/20 border-primary/30 text-primary/90'
+                  : 'bg-card/50 border-border text-foreground/80 hover:text-foreground'
               }`}
             >
               <Filter className="w-4 h-4" />
@@ -197,7 +197,7 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
 
             <button
               onClick={loadGraph}
-              className="p-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-300 hover:text-white transition-all"
+              className="p-2 bg-card/50 border border-border rounded-lg text-foreground/80 hover:text-foreground transition-all"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -214,24 +214,24 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-              <span className="text-sm text-slate-400">Loading graph...</span>
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Loading graph...</span>
             </div>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full p-12">
             <div className="text-center max-w-md">
-              <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-red-400 mb-2">Error loading graph</p>
-              <p className="text-sm text-slate-400">{error}</p>
+              <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
+              <p className="text-lg font-medium text-destructive mb-2">Error loading graph</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
             </div>
           </div>
         ) : nodes.length === 0 ? (
           <div className="flex items-center justify-center h-full p-12">
             <div className="text-center max-w-md">
-              <Network className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-lg font-medium text-slate-400 mb-2">No graph data</p>
-              <p className="text-sm text-slate-500">
+              <Network className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">No graph data</p>
+              <p className="text-sm text-muted-foreground/80">
                 Start chatting to create hierarchical memories and build your knowledge graph!
               </p>
             </div>
@@ -248,17 +248,17 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
             className="bg-transparent"
           >
             <Background color="#475569" gap={16} />
-            <Controls className="bg-slate-800/90 border border-slate-700" />
+            <Controls className="bg-card/90 border border-border" />
             <MiniMap
-              className="bg-slate-800/90 border border-slate-700"
+              className="bg-card/90 border border-border"
               nodeColor={(node) => {
                 const nodeData = node.data?.node as GraphNode | undefined;
                 return NODE_COLORS[nodeData?.type || 'unknown'] || NODE_COLORS.unknown;
               }}
             />
 
-            <Panel position="bottom-left" className="bg-slate-800/90 border border-slate-700 rounded-lg p-4">
-              <div className="text-xs text-slate-300 space-y-1">
+            <Panel position="bottom-left" className="bg-card/90 border border-border rounded-lg p-4">
+              <div className="text-xs text-foreground/80 space-y-1">
                 <div className="font-semibold mb-2">Legend</div>
                 {Object.entries(NODE_COLORS).map(([type, color]) => (
                   <div key={type} className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
             initial={{ x: 400 }}
             animate={{ x: 0 }}
             exit={{ x: 400 }}
-            className="absolute top-0 right-0 bottom-0 w-96 bg-slate-800/95 backdrop-blur-xl border-l border-slate-700 shadow-2xl z-20 overflow-y-auto"
+            className="absolute top-0 right-0 bottom-0 w-96 bg-card/95 backdrop-blur-xl border-l border-border shadow-2xl z-20 overflow-y-auto"
           >
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -297,27 +297,27 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
                 </div>
                 <button
                   onClick={() => setSelectedNode(null)}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition-all"
+                  className="p-2 hover:bg-border rounded-lg transition-all"
                 >
-                  <X className="w-4 h-4 text-slate-400" />
+                  <X className="w-4 h-4 text-foreground/80" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-2">Content</h4>
-                  <p className="text-sm text-slate-200 leading-relaxed">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Content</h4>
+                  <p className="text-sm text-foreground leading-relaxed">
                     {selectedNode.content}
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-2">Attributes</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Attributes</h4>
                   <div className="space-y-2">
                     {Object.entries(selectedNode.attributes).map(([key, value]) => (
-                      <div key={key} className="bg-slate-700/50 rounded-lg p-3">
-                        <div className="text-xs font-medium text-slate-400 mb-1">{key}</div>
-                        <div className="text-sm text-slate-200">
+                      <div key={key} className="bg-border/50 rounded-lg p-3">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">{key}</div>
+                        <div className="text-sm text-foreground">
                           {Array.isArray(value)
                             ? value.join(', ')
                             : typeof value === 'object'
@@ -331,8 +331,8 @@ export function MemoryGraph({ userId, entityType }: MemoryGraphProps) {
 
                 {selectedNode.created_at && (
                   <div>
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Created</h4>
-                    <p className="text-sm text-slate-200">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Created</h4>
+                    <p className="text-sm text-foreground">
                       {new Date(selectedNode.created_at).toLocaleString()}
                     </p>
                   </div>

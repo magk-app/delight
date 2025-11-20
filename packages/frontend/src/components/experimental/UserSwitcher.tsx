@@ -103,7 +103,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
     <div className="relative z-[9999]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 hover:text-white hover:border-purple-500/50 transition-all relative z-[9999]"
+        className="flex items-center gap-2 px-3 py-2 bg-card/50 border border-border rounded-lg text-foreground/80 hover:text-foreground hover:border-primary/50 transition-all relative z-[9999]"
       >
         <User className="w-4 h-4" />
         <span className="text-xs font-mono">{currentUserId.slice(0, 8)}...</span>
@@ -117,17 +117,17 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed right-4 top-20 w-80 bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-[99999] overflow-hidden"
+            className="fixed right-4 top-20 w-80 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[99999] overflow-hidden"
           >
             {/* Current User Section */}
-            <div className="p-4 border-b border-slate-700/50">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Current User
                 </span>
                 <button
                   onClick={copyUserId}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-slate-700/50 hover:bg-slate-700 rounded text-slate-300 hover:text-white transition-all"
+                  className="flex items-center gap-1 px-2 py-1 text-xs bg-border/50 hover:bg-border rounded text-foreground/80 hover:text-foreground transition-all"
                   title="Copy user ID"
                 >
                   {copied ? (
@@ -143,8 +143,8 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-2 p-2 bg-slate-900/50 rounded-lg border border-purple-500/20">
-                <User className="w-4 h-4 text-purple-400" />
+              <div className="flex items-center gap-2 p-2 bg-card/50 rounded-lg border border-primary/20">
+                <User className="w-4 h-4 text-primary" />
                 <span className="font-mono text-xs text-white flex-1 break-all">
                   {currentUserId}
                 </span>
@@ -153,20 +153,20 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
 
             {/* Recent Users Section */}
             {recentUsers.length > 1 && (
-              <div className="p-4 border-b border-slate-700/50">
-                <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
+              <div className="p-4 border-b border-border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                   Recent Users
                 </div>
-                <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   {recentUsers
                     .filter(userId => userId !== currentUserId)
                     .map(userId => (
                       <button
                         key={userId}
                         onClick={() => switchToUser(userId)}
-                        className="w-full text-left px-3 py-2 text-xs font-mono text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 text-xs font-mono text-foreground/80 hover:text-foreground hover:bg-border/50 rounded-lg transition-all flex items-center gap-2"
                       >
-                        <User className="w-3 h-3 text-slate-500" />
+                        <User className="w-3 h-3 text-muted-foreground" />
                         <span className="flex-1 truncate">{userId}</span>
                       </button>
                     ))}
@@ -178,7 +178,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
             <div className="p-4 space-y-2">
               <button
                 onClick={createNewUser}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-purple-500/20"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-primary/20"
               >
                 <Plus className="w-4 h-4" />
                 <span>New User</span>
@@ -186,7 +186,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
 
               <button
                 onClick={clearCurrentUser}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg font-medium text-sm transition-all border border-red-500/20"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-destructive/90 rounded-lg font-medium text-sm transition-all border border-destructive/20"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Clear & Reset</span>
@@ -195,7 +195,7 @@ export function UserSwitcher({ currentUserId, onUserChange }: UserSwitcherProps)
 
             {/* Info */}
             <div className="px-4 pb-3">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Switching users will reload the page with a different user ID. Memories are tied to each user.
               </p>
             </div>

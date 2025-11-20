@@ -47,20 +47,20 @@ export function MemoryNotifications({
       exit={{ opacity: 0, x: 20 }}
       className="fixed right-4 top-24 w-80 max-h-[calc(100vh-200px)] overflow-hidden z-50"
     >
-      <div className="bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl overflow-hidden">
+      <div className="bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-slate-700/50 bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
+        <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-secondary/10">
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-purple-400" />
+            <Brain className="w-5 h-5 text-primary" />
             <h3 className="text-sm font-semibold text-white">Memory Processing</h3>
             {isProcessing && (
-              <Loader2 className="w-4 h-4 text-purple-400 animate-spin ml-auto" />
+              <Loader2 className="w-4 h-4 text-primary animate-spin ml-auto" />
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           {/* Processing Indicator */}
           <AnimatePresence>
             {isProcessing && (
@@ -68,17 +68,17 @@ export function MemoryNotifications({
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="p-4 border-b border-slate-700/50"
+                className="p-4 border-b border-border"
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-500/20 rounded-lg">
-                    <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
+                  <div className="p-2 bg-primary/20 rounded-lg">
+                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-purple-300">
+                    <p className="text-sm font-medium text-primary/90">
                       Extracting facts...
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Analyzing your message and creating memories
                     </p>
                   </div>
@@ -97,26 +97,26 @@ export function MemoryNotifications({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: index * 0.1 }}
-                  className="p-3 bg-slate-900/50 border border-green-500/20 rounded-lg"
+                  className="p-3 bg-card/50 border border-success/20 rounded-lg"
                 >
                   <div className="flex items-start gap-2">
-                    <div className="p-1.5 bg-green-500/20 rounded">
-                      <Check className="w-3.5 h-3.5 text-green-400" />
+                    <div className="p-1.5 bg-success/20 rounded">
+                      <Check className="w-3.5 h-3.5 text-success" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-xs text-foreground/80 leading-relaxed">
                         {memory.content}
                       </p>
 
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full font-medium">
+                        <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary/90 rounded-full font-medium">
                           {memory.memory_type}
                         </span>
 
                         {memory.categories && memory.categories.length > 0 && (
                           <div className="flex items-center gap-1">
-                            <Tag className="w-3 h-3 text-slate-500" />
-                            <span className="text-xs text-slate-500">
+                            <Tag className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
                               {memory.categories.slice(0, 2).join(', ')}
                             </span>
                           </div>
@@ -130,8 +130,8 @@ export function MemoryNotifications({
 
             {recentMemories.length === 0 && !isProcessing && (
               <div className="text-center py-8">
-                <Brain className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                <p className="text-xs text-slate-500">No recent memories</p>
+                <Brain className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No recent memories</p>
               </div>
             )}
           </div>
@@ -139,12 +139,12 @@ export function MemoryNotifications({
 
         {/* Footer Stats */}
         {recentMemories.length > 0 && (
-          <div className="p-3 border-t border-slate-700/50 bg-slate-900/50">
+          <div className="p-3 border-t border-border bg-card/50">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">
+              <span className="text-muted-foreground">
                 {recentMemories.length} {recentMemories.length === 1 ? 'memory' : 'memories'} created
               </span>
-              <span className="text-green-400 font-medium">Active</span>
+              <span className="text-success font-medium">Active</span>
             </div>
           </div>
         )}

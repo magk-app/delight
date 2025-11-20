@@ -38,20 +38,20 @@ export default function ExperimentalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen dark bg-background">
       {/* Header with glassmorphism */}
-      <header className="bg-slate-900/50 backdrop-blur-xl shadow-2xl border-b border-slate-700/50 relative z-40">
+      <header className="bg-muted/30 backdrop-blur-xl shadow-2xl border-b border-border relative z-40">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg shadow-purple-500/30">
-                <Beaker className="w-7 h-7 text-white" />
+              <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-xl shadow-lg">
+                <Beaker className="w-7 h-7 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Experimental Lab
                 </h1>
-                <p className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5" />
                   AI-Powered Second Brain • Full Integration Test
                 </p>
@@ -135,7 +135,7 @@ export default function ExperimentalPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50">
+      <div className="bg-muted/20 backdrop-blur-xl border-b border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2">
             <TabButton
@@ -177,11 +177,11 @@ export default function ExperimentalPage() {
         <div className="min-h-[calc(100vh-16rem)]">
           {userLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-slate-400">Loading user session...</div>
+              <div className="text-muted-foreground">Loading user session...</div>
             </div>
           ) : !userId ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-red-400">Error: Could not initialize user session</div>
+              <div className="text-destructive">Error: Could not initialize user session</div>
             </div>
           ) : (
             <motion.div
@@ -206,8 +206,8 @@ export default function ExperimentalPage() {
       </main>
 
       {/* Footer Info */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-700/50 py-2 px-4 text-xs">
-        <div className="mx-auto max-w-7xl flex items-center justify-between text-slate-400">
+      <footer className="fixed bottom-0 left-0 right-0 bg-muted/90 backdrop-blur-xl border-t border-border py-2 px-4 text-xs">
+        <div className="mx-auto max-w-7xl flex items-center justify-between text-muted-foreground">
           <div className="flex items-center gap-2">
             <Beaker className="w-3.5 h-3.5" />
             <span>Phase 3 • Hierarchical Memory + Graph + Visualization</span>
@@ -217,8 +217,8 @@ export default function ExperimentalPage() {
             <span
               className={
                 healthy
-                  ? "text-green-400 font-medium"
-                  : "text-red-400 font-medium"
+                  ? "text-success font-medium"
+                  : "text-destructive font-medium"
               }
             >
               {healthy ? "http://localhost:8001" : "Not connected"}
@@ -249,7 +249,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={`relative flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all ${
-        active ? "text-purple-300" : "text-slate-400 hover:text-slate-300"
+        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -257,7 +257,7 @@ function TabButton({
       {active && (
         <motion.div
           layoutId="activeTab"
-          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 shadow-lg shadow-purple-500/50"
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary shadow-lg"
           transition={{ type: "spring", stiffness: 380, damping: 30 }}
         />
       )}

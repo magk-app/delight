@@ -117,20 +117,20 @@ export function ConversationList({
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-900/50 border-r border-slate-700/50">
+    <div className="h-full flex flex-col bg-card border-r border-border">
       {/* Header */}
-      <div className="p-4 border-b border-slate-700/50">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-purple-400" />
+            <MessageSquare className="w-5 h-5 text-primary" />
             <h2 className="text-sm font-semibold text-white">Conversations</h2>
           </div>
-          <span className="text-xs text-slate-500">{conversations.length}</span>
+          <span className="text-xs text-muted-foreground">{conversations.length}</span>
         </div>
 
         <button
           onClick={onNewConversation}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-purple-500/20"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-primary/20"
         >
           <Plus className="w-4 h-4" />
           <span>New Chat</span>
@@ -138,20 +138,20 @@ export function ConversationList({
       </div>
 
       {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent p-2">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-2">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="text-slate-400 text-sm">Loading...</div>
+            <div className="text-muted-foreground text-sm">Loading...</div>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center py-8">
-            <div className="text-red-400 text-sm">{error}</div>
+            <div className="text-destructive text-sm">{error}</div>
           </div>
         ) : conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <MessageSquare className="w-12 h-12 text-slate-600 mb-3" />
-            <p className="text-slate-400 text-sm">No conversations yet</p>
-            <p className="text-slate-500 text-xs mt-1">Start chatting to create your first conversation</p>
+            <MessageSquare className="w-12 h-12 text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground text-sm">No conversations yet</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">Start chatting to create your first conversation</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -169,25 +169,25 @@ export function ConversationList({
                     onClick={() => onConversationSelect(conversation.id)}
                     className={`w-full text-left p-3 rounded-lg transition-all ${
                       conversation.id === currentConversationId
-                        ? 'bg-purple-500/20 border border-purple-500/30'
-                        : 'hover:bg-slate-800/50 border border-transparent'
+                        ? 'bg-primary/20 border border-primary/30'
+                        : 'hover:bg-card/50 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <h3 className={`text-sm font-medium truncate ${
                           conversation.id === currentConversationId
-                            ? 'text-purple-300'
-                            : 'text-slate-300 group-hover:text-white'
+                            ? 'text-primary/90'
+                            : 'text-foreground/80 group-hover:text-foreground'
                         }`}>
                           {conversation.title}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-muted-foreground">
                             {conversation.message_count} messages
                           </span>
-                          <span className="text-xs text-slate-600">•</span>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground/50">•</span>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {formatDate(conversation.updated_at)}
                           </span>
@@ -195,7 +195,7 @@ export function ConversationList({
                       </div>
 
                       {conversation.id === currentConversationId && (
-                        <ChevronRight className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-primary flex-shrink-0" />
                       )}
                     </div>
                   </button>
@@ -206,10 +206,10 @@ export function ConversationList({
                       e.stopPropagation();
                       deleteConversation(conversation.id);
                     }}
-                    className="absolute top-3 right-3 p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-md opacity-0 group-hover:opacity-100 transition-all z-10"
+                    className="absolute top-3 right-3 p-1.5 bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 rounded-md opacity-0 group-hover:opacity-100 transition-all z-10"
                     title="Delete conversation"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </button>
                 </motion.div>
               ))}
