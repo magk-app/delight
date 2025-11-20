@@ -1,6 +1,11 @@
 {
+  "$schema": "https://schema.railpack.com",
+  "language": "python",
   "build": {
     "commands": [
+      "python -V",
+      "pip install --upgrade pip",
+      "pip install poetry",
       "cd packages/backend && poetry config virtualenvs.create false",
       "cd packages/backend && poetry install --no-dev --no-interaction"
     ]
