@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="memories-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>🧠 Memory Browser</h1>
+        <p class="subtitle">Explore knowledge graph and manage stored memories</p>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="refreshMemories()">
+                🔄 Refresh
+            </button>
+            <button class="btn btn-secondary" onclick="toggleView()">
+                <span id="view-toggle-icon">📊</span> <span id="view-toggle-text">Graph View</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filter-group">
+            <label>Memory Type:</label>
+            <select id="memory-type-filter" class="select-input" onchange="applyFilters()">
+                <option value="">All Types</option>
+                <option value="fact">Fact</option>
+                <option value="preference">Preference</option>
+                <option value="context">Context</option>
+                <option value="episodic">Episodic</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Category:</label>
+            <select id="category-filter" class="select-input" onchange="applyFilters()">
+                <option value="">All Categories</option>
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Search:</label>
+            <input type="text" id="memory-search" class="form-input" placeholder="Search memories..." onkeyup="applyFilters()">
+        </div>
+        <div class="filter-group">
+            <label>Limit:</label>
+            <input type="number" id="memory-limit" class="form-input" value="50" min="10" max="500" onchange="applyFilters()">
+        </div>
+    </div>
+
+    <!-- List View -->
+    <div id="list-view" class="view-container active">
+        <div class="card">
+            <div class="card-header">
+                <h2>📋 Memory List</h2>
+                <span id="memory-count" class="badge">0 memories</span>
+            </div>
+            <div class="card-body">
+                <div id="memories-list" class="memories-list">
+                    <p class="text-muted">Loading memories...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph View -->
+    <div id="graph-view" class="view-container">
+        <div class="card card-full">
+            <div class="card-header">
+                <h2>🌐 Knowledge Graph</h2>
+                <div class="graph-controls">
+                    <button class="btn btn-sm" onclick="resetGraphZoom()">Reset Zoom</button>
+                    <button class="btn btn-sm" onclick="togglePhysics()">
+                        <span id="physics-state">Pause</span> Physics
+                    </button>
+                    <label>
+                        <input type="checkbox" id="show-labels" checked onchange="toggleLabels()"> Show Labels
+                    </label>
+                </div>
+            </div>
+            <div class="card-body">
+                <svg id="knowledge-graph" width="100%" height="600"></svg>
+            </div>
+        </div>
+
+        <!-- Graph Legend -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🎨 Legend</h2>
+            </div>
+            <div class="card-body">
+                <div class="legend-grid">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4f46e5;"></div>
+                        <span>Fact</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #06b6d4;"></div>
+                        <span>Preference</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #10b981;"></div>
+                        <span>Context</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f59e0b;"></div>
+                        <span>Episodic</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Memory Detail Modal -->
+    <div id="memory-detail-modal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2>🔍 Memory Details</h2>
+                <button class="modal-close" onclick="closeMemoryDetail()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="memory-detail-content">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-danger" onclick="deleteCurrentMemory()">Delete Memory</button>
+                    <button class="btn btn-secondary" onclick="closeMemoryDetail()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/memories.js"></script>
+{% endblock %}

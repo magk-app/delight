@@ -16,8 +16,11 @@ export default clerkMiddleware(async (auth, request) => {
   // Protect all routes except public ones
   if (!isPublicRoute(request)) {
     // auth().protect() automatically redirects to sign-in if not authenticated
-    (await auth()).protect();
+    const authObj = await auth();
+    authObj.protect();
   }
+
+  return NextResponse.next();
 });
 
 export const config = {

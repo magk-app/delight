@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const narrativePhases = [
+  "Day 5: You open Delight, feeling overwhelmed by your project backlog...",
+  "Eliza greets you: 'Let's turn that anxiety into action. What matters most today?'",
+  "Breaking down your presentation into three focused missions...",
+];
+
 export function HeroAnimation() {
   const [currentPhase, setCurrentPhase] = useState(0);
   const [narrativeText, setNarrativeText] = useState("");
   const [progress, setProgress] = useState(0);
-
-  const narrativePhases = [
-    "Day 5: You open Delight, feeling overwhelmed by your project backlog...",
-    "Eliza greets you: 'Let's turn that anxiety into action. What matters most today?'",
-    "Breaking down your presentation into three focused missions...",
-  ];
 
   const missions = [
     { id: 1, title: "Research key points", time: "20 min", points: 15 },
@@ -95,12 +95,16 @@ export function HeroAnimation() {
               strokeDasharray={`${2 * Math.PI * 40}`}
               strokeDashoffset={`${2 * Math.PI * 40 * (1 - progress / 100)}`}
               initial={{ strokeDashoffset: 2 * Math.PI * 40 }}
-              animate={{ strokeDashoffset: 2 * Math.PI * 40 * (1 - progress / 100) }}
+              animate={{
+                strokeDashoffset: 2 * Math.PI * 40 * (1 - progress / 100),
+              }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-lg font-semibold text-foreground">{Math.round(progress)}%</span>
+            <span className="text-lg font-semibold text-foreground">
+              {Math.round(progress)}%
+            </span>
           </div>
         </div>
 
@@ -136,16 +140,24 @@ export function HeroAnimation() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold">{mission.id}</span>
+                    <span className="text-primary font-semibold">
+                      {mission.id}
+                    </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{mission.title}</p>
-                    <p className="text-xs text-muted-foreground">{mission.time}</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {mission.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {mission.time}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Progress</p>
-                  <p className="text-sm font-semibold text-primary">+{mission.points} XP</p>
+                  <p className="text-sm font-semibold text-primary">
+                    +{mission.points} XP
+                  </p>
                 </div>
               </motion.div>
             ))}

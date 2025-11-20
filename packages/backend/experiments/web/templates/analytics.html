@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="analytics-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>📈 Analytics Dashboard</h1>
+        <p class="subtitle">Detailed token usage, search performance, and cost analysis</p>
+    </div>
+
+    <!-- Token Usage Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <h3 id="total-cost-24h">$0.00</h3>
+                <p>Total Cost (24h)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h3 id="total-tokens-24h">0</h3>
+                <p>Total Tokens (24h)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <h3 id="avg-cost-per-request">$0.00</h3>
+                <p>Avg Cost / Request</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-content">
+                <h3 id="total-requests">0</h3>
+                <p>Total Requests</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="content-grid">
+        <!-- Token Usage by Model -->
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2>🤖 Token Usage by Model</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="token-by-model-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Cost Over Time -->
+        <div class="card card-wide">
+            <div class="card-header">
+                <h2>💸 Cost Over Time</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="cost-over-time-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Search Performance -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🔍 Search Performance</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="search-performance-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Model Comparison -->
+        <div class="card">
+            <div class="card-header">
+                <h2>⚖️ Model Cost Comparison</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="model-comparison-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Usage Table -->
+        <div class="card card-full">
+            <div class="card-header">
+                <h2>📋 Recent Usage</h2>
+            </div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Model</th>
+                            <th>Input Tokens</th>
+                            <th>Output Tokens</th>
+                            <th>Total Tokens</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-usage-tbody">
+                        <tr>
+                            <td colspan="6" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/analytics.js"></script>
+{% endblock %}
