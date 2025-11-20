@@ -1,263 +1,354 @@
-import Link from "next/link";
-import { CheckCircle2, Mail, Clock, Users } from "lucide-react";
+'use client';
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { ArrowRight, Sparkles, Users, Mail, CheckCircle2, Zap, Heart, Shield } from 'lucide-react';
 
 export default function WaitlistPage() {
   return (
-    <div className="flex flex-col">
-      {/* Hero */}
-      <section className="py-20 lg:py-32 bg-gradient-to-b from-primary/10 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Join the Delight waitlist
+    <div className="min-h-screen bg-black text-zinc-200">
+      {/* Hero Section */}
+      <section className="relative pt-48 pb-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/10 via-black to-black" />
+        <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto px-6 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="space-y-12 text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-emerald-400">
+              <Sparkles size={12} />
+              Join the Simulation
+            </div>
+
+            <h1 className="text-6xl md:text-8xl font-display font-bold text-white leading-[0.9] tracking-tighter">
+              Enter <br />
+              <span className="text-zinc-600">Early Access.</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              Be among the first to experience an AI companion that truly
-              understands your journey
+
+            <p className="text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+              Be among the first to experience an AI companion that <br className="hidden md:block" />
+              transforms ambition into narrative momentum.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Left: Benefits & Profile */}
+            <div className="space-y-12">
+              {/* Benefits */}
+              <div>
+                <h2 className="text-3xl font-display font-bold text-white mb-8">
+                  What You'll Receive
+                </h2>
+                <div className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 }}
+                    className="flex gap-4 group"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Users className="w-7 h-7 text-emerald-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-white mb-2 text-lg">
+                        Early Beta Access
+                      </h3>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        Join pilot cohorts before public launch. Shape the product with your lived experience,
+                        not abstract personas. Your journey informs our roadmap.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 }}
+                    className="flex gap-4 group"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Mail className="w-7 h-7 text-blue-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-white mb-2 text-lg">
+                        Thoughtful Updates
+                      </h3>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        No daily spam. No sales pressure. 1-2 meaningful emails per month when we hit milestones.
+                        Honest communication about progress, setbacks, and learnings.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 }}
+                    className="flex gap-4 group"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Zap className="w-7 h-7 text-purple-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-white mb-2 text-lg">
+                        Shape Direction
+                      </h3>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        Your feedback directly influences features, priorities, and design. The roadmap items
+                        that ship will be the ones that resonate with early users like you.
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Ideal User Profile */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-zinc-900/50 border border-white/5 rounded-2xl p-8"
+              >
+                <h3 className="text-xl font-display font-bold text-white mb-6">
+                  You're the ideal fit if...
+                </h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 leading-relaxed">
+                      You routinely set <span className="text-white font-medium">ambitious goals</span> but struggle
+                      with emotional friction and consistency
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 leading-relaxed">
+                      You're a <span className="text-white font-medium">founder, student, or creator</span> juggling
+                      multiple complex priorities simultaneously
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 leading-relaxed">
+                      You're willing to give <span className="text-white font-medium">honest, critical feedback</span>—
+                      even when it stings
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 leading-relaxed">
+                      You believe productivity tools should <span className="text-white font-medium">understand emotion</span>,
+                      not ignore it
+                    </span>
+                  </li>
+                </ul>
+              </motion.div>
+
+              {/* Trust Indicators */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-black/50 border border-white/5 rounded-xl text-center">
+                  <Shield size={20} className="text-emerald-500 mx-auto mb-2" />
+                  <div className="text-xs text-zinc-500 uppercase tracking-widest">Privacy</div>
+                  <div className="text-sm text-white font-medium">First</div>
+                </div>
+                <div className="p-4 bg-black/50 border border-white/5 rounded-xl text-center">
+                  <Heart size={20} className="text-purple-500 mx-auto mb-2" />
+                  <div className="text-xs text-zinc-500 uppercase tracking-widest">Free Beta</div>
+                  <div className="text-sm text-white font-medium">Access</div>
+                </div>
+                <div className="p-4 bg-black/50 border border-white/5 rounded-xl text-center">
+                  <Zap size={20} className="text-blue-500 mx-auto mb-2" />
+                  <div className="text-xs text-zinc-500 uppercase tracking-widest">Q1 2026</div>
+                  <div className="text-sm text-white font-medium">Launch</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Form Embed */}
+            <div className="lg:sticky lg:top-32">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-zinc-900/80 backdrop-blur-xl border-2 border-emerald-500/20 rounded-3xl p-8 shadow-2xl"
+              >
+                <div className="mb-6">
+                  <h3 className="text-2xl font-display font-bold text-white mb-2">
+                    Reserve Your Spot
+                  </h3>
+                  <p className="text-sm text-zinc-400">
+                    Takes less than 60 seconds. We respect your inbox.
+                  </p>
+                </div>
+
+                {/* Google Form Embed */}
+                <div className="rounded-2xl overflow-hidden border border-white/10 shadow-inner">
+                  <iframe
+                    src="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform?embedded=true"
+                    width="100%"
+                    height="800"
+                    frameBorder="0"
+                    marginHeight={0}
+                    marginWidth={0}
+                    className="w-full bg-white"
+                  >
+                    Loading…
+                  </iframe>
+                </div>
+
+                <div className="mt-6">
+                  <p className="text-xs text-zinc-500 text-center">
+                    Can't see the form?{" "}
+                    <a
+                      href="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-400 hover:text-emerald-300 transition-colors underline"
+                    >
+                      Open in new tab →
+                    </a>
+                  </p>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Content */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-start">
-              {/* Left: Benefits */}
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-4">
-                    What to expect
-                  </h2>
-                  <p className="text-muted-foreground leading-relaxed">
-                    When you join our waitlist, you&apos;re not just signing up
-                    for updates—you&apos;re expressing interest in helping shape
-                    a tool that could genuinely change how you approach your
-                    goals.
-                  </p>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Users className="w-6 h-6 text-primary" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">
-                        Early access to the beta
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Waitlist members get first access when we open up pilot
-                        cohorts. You&apos;ll be using Delight before the general
-                        public, helping us refine the experience.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
-                        <Mail className="w-6 h-6 text-secondary" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">
-                        Thoughtful, infrequent updates
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        We&apos;ll send you meaningful progress updates when we
-                        hit major milestones. No daily spam. No sales pressure.
-                        Just honest communication about where we are.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6 text-success" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">
-                        Shape the product direction
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Your feedback will directly influence features,
-                        priorities, and design decisions. We&apos;re building
-                        this for people like you—not for abstract personas.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-muted/50 border border-border rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-3">
-                    Who&apos;s the best fit for early access?
-                  </h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>
-                        Ambitious people who routinely set big goals but
-                        struggle with consistency
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>
-                        Founders, students, or creators juggling multiple
-                        priorities
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>
-                        People willing to give honest feedback, even when
-                        it&apos;s critical
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>
-                        Anyone who believes productivity tools should understand
-                        emotion, not ignore it
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Right: Form Embed */}
-              <div className="lg:sticky lg:top-24">
-                <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 shadow-lg">
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold text-foreground mb-2">
-                      Reserve your spot
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Takes less than a minute. We respect your inbox.
-                    </p>
-                  </div>
-
-                  {/* Google Form Embed */}
-                  <div className="rounded-xl overflow-hidden border border-border">
-                    <iframe
-                      src="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform?embedded=true"
-                      width="100%"
-                      height="800"
-                      frameBorder="0"
-                      marginHeight={0}
-                      marginWidth={0}
-                      className="w-full"
-                    >
-                      Loading…
-                    </iframe>
-                  </div>
-
-                  <div className="mt-6">
-                    <p className="text-xs text-muted-foreground text-center">
-                      Can&apos;t see the form?{" "}
-                      <a
-                        href="https://docs.google.com/forms/d/e/1FAIpQLSek-5i4Kdd6iRTKEhTVD3pjI0AAtnZ9_cGajk6oFeEXlb998g/viewform"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Open in new tab →
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* FAQ */}
-            <div className="mt-20 max-w-3xl mx-auto">
-              <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
-                Common questions
-              </h2>
-              <div className="space-y-6">
-                <div className="border border-border rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-2">
-                    When will the beta start?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    We&apos;re targeting early pilot cohorts in Q1 2026. The
-                    exact timing depends on core loop stability and memory
-                    system performance. Waitlist members will get at least 2
-                    weeks notice before their cohort starts.
-                  </p>
-                </div>
-
-                <div className="border border-border rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-2">
-                    How often will you email me?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Very rarely. Expect 1-2 emails per month at most, and only
-                    when there&apos;s something meaningful to share— like beta
-                    access opening, major feature launches, or requests for
-                    specific feedback. You can unsubscribe anytime.
-                  </p>
-                </div>
-
-                <div className="border border-border rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-2">
-                    Will early access be free?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Yes. Pilot cohort members will have free access during the
-                    beta period. We&apos;re not asking you to pay for an
-                    unfinished product—we&apos;re asking you to invest time
-                    giving us feedback. That&apos;s valuable enough.
-                  </p>
-                </div>
-
-                <div className="border border-border rounded-xl p-6">
-                  <h3 className="font-semibold text-foreground mb-2">
-                    What if Delight doesn&apos;t work for me?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    That&apos;s important data. If the core loop doesn&apos;t
-                    resonate, if the narrative feels gimmicky, if the AI
-                    misunderstands you—we want to know. Critical feedback is
-                    more valuable than polite praise. Help us build something
-                    that actually works.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom CTA */}
-            <div className="mt-16 text-center">
-              <p className="text-muted-foreground mb-6">
-                Want to learn more before joining?
+      {/* FAQ Section */}
+      <section className="py-24 bg-zinc-900/30 border-t border-white/5">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl font-display font-bold text-white mb-12 text-center">
+            Common Questions
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-black/50 border border-white/5 rounded-xl p-6"
+            >
+              <h3 className="font-display font-bold text-white mb-3">
+                When will the beta start?
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                We're targeting early pilot cohorts in <span className="text-white">Q1 2026</span>.
+                Exact timing depends on core loop stability and memory system performance.
+                Waitlist members get 2+ weeks notice before their cohort starts.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/"
-                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-foreground border border-border rounded-lg hover:border-primary/50 hover:bg-accent transition-all"
-                >
-                  ← Explore the Product
-                </Link>
-                <Link
-                  href="/why"
-                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-foreground border border-border rounded-lg hover:border-primary/50 hover:bg-accent transition-all"
-                >
-                  Read the Manifesto
-                </Link>
-                <Link
-                  href="/future"
-                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-foreground border border-border rounded-lg hover:border-primary/50 hover:bg-accent transition-all"
-                >
-                  See the Future →
-                </Link>
-              </div>
-            </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-black/50 border border-white/5 rounded-xl p-6"
+            >
+              <h3 className="font-display font-bold text-white mb-3">
+                How often will you email me?
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Very rarely. Expect <span className="text-white">1-2 emails per month</span> at most,
+                and only when there's something meaningful—beta access opening, major features, or
+                specific feedback requests. Unsubscribe anytime.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-black/50 border border-white/5 rounded-xl p-6"
+            >
+              <h3 className="font-display font-bold text-white mb-3">
+                Will early access be free?
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Yes. <span className="text-white">Pilot cohort members get free access</span> during
+                the beta period. We're not asking you to pay for an unfinished product—we're asking
+                you to invest time giving feedback. That's valuable enough.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="bg-black/50 border border-white/5 rounded-xl p-6"
+            >
+              <h3 className="font-display font-bold text-white mb-3">
+                What if Delight doesn't work for me?
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                <span className="text-white">That's important data.</span> If the core loop doesn't
+                resonate, if the narrative feels gimmicky, if the AI misunderstands you—we want to know.
+                Critical feedback is more valuable than polite praise.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="py-32 border-t border-white/5">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-6"
+          >
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-white">
+              Want to learn more <br />
+              <span className="text-emerald-500">before joining?</span>
+            </h2>
+            <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+              Explore the system, read the philosophy, or see what we're building next.
+            </p>
+          </motion.div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-full font-medium hover:bg-white/10 transition-all"
+            >
+              ← Explore the System
+            </Link>
+            <Link
+              href="/why"
+              className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-full font-medium hover:bg-white/10 transition-all"
+            >
+              Read the Manifesto
+            </Link>
+            <Link
+              href="/future"
+              className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-full font-medium hover:bg-white/10 transition-all"
+            >
+              See the Future <ArrowRight size={16} />
+            </Link>
           </div>
         </div>
       </section>

@@ -32,7 +32,7 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <body className="font-sans bg-slate-950" suppressHydrationWarning>
           <MainNav />
-          <div className="pt-16">{children}</div>
+          {children}
         </body>
       </html>
     </ClerkProvider>
