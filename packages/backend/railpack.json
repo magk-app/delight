@@ -6,10 +6,11 @@
       "python -V",
       "pip install --upgrade pip",
       "pip install poetry",
-      "poetry export -f requirements.txt --output requirements.txt --without-hashes --without dev"
+      "poetry config virtualenvs.create false",
+      "poetry install --no-dev --no-interaction"
     ]
   },
-  "deploy": {
-    "startCommand": "pip install --no-cache-dir -r requirements.txt && python -m alembic upgrade head || true && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+  "start": {
+    "command": "poetry run python -m experiments.web.dashboard_server"
   }
 }
