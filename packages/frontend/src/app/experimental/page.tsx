@@ -49,7 +49,7 @@ export default function ExperimentalPage() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                  Experimental Lab
+                  Delight v1 Beta
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-400 mt-0.5 sm:mt-1 flex items-center gap-1.5 sm:gap-2">
                   <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -65,7 +65,7 @@ export default function ExperimentalPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               {/* User Switcher */}
               {userId && !userLoading && (
-                <div className="hidden sm:block">
+                <div>
                   <UserSwitcher
                     currentUserId={userId}
                     onUserChange={handleUserChange}
@@ -105,7 +105,7 @@ export default function ExperimentalPage() {
                     {checking
                       ? "Checking..."
                       : healthy
-                      ? "Backend Online"
+                      ? "Connected to ngrok"
                       : "Backend Offline"}
                   </span>
                   <span className="sm:hidden">
@@ -250,7 +250,7 @@ export default function ExperimentalPage() {
               }
             >
               {healthy ? (
-                <span className="hidden sm:inline">http://localhost:8001</span>
+                <span className="hidden sm:inline">Connected to ngrok</span>
               ) : (
                 <span className="hidden sm:inline">Not connected</span>
               )}

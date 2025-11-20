@@ -217,7 +217,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   // Poll for newly created memories (created in background)
   const pollForNewMemories = async (userId: string) => {
     let pollCount = 0;
-    const maxPolls = 10; // Poll for 20 seconds (10 polls * 2 seconds) - increased from 5
+    const maxPolls = 6; // Poll for 30 seconds (6 polls * 5 seconds)
+    const pollInterval = 5000; // Poll every 5 seconds instead of 2
     let lastMemoryIds = new Set<string>(); // Track memory IDs instead of count
 
     const poll = async () => {
@@ -276,13 +277,17 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
           // Continue polling in case more memories are created
           pollCount++;
           if (pollCount < maxPolls) {
-            setTimeout(poll, 2000);
+            setTimeout(poll, pollInterval);
+          } else {
+            // Stop polling after max attempts
+            console.log("⏹️ Stopped polling for memories (timeout)");
+            setIsProcessingMemories(false);
           }
         } else {
           // No new memories yet, continue polling
           pollCount++;
           if (pollCount < maxPolls) {
-            setTimeout(poll, 2000);
+            setTimeout(poll, pollInterval);
           } else {
             // Stop polling after max attempts
             console.log("⏹️ Stopped polling for memories (timeout)");
@@ -310,8 +315,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       console.error("Error getting initial memories:", error);
     }
 
-    // Start polling after 1.5 seconds (give background task time to start)
-    setTimeout(poll, 1500);
+    // Start polling after 2 seconds (give background task time to start)
+    setTimeout(poll, 2000);
   };
 
   const handleNewConversation = async () => {
