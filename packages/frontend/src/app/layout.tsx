@@ -44,8 +44,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable} ${dancingScript.variable}`}>
-        <body className="font-sans" suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning>
+        <body className={`font-sans ${inter.variable} ${spaceGrotesk.variable} ${dancingScript.variable}`} suppressHydrationWarning>
           <MainNav />
           {children}
         </body>
