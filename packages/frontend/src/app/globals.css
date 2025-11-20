@@ -85,6 +85,7 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Use system fonts for instant rendering - no download needed! */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background-color: #000000;
   }
@@ -92,17 +93,20 @@
 
 /* Marketing Page Custom Styles */
 
-/* Custom font utilities - using Next.js optimized fonts */
+/* Custom font utilities */
 .font-display {
-  font-family: var(--font-display), sans-serif;
+  /* Space Grotesk for headings only - fallback to system fonts */
+  font-family: var(--font-display), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .font-signature {
-  font-family: var(--font-signature), cursive;
+  /* Fallback to system cursive fonts */
+  font-family: "Brush Script MT", cursive, system-ui;
 }
 
 .font-sans {
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* System fonts for body text - instant rendering! */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Glass panel effect */

@@ -1,29 +1,18 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MainNav } from "@/components/navigation/main-nav";
-import { Inter, Space_Grotesk, Dancing_Script } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-// Optimized font loading - self-hosted, no external requests
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
+// Only load Space Grotesk for headings - MUCH faster!
+// Body text uses system fonts (no download needed)
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "700"], // Only 2 weights instead of 11!
   variable: "--font-display",
-  display: "swap",
-});
-
-const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-signature",
-  display: "swap",
+  display: "optional", // Don't block render waiting for fonts
+  preload: true,
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -45,7 +34,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`font-sans ${inter.variable} ${spaceGrotesk.variable} ${dancingScript.variable}`} suppressHydrationWarning>
+        <body className={`${spaceGrotesk.variable}`} suppressHydrationWarning>
           <MainNav />
           {children}
         </body>
