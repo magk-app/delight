@@ -1,20 +1,58 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { SectionFrame } from "@/components/marketing/ui/SectionFrame";
 import { ScrollProgress } from "@/components/marketing/ui/ScrollProgress";
 import { NarrativeDemo } from "@/components/marketing/NarrativeDemo";
-import { MissionControl } from "@/components/marketing/MissionControl";
-import { Companions } from "@/components/marketing/Companions";
-import { Constellation } from "@/components/marketing/Constellation";
-import { DailyLoop } from "@/components/marketing/DailyLoop";
-import { WorldMap } from "@/components/marketing/WorldMap";
-import { Psychology } from "@/components/marketing/Psychology";
-import { FeatureDeepDive } from "@/components/marketing/FeatureDeepDive";
-import { WhyDelight } from "@/components/marketing/WhyDelight";
-import { CollaborativeStory } from "@/components/marketing/CollaborativeStory";
-import { MoveUpRight, Play } from "lucide-react";
+import { Play } from "lucide-react";
+
+// Lazy load below-the-fold components for better mobile performance
+const MissionControl = dynamic(() => import("@/components/marketing/MissionControl").then(mod => ({ default: mod.MissionControl })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const Companions = dynamic(() => import("@/components/marketing/Companions").then(mod => ({ default: mod.Companions })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const Constellation = dynamic(() => import("@/components/marketing/Constellation").then(mod => ({ default: mod.Constellation })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const DailyLoop = dynamic(() => import("@/components/marketing/DailyLoop").then(mod => ({ default: mod.DailyLoop })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const WorldMap = dynamic(() => import("@/components/marketing/WorldMap").then(mod => ({ default: mod.WorldMap })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const Psychology = dynamic(() => import("@/components/marketing/Psychology").then(mod => ({ default: mod.Psychology })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const FeatureDeepDive = dynamic(() => import("@/components/marketing/FeatureDeepDive").then(mod => ({ default: mod.FeatureDeepDive })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const WhyDelight = dynamic(() => import("@/components/marketing/WhyDelight").then(mod => ({ default: mod.WhyDelight })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
+
+const CollaborativeStory = dynamic(() => import("@/components/marketing/CollaborativeStory").then(mod => ({ default: mod.CollaborativeStory })), {
+  loading: () => <div className="min-h-[400px] animate-pulse bg-zinc-900/20" />,
+  ssr: true
+});
 
 export default function MarketingHome() {
   return (
