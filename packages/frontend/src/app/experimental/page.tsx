@@ -41,25 +41,28 @@ export default function ExperimentalPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header with glassmorphism */}
       <header className="bg-slate-900/50 backdrop-blur-xl shadow-2xl border-b border-slate-700/50 relative z-40">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg shadow-purple-500/30">
-                <Beaker className="w-7 h-7 text-white" />
+        <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg shadow-purple-500/30">
+                <Beaker className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
                   Experimental Lab
                 </h1>
-                <p className="text-sm text-slate-400 mt-1 flex items-center gap-2">
-                  <Activity className="w-3.5 h-3.5" />
-                  AI-Powered Second Brain • Full Integration Test
+                <p className="text-xs sm:text-sm text-slate-400 mt-0.5 sm:mt-1 flex items-center gap-1.5 sm:gap-2">
+                  <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <span className="hidden sm:inline">
+                    AI-Powered Second Brain • Full Integration Test
+                  </span>
+                  <span className="sm:hidden">AI Second Brain</span>
                 </p>
               </div>
             </div>
 
             {/* Backend Status & User Switcher */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {/* User Switcher */}
               {userId && !userLoading && (
                 <UserSwitcher
@@ -70,7 +73,7 @@ export default function ExperimentalPage() {
 
               {/* Backend Status Indicator */}
               <div
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg transition-all ${
                   checking
                     ? "bg-yellow-500/10 border border-yellow-500/30"
                     : healthy
@@ -88,7 +91,7 @@ export default function ExperimentalPage() {
                   }`}
                 />
                 <span
-                  className={`text-sm font-medium ${
+                  className={`text-xs sm:text-sm font-medium ${
                     checking
                       ? "text-yellow-300"
                       : healthy
@@ -96,11 +99,19 @@ export default function ExperimentalPage() {
                       : "text-red-300"
                   }`}
                 >
-                  {checking
-                    ? "Checking..."
-                    : healthy
-                    ? "Backend Online"
-                    : "Backend Offline"}
+                  {checking ? (
+                    "Checking..."
+                  ) : healthy ? (
+                    <span className="hidden sm:inline">Backend Online</span>
+                  ) : (
+                    <span className="hidden sm:inline">Backend Offline</span>
+                  )}
+                  {!checking && healthy && (
+                    <span className="sm:hidden">Online</span>
+                  )}
+                  {!checking && !healthy && (
+                    <span className="sm:hidden">Offline</span>
+                  )}
                 </span>
               </div>
             </div>
@@ -122,10 +133,15 @@ export default function ExperimentalPage() {
                   <p className="text-xs text-yellow-200/80 mt-2">
                     Start the backend to enable full chat functionality:
                   </p>
-                  <code className="block mt-2 bg-slate-900/50 px-3 py-2 rounded-lg text-xs text-yellow-100 font-mono border border-yellow-500/20">
-                    <Code className="w-3 h-3 inline mr-2" />
-                    cd packages/backend && poetry run python
-                    experiments/web/dashboard_server.py
+                  <code className="block mt-2 bg-slate-900/50 px-2 sm:px-3 py-2 rounded-lg text-[10px] sm:text-xs text-yellow-100 font-mono border border-yellow-500/20 overflow-x-auto">
+                    <Code className="w-3 h-3 inline mr-1.5 sm:mr-2" />
+                    <span className="whitespace-nowrap">
+                      cd packages/backend && poetry run python
+                    </span>
+                    <br className="sm:hidden" />
+                    <span className="whitespace-nowrap">
+                      experiments/web/dashboard_server.py
+                    </span>
                   </code>
                 </div>
               </div>
@@ -135,9 +151,9 @@ export default function ExperimentalPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2">
+      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50 overflow-x-auto">
+        <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
+          <div className="flex gap-1 sm:gap-2 min-w-max">
             <TabButton
               active={activeTab === "chat"}
               onClick={() => setActiveTab("chat")}
@@ -173,15 +189,19 @@ export default function ExperimentalPage() {
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 min-h-[calc(100vh-16rem)] pb-16">
-        <div className="min-h-[calc(100vh-16rem)]">
+      <main className="mx-auto max-w-7xl px-2 sm:px-4 py-4 sm:py-6 lg:px-8 min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-16rem)] pb-20 sm:pb-16">
+        <div className="min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-16rem)]">
           {userLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-slate-400">Loading user session...</div>
+              <div className="text-sm sm:text-base text-slate-400">
+                Loading user session...
+              </div>
             </div>
           ) : !userId ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-red-400">Error: Could not initialize user session</div>
+              <div className="text-sm sm:text-base text-red-400">
+                Error: Could not initialize user session
+              </div>
             </div>
           ) : (
             <motion.div
@@ -191,14 +211,20 @@ export default function ExperimentalPage() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {activeTab === "chat" && <ChatInterfaceWithSidebar userId={userId} />}
-              {activeTab === "memories" && <MemoryVisualization userId={userId} />}
+              {activeTab === "chat" && (
+                <ChatInterfaceWithSidebar userId={userId} />
+              )}
+              {activeTab === "memories" && (
+                <MemoryVisualization userId={userId} />
+              )}
               {activeTab === "graph" && (
-                <div className="h-[calc(100vh-20rem)]">
+                <div className="h-[calc(100vh-14rem)] sm:h-[calc(100vh-20rem)]">
                   <MemoryGraph userId={userId} />
                 </div>
               )}
-              {activeTab === "analytics" && <AnalyticsDashboard userId={userId} />}
+              {activeTab === "analytics" && (
+                <AnalyticsDashboard userId={userId} />
+              )}
               {activeTab === "config" && <ConfigurationPanel />}
             </motion.div>
           )}
@@ -206,14 +232,17 @@ export default function ExperimentalPage() {
       </main>
 
       {/* Footer Info */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-700/50 py-2 px-4 text-xs">
-        <div className="mx-auto max-w-7xl flex items-center justify-between text-slate-400">
-          <div className="flex items-center gap-2">
-            <Beaker className="w-3.5 h-3.5" />
-            <span>Phase 3 • Hierarchical Memory + Graph + Visualization</span>
+      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-700/50 py-2 px-3 sm:px-4 text-xs">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-slate-400">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Beaker className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">
+              Phase 3 • Hierarchical Memory + Graph + Visualization
+            </span>
+            <span className="sm:hidden">Phase 3</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span>Backend:</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="hidden sm:inline">Backend:</span>
             <span
               className={
                 healthy
@@ -221,7 +250,16 @@ export default function ExperimentalPage() {
                   : "text-red-400 font-medium"
               }
             >
-              {healthy ? "http://localhost:8001" : "Not connected"}
+              {healthy ? (
+                <span className="hidden sm:inline">http://localhost:8001</span>
+              ) : (
+                <span className="hidden sm:inline">Not connected</span>
+              )}
+              {healthy ? (
+                <span className="sm:hidden">Online</span>
+              ) : (
+                <span className="sm:hidden">Offline</span>
+              )}
             </span>
           </div>
         </div>
@@ -248,12 +286,12 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all ${
+      className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all whitespace-nowrap ${
         active ? "text-purple-300" : "text-slate-400 hover:text-slate-300"
       }`}
     >
       {icon}
-      <span>{label}</span>
+      <span className="hidden sm:inline">{label}</span>
       {active && (
         <motion.div
           layoutId="activeTab"

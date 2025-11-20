@@ -7,18 +7,11 @@
  * - Displays created memories with animations
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Brain,
-  Sparkles,
-  Check,
-  Loader2,
-  Tag,
-  Link2,
-} from 'lucide-react';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Brain, Sparkles, Check, Loader2, Tag, Link2 } from "lucide-react";
 
 interface Memory {
   id: string;
@@ -45,28 +38,30 @@ export function MemoryNotifications({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="fixed right-4 top-24 w-80 max-h-[calc(100vh-200px)] overflow-hidden z-50"
+      className="h-full w-full max-h-full overflow-hidden flex flex-col"
     >
-      <div className="bg-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl overflow-hidden">
+      <div className="bg-slate-800/95 backdrop-blur-xl border-l sm:border border-slate-700/50 rounded-none sm:rounded-xl shadow-2xl overflow-hidden h-full flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-slate-700/50 bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
+        <div className="p-3 sm:p-4 border-b border-slate-700/50 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-purple-400" />
-            <h3 className="text-sm font-semibold text-white">Memory Processing</h3>
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+            <h3 className="text-xs sm:text-sm font-semibold text-white">
+              Memory Processing
+            </h3>
             {isProcessing && (
-              <Loader2 className="w-4 h-4 text-purple-400 animate-spin ml-auto" />
+              <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 animate-spin ml-auto" />
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
           {/* Processing Indicator */}
           <AnimatePresence>
             {isProcessing && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="p-4 border-b border-slate-700/50"
               >
@@ -88,7 +83,7 @@ export function MemoryNotifications({
           </AnimatePresence>
 
           {/* Recent Memories */}
-          <div className="p-3 space-y-2">
+          <div className="p-2 sm:p-3 space-y-2">
             <AnimatePresence>
               {recentMemories.map((memory, index) => (
                 <motion.div
@@ -97,14 +92,14 @@ export function MemoryNotifications({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: index * 0.1 }}
-                  className="p-3 bg-slate-900/50 border border-green-500/20 rounded-lg"
+                  className="p-2 sm:p-3 bg-slate-900/50 border border-green-500/20 rounded-lg"
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="p-1.5 bg-green-500/20 rounded">
-                      <Check className="w-3.5 h-3.5 text-green-400" />
+                  <div className="flex items-start gap-1.5 sm:gap-2">
+                    <div className="p-1 sm:p-1.5 bg-green-500/20 rounded flex-shrink-0">
+                      <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-[10px] sm:text-xs text-slate-300 leading-relaxed break-words">
                         {memory.content}
                       </p>
 
@@ -117,7 +112,7 @@ export function MemoryNotifications({
                           <div className="flex items-center gap-1">
                             <Tag className="w-3 h-3 text-slate-500" />
                             <span className="text-xs text-slate-500">
-                              {memory.categories.slice(0, 2).join(', ')}
+                              {memory.categories.slice(0, 2).join(", ")}
                             </span>
                           </div>
                         )}
@@ -139,10 +134,11 @@ export function MemoryNotifications({
 
         {/* Footer Stats */}
         {recentMemories.length > 0 && (
-          <div className="p-3 border-t border-slate-700/50 bg-slate-900/50">
-            <div className="flex items-center justify-between text-xs">
+          <div className="p-2 sm:p-3 border-t border-slate-700/50 bg-slate-900/50 flex-shrink-0">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs">
               <span className="text-slate-400">
-                {recentMemories.length} {recentMemories.length === 1 ? 'memory' : 'memories'} created
+                {recentMemories.length}{" "}
+                {recentMemories.length === 1 ? "memory" : "memories"} created
               </span>
               <span className="text-green-400 font-medium">Active</span>
             </div>
