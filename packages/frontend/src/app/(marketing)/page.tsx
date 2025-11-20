@@ -14,8 +14,7 @@ import { Psychology } from "@/components/marketing/Psychology";
 import { FeatureDeepDive } from "@/components/marketing/FeatureDeepDive";
 import { WhyDelight } from "@/components/marketing/WhyDelight";
 import { CollaborativeStory } from "@/components/marketing/CollaborativeStory";
-import { Twitter, Github, MoveUpRight, Play, Disc } from "lucide-react";
-import Link from "next/link";
+import { MoveUpRight, Play } from "lucide-react";
 
 export default function MarketingHome() {
   return (
@@ -128,81 +127,6 @@ export default function MarketingHome() {
       <section id="manifesto">
         <WhyDelight />
       </section>
-
-      {/* Footer */}
-      <footer className="bg-black pt-24 pb-12 relative z-20">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-24">
-          <div className="space-y-6">
-            <h3 className="text-2xl font-display font-bold text-white">
-              Delight.
-            </h3>
-            <p className="text-zinc-500 text-sm leading-relaxed">
-              San Francisco, CA <br />
-              Simulating since 2024.
-            </p>
-          </div>
-
-          <div className="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-8">
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-6">
-                Platform
-              </h4>
-              <ul className="space-y-4 text-sm text-zinc-500">
-                <li className="hover:text-white cursor-pointer transition-colors">
-                  Narrative Engine
-                </li>
-                <li className="hover:text-white cursor-pointer transition-colors">
-                  Psychology
-                </li>
-                <li className="hover:text-white cursor-pointer transition-colors">
-                  Pricing
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-6">
-                Guild
-              </h4>
-              <ul className="space-y-4 text-sm text-zinc-500">
-                <li className="hover:text-white cursor-pointer transition-colors">
-                  Discord
-                </li>
-                <li className="hover:text-white cursor-pointer transition-colors">
-                  Twitter
-                </li>
-                <li className="hover:text-white cursor-pointer transition-colors">
-                  <Link href="/why">Manifesto</Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-6">
-                System
-              </h4>
-              <div className="flex items-center gap-2 text-emerald-500 text-sm font-mono">
-                <Disc size={14} className="animate-spin-slow" />
-                <span>Operational</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 border-t border-white/10 pt-8 flex justify-between items-center">
-          <p className="text-[10px] text-zinc-700 uppercase tracking-widest">
-            © 2025 Delight Systems Inc.
-          </p>
-          <div className="flex gap-6">
-            <Twitter
-              size={16}
-              className="text-zinc-700 hover:text-white transition-colors cursor-pointer"
-            />
-            <Github
-              size={16}
-              className="text-zinc-700 hover:text-white transition-colors cursor-pointer"
-            />
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
