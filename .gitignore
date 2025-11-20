@@ -127,3 +127,6 @@ bmad/
 # other
 tmp/
 docs/archive/
+
+# Experimental data
+packages/backend/experiments/web/data/
