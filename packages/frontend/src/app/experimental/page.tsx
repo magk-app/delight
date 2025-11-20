@@ -119,18 +119,18 @@ export default function ExperimentalPage() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm"
+              className="mt-3 sm:mt-4 p-3 sm:p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg sm:rounded-xl backdrop-blur-sm"
             >
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-yellow-300">
-                    Experimental Backend Not Running
+                  <p className="text-xs sm:text-sm font-semibold text-yellow-300">
+                    Backend Not Running
                   </p>
-                  <p className="text-xs text-yellow-200/80 mt-2">
+                  <p className="text-xs text-yellow-200/80 mt-1 sm:mt-2 hidden sm:block">
                     Start the backend to enable full chat functionality:
                   </p>
-                  <code className="block mt-2 bg-slate-900/50 px-3 py-2 rounded-lg text-xs text-yellow-100 font-mono border border-yellow-500/20">
+                  <code className="hidden sm:block mt-2 bg-slate-900/50 px-3 py-2 rounded-lg text-xs text-yellow-100 font-mono border border-yellow-500/20 overflow-x-auto">
                     <Code className="w-3 h-3 inline mr-2" />
                     cd packages/backend && poetry run python
                     experiments/web/dashboard_server.py
@@ -143,37 +143,37 @@ export default function ExperimentalPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2">
+      <div className="bg-slate-900/30 backdrop-blur-xl border-b border-slate-700/50 overflow-x-auto scrollbar-hide">
+        <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+          <div className="flex gap-1 sm:gap-2 min-w-max">
             <TabButton
               active={activeTab === "chat"}
               onClick={() => setActiveTab("chat")}
-              icon={<MessageSquare className="w-4 h-4" />}
+              icon={<MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Chat"
             />
             <TabButton
               active={activeTab === "memories"}
               onClick={() => setActiveTab("memories")}
-              icon={<Brain className="w-4 h-4" />}
+              icon={<Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Memories"
             />
             <TabButton
               active={activeTab === "graph"}
               onClick={() => setActiveTab("graph")}
-              icon={<Network className="w-4 h-4" />}
+              icon={<Network className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Graph"
             />
             <TabButton
               active={activeTab === "analytics"}
               onClick={() => setActiveTab("analytics")}
-              icon={<BarChart3 className="w-4 h-4" />}
+              icon={<BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Analytics"
             />
             <TabButton
               active={activeTab === "config"}
               onClick={() => setActiveTab("config")}
-              icon={<Settings className="w-4 h-4" />}
+              icon={<Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               label="Config"
             />
           </div>
@@ -181,15 +181,15 @@ export default function ExperimentalPage() {
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 min-h-[calc(100vh-16rem)] pb-16">
-        <div className="min-h-[calc(100vh-16rem)]">
+      <main className="mx-auto max-w-7xl px-2 py-4 sm:px-6 sm:py-8 lg:px-8 min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-16rem)] pb-12 sm:pb-16">
+        <div className="min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-16rem)]">
           {userLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-slate-400">Loading user session...</div>
+              <div className="text-sm sm:text-base text-slate-400">Loading user session...</div>
             </div>
           ) : !userId ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-red-400">Error: Could not initialize user session</div>
+              <div className="text-sm sm:text-base text-red-400">Error: Could not initialize user session</div>
             </div>
           ) : (
             <motion.div
@@ -202,7 +202,7 @@ export default function ExperimentalPage() {
               {activeTab === "chat" && <ChatInterfaceWithSidebar userId={userId} />}
               {activeTab === "memories" && <MemoryVisualization userId={userId} />}
               {activeTab === "graph" && (
-                <div className="h-[calc(100vh-20rem)]">
+                <div className="h-[calc(100vh-16rem)] sm:h-[calc(100vh-20rem)]">
                   <MemoryGraph userId={userId} />
                 </div>
               )}
@@ -214,14 +214,15 @@ export default function ExperimentalPage() {
       </main>
 
       {/* Footer Info */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-700/50 py-2 px-4 text-xs">
+      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-700/50 py-1.5 sm:py-2 px-2 sm:px-4 text-xs">
         <div className="mx-auto max-w-7xl flex items-center justify-between text-slate-400">
-          <div className="flex items-center gap-2">
-            <Beaker className="w-3.5 h-3.5" />
-            <span>Phase 3 • Hierarchical Memory + Graph + Visualization</span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Beaker className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">Phase 3 • Hierarchical Memory + Graph + Visualization</span>
+            <span className="sm:hidden">Phase 3</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span>Backend:</span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="hidden sm:inline">Backend:</span>
             <span
               className={
                 healthy
@@ -229,7 +230,8 @@ export default function ExperimentalPage() {
                   : "text-red-400 font-medium"
               }
             >
-              {healthy ? "http://localhost:8001" : "Not connected"}
+              <span className="hidden sm:inline">{healthy ? "http://localhost:8001" : "Not connected"}</span>
+              <span className="sm:hidden">{healthy ? ":8001" : "Off"}</span>
             </span>
           </div>
         </div>
@@ -256,7 +258,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all ${
+      className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all whitespace-nowrap ${
         active ? "text-purple-300" : "text-slate-400 hover:text-slate-300"
       }`}
     >
