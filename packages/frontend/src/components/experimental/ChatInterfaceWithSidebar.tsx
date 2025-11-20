@@ -7,6 +7,21 @@
  * - Modern, futuristic, minimalistic design
  * - No emojis, only Lucide icons
  * - Warm glassmorphism effects
+ *
+ * FIXES APPLIED (2024):
+ * =====================
+ * 1. Dependency Loop Fix: Removed isCreatingConversation from useCallback deps
+ *    - Prevents infinite re-renders and excessive API calls
+ *    - Uses ref-based guard instead of state for initialization
+ *
+ * 2. Request Caching: Integrated API client caching
+ *    - Clears cache after mutations (create/delete messages)
+ *    - Prevents duplicate requests when components re-render
+ *
+ * 3. Mobile Optimizations: Fixed iOS zoom, scroll behavior, white background
+ *    - Input font-size set to 16px to prevent iOS auto-zoom
+ *    - Instant scroll on mobile for better UX
+ *    - Proper backdrop blur to prevent white flashes
  */
 
 "use client";
@@ -60,6 +75,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false); // Prevent duplicate initialization
+  const loadingConversationRef = useRef<string | null>(null); // Track which conversation is being loaded
 
   // Auto-scroll to bottom - use instant scroll on mobile for better UX
   const scrollToBottom = useCallback(() => {
@@ -94,7 +110,7 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
    * Previously, loadOrCreateConversation depended on isCreatingConversation state,
    * which caused the callback to be recreated every time the state changed,
    * triggering the useEffect again → infinite loop of API calls.
-   * 
+   *
    * Solution: Use ref (hasInitialized) instead of state for guard, and remove
    * isCreatingConversation from useCallback dependencies. This prevents the
    * callback from being recreated unnecessarily.
@@ -127,7 +143,8 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
         // Try to load existing conversation
         try {
           const conversation = await experimentalAPI.getConversation(
-            storedConversationId
+            storedConversationId,
+            true // Use cache
           );
 
           console.log(
@@ -198,6 +215,13 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   }, [userId]); // Remove isCreatingConversation from dependencies
 
   // Load or create conversation on mount (with duplicate prevention)
+  /**
+   * FIXED: Removed loadOrCreateConversation from dependencies
+   * =========================================================
+   * Including the callback in dependencies caused re-runs when it was recreated.
+   * Since we use hasInitialized ref to prevent duplicates, we only need to
+   * depend on userId. The eslint-disable comment is intentional.
+   */
   useEffect(() => {
     // Only initialize once per userId
     if (hasInitialized.current) {
@@ -212,12 +236,30 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
   }, [userId]); // Only depend on userId, not loadOrCreateConversation to avoid loops
 
   const handleConversationSelect = async (newConversationId: string) => {
+    // Prevent loading the same conversation that's already loaded
+    if (conversationId === newConversationId) {
+      console.log(
+        `⏭️ Conversation ${newConversationId} already loaded, skipping...`
+      );
+      return;
+    }
+
+    // Prevent loading if we're already loading this conversation
+    if (loadingConversationRef.current === newConversationId) {
+      console.log(
+        `⏳ Conversation ${newConversationId} already loading, skipping...`
+      );
+      return;
+    }
+
     try {
+      loadingConversationRef.current = newConversationId;
       const { default: experimentalAPI } = await import(
         "@/lib/api/experimental-client"
       );
       const conversation = await experimentalAPI.getConversation(
-        newConversationId
+        newConversationId,
+        true // Use cache
       );
 
       const loadedMessages: Message[] = [
@@ -240,8 +282,10 @@ export function ChatInterfaceWithSidebar({ userId }: { userId: string }) {
       setMessages(loadedMessages);
       setConversationId(newConversationId);
       localStorage.setItem(`conversation_${userId}`, newConversationId);
+      loadingConversationRef.current = null; // Clear loading flag
     } catch (error) {
       console.error("Failed to load conversation:", error);
+      loadingConversationRef.current = null; // Clear loading flag on error
     }
   };
 

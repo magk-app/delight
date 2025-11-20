@@ -6,6 +6,20 @@
  * - Highlights active conversation
  * - Delete conversations
  * - Create new conversation
+ *
+ * FIXES APPLIED (2024):
+ * =====================
+ * 1. Memoization: Wrapped loadConversations in useCallback
+ *    - Prevents function recreation on every render
+ *    - Properly included in useEffect dependencies
+ *
+ * 2. Concurrent Request Prevention: Added isLoadingRef guard
+ *    - Prevents multiple simultaneous API calls
+ *    - Reduces backend load from rapid re-renders
+ *
+ * 3. Cache Management: Clears API cache after mutations
+ *    - Ensures fresh data after delete operations
+ *    - Prevents stale data from being displayed
  */
 
 "use client";

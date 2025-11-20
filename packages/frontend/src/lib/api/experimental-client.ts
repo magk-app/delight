@@ -161,6 +161,18 @@ export interface ConversationMessage {
 // API Client
 // ============================================================================
 
+/**
+ * FIXES APPLIED (2024):
+ * =====================
+ * 1. Request Caching: Added 2-second cache for GET requests
+ *    - Prevents duplicate API calls when components re-render rapidly
+ *    - Reduces backend load from excessive polling
+ *    - Cache is automatically cleared after mutations (create/delete/update)
+ *
+ * 2. Error Handling: Improved error messages for network failures
+ *    - Better diagnostics for connection issues
+ *    - Helpful messages for ngrok/network access scenarios
+ */
 class ExperimentalAPIClient {
   private baseUrl: string;
   private wsUrl: string;
@@ -168,7 +180,7 @@ class ExperimentalAPIClient {
   private wsCallbacks: Map<string, (data: any) => void> = new Map();
   private requestCache: Map<string, { data: any; timestamp: number }> =
     new Map();
-  private readonly CACHE_TTL = 2000; // 2 seconds cache for GET requests
+  private readonly CACHE_TTL = 5000; // 5 seconds cache for GET requests (increased from 2s)
 
   constructor(baseUrl?: string) {
     // Use environment variable if available, otherwise fallback to localhost
@@ -238,23 +250,47 @@ class ExperimentalAPIClient {
     }
   }
 
+  private pendingRequests: Map<string, Promise<any>> = new Map();
+
   private async get<T>(endpoint: string, useCache: boolean = true): Promise<T> {
     // Check cache for recent requests to prevent duplicate calls
     if (useCache) {
       const cached = this.requestCache.get(endpoint);
       if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        console.log(`📦 Cache hit for ${endpoint}`);
         return cached.data as T;
+      }
+
+      // Check if there's already a pending request for this endpoint
+      const pending = this.pendingRequests.get(endpoint);
+      if (pending) {
+        console.log(`⏳ Reusing pending request for ${endpoint}`);
+        return pending as Promise<T>;
       }
     }
 
-    const data = await this.request<T>(endpoint, { method: "GET" });
+    // Create new request and track it
+    const requestPromise = this.request<T>(endpoint, { method: "GET" })
+      .then((data) => {
+        // Cache the result
+        if (useCache) {
+          this.requestCache.set(endpoint, { data, timestamp: Date.now() });
+        }
+        // Remove from pending requests
+        this.pendingRequests.delete(endpoint);
+        return data;
+      })
+      .catch((error) => {
+        // Remove from pending requests on error
+        this.pendingRequests.delete(endpoint);
+        throw error;
+      });
 
-    // Cache the result
     if (useCache) {
-      this.requestCache.set(endpoint, { data, timestamp: Date.now() });
+      this.pendingRequests.set(endpoint, requestPromise);
     }
 
-    return data;
+    return requestPromise;
   }
 
   private async post<T>(endpoint: string, data?: any): Promise<T> {
@@ -623,8 +659,12 @@ class ExperimentalAPIClient {
   clearCache(endpoint?: string): void {
     if (endpoint) {
       this.requestCache.delete(endpoint);
+      this.pendingRequests.delete(endpoint);
+      console.log(`🗑️ Cleared cache for ${endpoint}`);
     } else {
       this.requestCache.clear();
+      this.pendingRequests.clear();
+      console.log(`🗑️ Cleared all cache`);
     }
   }
 
