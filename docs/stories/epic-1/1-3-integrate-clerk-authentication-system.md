@@ -1225,7 +1225,8 @@ The backend application **cannot start** due to a Pydantic `ValidationError` whe
    - **Evidence:**
      - Error during test collection: `pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings / CLERK_WEBHOOK_SECRET / Extra inputs are not permitted [type=extra_forbidden, input_value='whsec_...', input_type=str]`
      - `CLERK_WEBHOOK_SECRET` IS correctly defined in `config.py:19` as a required field
-     - `.env` file contains `CLERK_WEBHOOK_SECRET=whsec_xSPnZzquPpSQuqjptNW7Z5KrOSVCQsaK`
+     - `.env` file contains `CLERK_WEBHOOK_SECRET=whsec_[REDACTED_FROM_REPOSITORY]`
+     - **SECURITY NOTE:** The exposed secret has been redacted and must be rotated via Clerk Dashboard
    - **Root Cause Analysis:** Pydantic Settings v2 default configuration appears to be rejecting the field despite it being defined in the Settings class. Possible causes:
      - Missing `extra="allow"` in `SettingsConfigDict` (Pydantic Settings v2 defaults to `extra="forbid"`)
      - Pydantic version conflict between dependencies
